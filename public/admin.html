@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Moon Light</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="user-info">
+                <span id="adminName">Admin</span>
+                <small id="adminRole">Quyền hạn: Admin</small>
+            </div>
+            <nav class="admin-menu">
+                <a href="#" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="#" id="menuProducts"><i class="fas fa-box"></i> Quản lý sản phẩm</a>
+                <a href="#" id="menuOrders"><i class="fas fa-shopping-cart"></i> Quản lý đơn hàng</a>
+                <a href="#" id="menuStaff" class="admin-only"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a>
+                <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-content">
+            <header class="admin-header">
+                <h2>BÁO CÁO TỔNG QUAN</h2>
+            </header>
+            
+            <div class="dashboard-stats">
+                <div class="stat-card"><h3>Doanh thu</h3><p id="totalRev">0₫</p></div>
+                <div class="stat-card"><h3>Đơn hàng</h3><p id="orderCount">0</p></div>
+                <div class="stat-card"><h3>Sản phẩm</h3><p id="prodCount">0</p></div>
+            </div>
+
+            <div class="data-table-container">
+                <h3>Danh sách gần đây</h3>
+                <table class="admin-table" id="adminDataTable">
+                    </table>
+            </div>
+        </main>
+    </div>
+    <script src="./js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth(); // Kiểm tra quyền truy cập khi load trang
+            renderAdminStats();
+        });
+    </script>
+</body>
+</html>
