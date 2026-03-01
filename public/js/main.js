@@ -1,40 +1,31 @@
 // --- 1. DỮ LIỆU SẢN PHẨM MẪU (DATABASE) ---
-const products = [
-    { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 120, sold: 500, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }, { color: "Xám", hex: "#7f8c8d", price: 1600000, img: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800" }], desc: "Thiết kế Ý lịch lãm, chất liệu vải Wool cao cấp chống nhăn." },
-    { id: 2, name: "Sơ Mi Lụa Premium", price: 550000, oldPrice: 750000, rating: 4.9, reviews: 85, sold: 1200, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500", sizes: ["M", "L", "XL"], variants: [{ color: "Trắng", hex: "#fff", price: 550000, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800" }, { color: "Vàng", hex: "#f39c12", price: 580000, img: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=800" }], desc: "Sơ mi lụa mềm mại, thoáng mát, form Slimfit tôn dáng." },
-    { id: 3, name: "Quần Âu Slimfit", price: 650000, oldPrice: 800000, rating: 4.5, reviews: 40, sold: 300, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500", sizes: ["29", "30", "31", "32"], variants: [{color:"Đen", hex:"#000", price: 650000, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800" }], desc: "Quần âu form chuẩn, co giãn nhẹ." },
-    { id: 4, name: "Áo Thun Basic", price: 320000, oldPrice: 400000, rating: 5.0, reviews: 200, sold: 5000, img: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500", sizes: ["S", "M", "L"], variants: [{color:"Đen", hex:"#000", price: 320000, img: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800" }], desc: "Áo thun cotton 100%, thấm hút mồ hôi." },
-    { id: 13, name: "Áo Polo Signature", price: 450000, oldPrice: 600000, rating: 4.7, reviews: 50, sold: 600, img: "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=500", sizes: ["M", "L"], variants: [{color:"Đen", hex:"#000", price: 450000, img: "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=800" }], desc: "Áo Polo cổ điển, lịch sự." },
-    { id: 14, name: "Quần Short Kaki", price: 350000, oldPrice: 500000, rating: 4.6, reviews: 30, sold: 150, img: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500", sizes: ["29", "30", "31"], variants: [{color:"Be", hex:"#f5f5dc", price: 350000, img: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=800" }], desc: "Quần short thoải mái cho mùa hè." },
-    { id: 15, name: "Áo Khoác Jean", price: 850000, oldPrice: 1200000, rating: 4.8, reviews: 10, sold: 80, img: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=500", sizes: ["L", "XL"], variants: [{color:"Xanh", hex:"#3498db", price: 850000, img: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=800" }], desc: "Áo khoác Jean bụi bặm, cá tính." },
-    { id: 16, name: "Áo Hoodie Street", price: 550000, oldPrice: 800000, rating: 4.9, reviews: 90, sold: 400, img: "https://images.unsplash.com/photo-1556906781-9a412961d28c?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 550000, img: "https://images.unsplash.com/photo-1556906781-9a412961d28c?w=800" }], desc: "Hoodie phong cách đường phố." },
-    { id: 17, name: "Kính Mát Phi Công", price: 250000, oldPrice: 400000, rating: 4.7, reviews: 20, sold: 200, img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 250000, img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800" }], desc: "Kính mát thời trang." },
-    { id: 18, name: "Thắt Lưng Da", price: 300000, oldPrice: 450000, rating: 4.5, reviews: 15, sold: 100, img: "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=500", sizes: ["Free"], variants: [{color:"Nâu", hex:"#8b4513", price: 300000, img: "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=800" }], desc: "Thắt lưng da bò thật." },
-    { id: 19, name: "Ví Da Nam", price: 400000, oldPrice: 600000, rating: 4.8, reviews: 45, sold: 320, img: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 400000, img: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800" }], desc: "Ví da nam nhỏ gọn." },
-    { id: 20, name: "Cà Vạt Lụa", price: 150000, oldPrice: 250000, rating: 4.6, reviews: 12, sold: 50, img: "https://images.unsplash.com/photo-1589756823695-278bc923f962?w=500", sizes: ["Free"], variants: [{color:"Đỏ", hex:"#e74c3c", price: 150000, img: "https://images.unsplash.com/photo-1589756823695-278bc923f962?w=800" }], desc: "Cà vạt lụa cao cấp." }
+let products = JSON.parse(localStorage.getItem('moonlight_products')) || [
+    { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 120, sold: 500, stock: 50, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
+    // Các sản phẩm khác...
 ];
 
-const bestSellers = [
-    { id: 5, name: "Đồng Hồ Cổ Điển", price: 2500000, oldPrice: 3000000, rating: 5.0, reviews: 300, sold: 1500, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 2500000, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800" }], desc: "Đồng hồ cơ tự động, mặt kính sapphire." },
-    { id: 6, name: "Túi Da Công Sở", price: 1800000, oldPrice: 2200000, rating: 4.9, reviews: 150, sold: 800, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", sizes: ["Free"], variants: [{color:"Nâu", hex:"#8b4513", price: 1800000, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800" }], desc: "Da bò thật 100%, đựng vừa laptop 14inch." },
-    { id: 7, name: "Áo Khoác Dạ", price: 3200000, oldPrice: 4000000, rating: 4.8, reviews: 80, sold: 400, img: "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=500", sizes: ["L", "XL"], variants: [{color:"Xám", hex:"#333", price: 3200000, img: "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=800" }], desc: "Áo khoác dạ dáng dài phong cách Hàn Quốc." },
-    { id: 8, name: "Giày Sneaker White", price: 950000, oldPrice: 1200000, rating: 4.7, reviews: 210, sold: 3000, img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500", sizes: ["40", "41", "42"], variants: [{color:"Trắng", hex:"#fff", price: 950000, img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800" }], desc: "Sneaker da thật, đế cao su êm ái." },
-    { id: 21, name: "Giày Chelsea Black", price: 1250000, oldPrice: 1600000, rating: 4.6, reviews: 60, sold: 350, img: "https://images.unsplash.com/photo-1638361623861-1d70d7eb595e?w=500", sizes: ["39", "40", "41"], variants: [{color:"Đen", hex:"#000", price: 1250000, img: "https://images.unsplash.com/photo-1638361623861-1d70d7eb595e?w=800" }], desc: "Giày Chelsea Boots da lộn." },
-    { id: 22, name: "Balo Du Lịch", price: 650000, oldPrice: 900000, rating: 4.8, reviews: 90, sold: 600, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", sizes: ["Free"], variants: [{color:"Xám", hex:"#7f8c8d", price: 650000, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800" }], desc: "Balo chống nước cao cấp." },
-    { id: 23, name: "Mũ Fedora", price: 300000, oldPrice: 500000, rating: 4.5, reviews: 20, sold: 90, img: "https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=500", sizes: ["Free"], variants: [{color:"Be", hex:"#f5f5dc", price: 300000, img: "https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=800" }], desc: "Mũ Fedora phong cách cổ điển." },
-    { id: 24, name: "Vòng Tay Da", price: 150000, oldPrice: 200000, rating: 4.4, reviews: 10, sold: 200, img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 150000, img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800" }], desc: "Vòng tay da cá tính." }
+let bestSellers = JSON.parse(localStorage.getItem('moonlight_products')) || [
+    { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 120, sold: 500, stock: 50, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
+    // Các sản phẩm khác...
 ];
 
-const accounts = [
-    { username: "admin", password: "123", name: "Vũ Phạm Luân", role: "Admin" },
-    { username: "owner", password: "123", name: "Chủ Doanh Nghiệp", role: "Owner" },
-    { username: "staff", password: "123", name: "Nhân viên Bán hàng", role: "Staff" }
+let accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || [
+    { id: 1, username: "admin", password: "123", name: "Vũ Phạm Luân", role: "Admin" },
+    { id: 2, username: "owner", password: "123", name: "Chủ doanh nghiệp", role: "Owner" },
+    { id: 3, username: "staff", password: "123", name: "Nhân viên kho", role: "Staff" }
 ];
+
+let revenueChartInstance = null;
+let statusChartInstance = null;
+
+function saveAccountsToLocal() {
+    localStorage.setItem('moonlight_accounts', JSON.stringify(accounts));
+}
 
 // --- 2. KHỞI TẠO BIẾN TOÀN CỤC ---
 let cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
 let wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
-let displayedProducts = 8; 
+let displayedProducts = 8;
 let displayedBestSellers = 4;
 
 // Biến cho trang Chi Tiết
@@ -45,51 +36,54 @@ let quantity = 1; // Mặc định số lượng là 1
 
 // --- 3. SỰ KIỆN KHI WEB LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // Nếu đang ở trang chủ (có lưới sản phẩm)
-    if(document.getElementById('product-grid')) {
-        renderShop(displayedProducts); 
+    if (document.getElementById('product-grid')) {
+        renderShop(displayedProducts);
         renderBestSellers(displayedBestSellers);
     }
-    
+
     // Nếu đang ở trang chi tiết
-    if(document.getElementById('productDetailContainer')) {
+    if (document.getElementById('productDetailContainer')) {
         loadProductDetail();
     }
 
     // Nếu đang ở trang thanh toán
-    if(document.getElementById('checkoutItems')) {
+    if (document.getElementById('checkoutItems')) {
         renderCheckoutPage();
     }
-    
+
     // Khởi tạo các tính năng chung
     setupSearch();
     setupScrollEffects();
     updateCartUI(); // Cập nhật icon giỏ hàng ngay khi vào web
-    
+
     // Bắt sự kiện toàn cục cho nút Checkout (Fix lỗi click)
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (e.target && e.target.classList.contains('checkout-btn')) {
             goToCheckout();
         }
     });
 });
 
+function saveProductsToLocal() {
+    localStorage.setItem('moonlight_products', JSON.stringify(products));
+}
 // --- 4. LOGIC TRANG CHI TIẾT (QUAN TRỌNG: FIX LỖI THÊM GIỎ HÀNG) ---
 function loadProductDetail() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = parseInt(urlParams.get('id'));
     const allProducts = [...products, ...bestSellers];
-    
+
     currentProduct = allProducts.find(p => p.id === id);
 
-    if(!currentProduct) {
+    if (!currentProduct) {
         document.getElementById('productDetailContainer').innerHTML = "<h3>Sản phẩm không tồn tại!</h3>";
         return;
     }
 
     // RESET DỮ LIỆU MỖI KHI VÀO TRANG MỚI (FIX LỖI)
-    quantity = 1; 
+    quantity = 1;
     selectedColor = currentProduct.variants[0]; // Mặc định chọn màu đầu tiên
     selectedSize = currentProduct.sizes[0];     // Mặc định chọn size đầu tiên
 
@@ -99,7 +93,9 @@ function loadProductDetail() {
 
 function renderDetailHTML() {
     const container = document.getElementById('productDetailContainer');
-    const percent = Math.round(((currentProduct.oldPrice - selectedColor.price) / currentProduct.oldPrice) * 100);
+    
+    // Tính % giảm giá thực tế để hiển thị
+    const percent = selectedColor.oldPrice ? Math.round(((selectedColor.oldPrice - selectedColor.price) / selectedColor.oldPrice) * 100) : 0;
     const isLiked = wishlist.includes(currentProduct.id) ? 'active' : '';
     const iconClass = wishlist.includes(currentProduct.id) ? 'fas' : 'far';
 
@@ -121,10 +117,11 @@ function renderDetailHTML() {
 
             <div class="pd-price-box">
                 <span class="pd-price" id="detailPrice">${selectedColor.price.toLocaleString()}₫</span>
-                <span class="pd-old-price">${currentProduct.oldPrice.toLocaleString()}₫</span>
-                <span class="pd-discount-tag">Giảm ${percent}%</span>
+                ${percent > 0 ? `<span class="pd-old-price" id="detailOldPrice">${selectedColor.oldPrice.toLocaleString()}₫</span>` : ''}
+                ${percent > 0 ? `<span class="pd-discount-tag" id="detailSaleTag">Giảm ${percent}%</span>` : ''}
             </div>
-            <p class="pd-desc">${currentProduct.desc}</p>
+            
+            <p class="pd-desc">${currentProduct.desc || 'Chưa có mô tả.'}</p>
             
             <div class="pd-option-group">
                 <span class="option-label">Màu sắc: <span id="colorName" style="font-weight:400">${selectedColor.color}</span></span>
@@ -138,11 +135,9 @@ function renderDetailHTML() {
             </div>
 
             <div class="pd-option-group">
-                <span class="option-label">Kích thước: <span id="sizeName" style="font-weight:400">${selectedSize}</span></span>
-                <div class="size-selector">
-                    ${currentProduct.sizes.map((s, idx) => `
-                        <div class="size-btn ${idx === 0 ? 'selected' : ''}" onclick="selectSize('${s}', this)">${s}</div>
-                    `).join('')}
+                <span class="option-label">Kích thước: <span id="sizeName" style="font-weight:400">Chọn size</span></span>
+                <div class="size-selector" id="sizeSelectorContainer">
+                    ${renderSizeButtons(selectedColor.sizes)}
                 </div>
             </div>
 
@@ -156,17 +151,45 @@ function renderDetailHTML() {
             </div>
         </div>
     `;
+    
+    // Reset chọn size khi mới vào
+    selectedSize = null; 
+}
+
+function renderSizeButtons(sizes) {
+    if (!sizes || sizes.length === 0) return '<span style="color:#999; font-style:italic">Freesize / Hết size</span>';
+    return sizes.map(s => `
+        <div class="size-btn" onclick="selectSize('${s}', this)">${s}</div>
+    `).join('');
 }
 
 // Logic chọn biến thể
 function selectVariant(index, btn) {
     selectedColor = currentProduct.variants[index];
-    // Update giao diện ngay lập tức
+    
+    // 1. Cập nhật Ảnh & Giá
     document.getElementById('mainDetailImg').src = selectedColor.img;
     document.getElementById('detailPrice').innerText = selectedColor.price.toLocaleString() + '₫';
-    document.getElementById('colorName').innerText = selectedColor.color;
     
-    // Đổi class active
+    // 2. Cập nhật Giá cũ (nếu có sale)
+    const oldPriceEl = document.getElementById('detailOldPrice');
+    const saleTagEl = document.getElementById('detailSaleTag');
+    if (selectedColor.oldPrice && selectedColor.oldPrice > selectedColor.price) {
+        const percent = Math.round(((selectedColor.oldPrice - selectedColor.price) / selectedColor.oldPrice) * 100);
+        if (oldPriceEl) { oldPriceEl.innerText = selectedColor.oldPrice.toLocaleString() + '₫'; oldPriceEl.style.display = 'inline'; }
+        if (saleTagEl) { saleTagEl.innerText = `Giảm ${percent}%`; saleTagEl.style.display = 'inline-block'; }
+    } else {
+        if (oldPriceEl) oldPriceEl.style.display = 'none';
+        if (saleTagEl) saleTagEl.style.display = 'none';
+    }
+
+    // 3. CẬP NHẬT DANH SÁCH SIZE (QUAN TRỌNG)
+    document.getElementById('sizeSelectorContainer').innerHTML = renderSizeButtons(selectedColor.sizes);
+    selectedSize = null; // Reset size đã chọn vì màu mới có thể không có size cũ
+    document.getElementById('sizeName').innerText = "Vui lòng chọn lại size";
+
+    // 4. UI Active
+    document.getElementById('colorName').innerText = selectedColor.color;
     document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
 }
@@ -180,14 +203,14 @@ function selectSize(size, btn) {
 
 function updateDetailQty(change) {
     quantity += change;
-    if(quantity < 1) quantity = 1;
+    if (quantity < 1) quantity = 1;
     document.getElementById('detailQty').value = quantity;
 }
 
 // HÀM QUAN TRỌNG: THÊM VÀO GIỎ TỪ TRANG CHI TIẾT
 function addDetailToCart() {
-    if(!currentProduct || !selectedColor || !selectedSize) {
-        showToast({title: 'Lỗi', message: 'Dữ liệu sản phẩm chưa tải xong.', type: 'error'});
+    if (!currentProduct || !selectedColor || !selectedSize) {
+        showToast({ title: 'Lỗi', message: 'Dữ liệu sản phẩm chưa tải xong.', type: 'error' });
         return;
     }
 
@@ -200,7 +223,7 @@ function addDetailToCart() {
         size: selectedSize,         // Size đã chọn
         quantity: quantity          // Số lượng từ input
     };
-    
+
     pushToCart(item);
 }
 
@@ -208,13 +231,13 @@ function addDetailToCart() {
 function pushToCart(newItem) {
     // Kiểm tra trùng sản phẩm (ID + Màu + Size giống nhau)
     const exist = cart.find(i => i.id === newItem.id && i.color === newItem.color && i.size === newItem.size);
-    
-    if(exist) {
+
+    if (exist) {
         exist.quantity += newItem.quantity;
     } else {
         cart.push(newItem);
     }
-    
+
     saveCart();
     updateCartUI();
     toggleCart(); // Mở sidebar giỏ hàng để khách thấy
@@ -228,7 +251,7 @@ function saveCart() {
 
 function updateCartIcon() {
     const badge = document.querySelector('.badge');
-    if(badge) {
+    if (badge) {
         const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
         badge.innerText = totalQty;
     }
@@ -237,21 +260,21 @@ function updateCartIcon() {
 function updateCartUI() {
     const list = document.getElementById('cartItems');
     const totalEl = document.getElementById('cartTotal');
-    
-    if(!list) return;
+
+    if (!list) return;
 
     let total = 0;
     list.innerHTML = '';
 
-    if(cart.length === 0) {
+    if (cart.length === 0) {
         list.innerHTML = '<p style="text-align:center; margin-top:50px; color:#999;">Giỏ hàng trống.</p>';
-        if(totalEl) totalEl.innerText = '0₫';
+        if (totalEl) totalEl.innerText = '0₫';
         return;
     }
 
     cart.forEach((item, index) => {
         total += item.price * item.quantity;
-        
+
         // Tìm dữ liệu gốc của sản phẩm để lấy danh sách size/màu đầy đủ
         const allProducts = [...products, ...bestSellers];
         const originalProduct = allProducts.find(p => p.id === item.id);
@@ -300,7 +323,7 @@ function updateCartUI() {
         `;
     });
 
-    if(totalEl) totalEl.innerText = total.toLocaleString() + '₫';
+    if (totalEl) totalEl.innerText = total.toLocaleString() + '₫';
 }
 
 // Hàm cập nhật Size hoặc Màu trực tiếp từ giỏ hàng
@@ -321,11 +344,11 @@ function updateCartItemProperty(index, property, value) {
     // Sau khi cập nhật, kiểm tra xem có bị trùng với sản phẩm nào khác trong giỏ không
     // (Ví dụ: Đổi màu đen thành màu xám, mà trong giỏ đã có sẵn màu xám)
     for (let i = 0; i < cart.length; i++) {
-        if (i !== index && 
-            cart[i].id === item.id && 
-            cart[i].color === item.color && 
+        if (i !== index &&
+            cart[i].id === item.id &&
+            cart[i].color === item.color &&
             cart[i].size === item.size) {
-            
+
             cart[i].quantity += item.quantity; // Gộp số lượng
             cart.splice(index, 1); // Xóa item hiện tại
             break;
@@ -338,7 +361,7 @@ function updateCartItemProperty(index, property, value) {
 
 function cartChangeQty(index, change) {
     cart[index].quantity += change;
-    if(cart[index].quantity <= 0) {
+    if (cart[index].quantity <= 0) {
         // Nếu giảm về 0 thì hỏi xóa
         cart.splice(index, 1);
     }
@@ -358,11 +381,11 @@ function cartRemove(index) {
 function toggleCart() {
     const sidebar = document.getElementById('cartSidebar');
     const overlay = document.getElementById('cartOverlay');
-    if(sidebar && overlay) {
+    if (sidebar && overlay) {
         sidebar.classList.toggle('open');
         overlay.classList.toggle('open');
         // Nếu mở ra thì update lại cho chắc
-        if(sidebar.classList.contains('open')) updateCartUI();
+        if (sidebar.classList.contains('open')) updateCartUI();
     }
 }
 
@@ -370,7 +393,7 @@ function toggleCart() {
 function quickAdd(id) {
     const allProducts = [...products, ...bestSellers];
     const p = allProducts.find(x => x.id === id);
-    if(p) {
+    if (p) {
         // Lấy biến thể đầu tiên làm mặc định
         const v = p.variants[0];
         pushToCart({
@@ -389,10 +412,10 @@ function quickAdd(id) {
 function toggleWishlist(btn, id) {
     btn.classList.toggle('active');
     const icon = btn.querySelector('i');
-    if(btn.classList.contains('active')) {
+    if (btn.classList.contains('active')) {
         icon.classList.remove('far');
         icon.classList.add('fas');
-        if(!wishlist.includes(id)) wishlist.push(id);
+        if (!wishlist.includes(id)) wishlist.push(id);
     } else {
         icon.classList.remove('fas');
         icon.classList.add('far');
@@ -403,22 +426,22 @@ function toggleWishlist(btn, id) {
 
 // Helper Format số đã bán
 function formatSold(num) {
-    if(num >= 1000) return (num/1000).toFixed(1) + 'k';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
     return num;
 }
 
 // Search
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
-    if(searchInput) {
-        searchInput.addEventListener('input', function(e) {
+    if (searchInput) {
+        searchInput.addEventListener('input', function (e) {
             const keyword = e.target.value.toLowerCase();
             const allProducts = [...products, ...bestSellers];
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(keyword));
-            
-            if(document.getElementById('product-grid')) {
+
+            if (document.getElementById('product-grid')) {
                 renderProductsHTML(filtered, 'product-grid');
-                if(filtered.length > 0) document.getElementById('shop').scrollIntoView({behavior:'smooth'});
+                if (filtered.length > 0) document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
             } else {
                 window.location.href = `index.html?search=${keyword}`;
             }
@@ -428,21 +451,21 @@ function setupSearch() {
 function toggleSearch() {
     const overlay = document.getElementById('searchOverlay');
     const input = document.getElementById('searchInput');
-    if(overlay) {
+    if (overlay) {
         overlay.classList.toggle('open');
-        if(overlay.classList.contains('open') && input) input.focus();
+        if (overlay.classList.contains('open') && input) input.focus();
     }
 }
 
 // Render HTML Trang Chủ (Dùng chung cho Search, Load more)
 function renderProductsHTML(data, elementId) {
     const grid = document.getElementById(elementId);
-    if(!grid) return;
-    if(data.length === 0) { grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Không tìm thấy sản phẩm.</p>'; return; }
+    if (!grid) return;
+    if (data.length === 0) { grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Không tìm thấy sản phẩm.</p>'; return; }
 
     grid.innerHTML = data.map(p => {
         const percent = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-        const v = p.variants && p.variants[0] ? p.variants[0] : {img: p.img}; 
+        const v = p.variants && p.variants[0] ? p.variants[0] : { img: p.img };
         const isLiked = wishlist.includes(p.id) ? 'active' : '';
         const iconClass = wishlist.includes(p.id) ? 'fas' : 'far';
 
@@ -474,7 +497,7 @@ function renderShop(limit) {
     const list = products.slice(0, limit);
     renderProductsHTML(list, 'product-grid');
     const btn = document.getElementById('loadMoreContainer');
-    if(btn) btn.style.display = (limit >= products.length) ? 'none' : 'block';
+    if (btn) btn.style.display = (limit >= products.length) ? 'none' : 'block';
 }
 function loadMoreProducts() { displayedProducts += 4; renderShop(displayedProducts); }
 
@@ -482,13 +505,13 @@ function renderBestSellers(limit) {
     const list = bestSellers.slice(0, limit);
     renderProductsHTML(list, 'best-seller-grid');
     const btn = document.getElementById('loadMoreBestSeller');
-    if(btn) btn.style.display = (limit >= bestSellers.length) ? 'none' : 'block';
+    if (btn) btn.style.display = (limit >= bestSellers.length) ? 'none' : 'block';
 }
 function loadMoreBestSellers() { displayedBestSellers += 4; renderBestSellers(displayedBestSellers); }
 
 function renderRelatedProducts(allProducts) {
     const grid = document.getElementById('related-grid');
-    if(!grid) return;
+    if (!grid) return;
     const related = allProducts.filter(p => p.id !== currentProduct.id).slice(0, 4);
     grid.innerHTML = related.map(p => `
         <div class="product-card">
@@ -510,8 +533,8 @@ function renderCheckoutPage() {
     const container = document.getElementById('checkoutItems');
     const subtotalEl = document.getElementById('checkoutSubtotal');
     const totalEl = document.getElementById('checkoutTotal');
-    if(!container) return;
-    if(cart.length === 0) { container.innerHTML = '<p style="text-align:center; color:#999;">Giỏ hàng trống.</p>'; return; }
+    if (!container) return;
+    if (cart.length === 0) { container.innerHTML = '<p style="text-align:center; color:#999;">Giỏ hàng trống.</p>'; return; }
     let total = 0;
     container.innerHTML = cart.map(item => {
         total += item.price * item.quantity;
@@ -521,13 +544,42 @@ function renderCheckoutPage() {
 }
 
 function handleCheckout(e) {
-    e.preventDefault(); 
-    if(cart.length === 0) { showToast({ title: 'Giỏ hàng trống!', message: 'Vui lòng chọn sản phẩm.', type: 'error' }); return; }
+    e.preventDefault();
+    if (cart.length === 0) {
+        showToast({ title: 'Giỏ hàng trống!', message: 'Vui lòng chọn sản phẩm.', type: 'error' });
+        return;
+    }
+
     const name = document.getElementById('cusName').value.trim();
-    if(name.length < 2) { showToast({ title: 'Thiếu thông tin!', message: 'Vui lòng kiểm tra lại họ tên.', type: 'error' }); return; }
-    
-    showToast({ title: 'Đặt hàng thành công! 🎉', message: `Cảm ơn ${name}. Đơn hàng đang được xử lý.`, type: 'success', duration: 4000 });
-    setTimeout(() => { cart = []; saveCart(); window.location.href = 'index.html'; }, 2000);
+    const phone = document.getElementById('cusPhone').value.trim();
+    const address = document.getElementById('cusAddress').value.trim();
+    const note = document.getElementById('cusNote').value.trim();
+    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+    // Tạo đối tượng đơn hàng mới
+    const newOrder = {
+        id: "DH" + Date.now(), // Mã đơn hàng duy nhất
+        customer: { name, phone, address, note },
+        items: [...cart], // Lưu lại danh sách sản phẩm lúc mua
+        total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        status: 'pending', // Trạng thái: pending (Chờ duyệt), completed (Đã giao), cancelled (Đã hủy)
+        date: new Date().toLocaleString('vi-VN'),
+        paymentMethod: paymentMethod === 'cod' ? 'Thanh toán COD' : 'Chuyển khoản'
+    };
+
+    // Lưu vào danh sách đơn hàng tổng trong localStorage
+    let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+    allOrders.unshift(newOrder);
+    localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+
+    // Thông báo và chuyển hướng
+    showToast({ title: 'Đặt hàng thành công! 🎉', message: `Cảm ơn ${name}. Đơn hàng của bạn đang được xử lý.`, type: 'success', duration: 4000 });
+
+    setTimeout(() => {
+        cart = []; // Xóa giỏ hàng sau khi đặt thành công
+        saveCart();
+        window.location.href = 'index.html';
+    }, 2000);
 }
 
 // Toast
@@ -543,7 +595,7 @@ function showToast({ title = '', message = '', type = 'info', duration = 3000 })
     toast.style.animation = `slideInLeft 0.5s ease, fadeOut linear 1s ${delay}s forwards`;
     toast.innerHTML = `<div class="toast__icon"><i class="${icon}"></i></div><div class="toast__body"><h3 class="toast__title">${title}</h3><p class="toast__msg">${message}</p></div><div class="toast__close"><i class="fas fa-times"></i></div>`;
     toastBox.appendChild(toast);
-    const autoRemoveId = setTimeout(() => { if(toast.parentNode) toastBox.removeChild(toast); }, duration + 1000);
+    const autoRemoveId = setTimeout(() => { if (toast.parentNode) toastBox.removeChild(toast); }, duration + 1000);
     toast.onclick = (e) => { if (e.target.closest('.toast__close')) { toastBox.removeChild(toast); clearTimeout(autoRemoveId); } };
 }
 
@@ -552,19 +604,121 @@ let selectedRating = 0;
 function rateStar(star) {
     selectedRating = star; document.getElementById('ratingValue').value = star;
     const stars = document.querySelectorAll('.star-rating-input i');
-    stars.forEach((s, index) => { if(index < star) { s.classList.remove('far'); s.classList.add('fas'); } else { s.classList.remove('fas'); s.classList.add('far'); } });
+    stars.forEach((s, index) => { if (index < star) { s.classList.remove('far'); s.classList.add('fas'); } else { s.classList.remove('fas'); s.classList.add('far'); } });
 }
 function submitReview(e) {
     e.preventDefault();
-    if(selectedRating === 0) { showToast({title:'Chưa chọn sao!', message:'Vui lòng chấm điểm sản phẩm.', type:'warning'}); return; }
+    if (selectedRating === 0) { showToast({ title: 'Chưa chọn sao!', message: 'Vui lòng chấm điểm sản phẩm.', type: 'warning' }); return; }
+
     const name = document.getElementById('reviewerName').value;
     const content = document.getElementById('reviewContent').value;
     const date = new Date().toLocaleDateString('vi-VN');
-    const newReview = `<div class="review-item" style="animation: fadeIn 0.5s"><div class="review-avatar" style="background:#27ae60">${name.charAt(0).toUpperCase()}</div><div class="review-content"><div class="review-top"><strong>${name}</strong><span class="review-date">${date}</span></div><div class="stars-display">${'<i class="fas fa-star"></i>'.repeat(selectedRating)}${'<i class="far fa-star"></i>'.repeat(5-selectedRating)}</div><p>${content}</p></div></div>`;
-    const list = document.getElementById('reviewsList');
-    if(list) list.innerHTML = newReview + list.innerHTML;
-    document.getElementById('reviewForm').reset(); selectedRating = 0; rateStar(0);
+    const productId = currentProduct.id; // Lưu ID sản phẩm được đánh giá
+
+    // Đối tượng review mới
+    const newReviewData = {
+        id: Date.now(), // ID định danh duy nhất cho review
+        productId: productId,
+        productName: currentProduct.name,
+        name: name,
+        rating: selectedRating,
+        content: content,
+        date: date,
+        status: 'approved' // Mặc định là hiện
+    };
+
+    // Lưu vào danh sách tổng trong localStorage
+    let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+    allReviews.unshift(newReviewData);
+    localStorage.setItem('moonlight_all_reviews', JSON.stringify(allReviews));
+
+    // Reset Form và thông báo
+    document.getElementById('reviewForm').reset();
+    selectedRating = 0;
+    rateStar(0);
     showToast({ title: 'Đánh giá thành công!', message: 'Cảm ơn bạn đã nhận xét.', type: 'success' });
+
+    // Cập nhật lại danh sách hiển thị ở trang product
+    renderProductReviews(productId);
+}
+
+function renderAdminReviews() {
+    const container = document.querySelector('.admin-content');
+    let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+
+    container.innerHTML = `
+        <header class="admin-header"><h2>QUẢN LÝ ĐÁNH GIÁ</h2></header>
+        <div class="data-table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Khách hàng</th>
+                        <th>Sản phẩm</th>
+                        <th>Đánh giá</th>
+                        <th>Nội dung</th>
+                        <th>Ngày</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${allReviews.map((rev, index) => `
+                        <tr>
+                            <td><strong>${rev.name}</strong></td>
+                            <td><small>${rev.productName}</small></td>
+                            <td><span style="color:#f1c40f">${'★'.repeat(rev.rating)}</span></td>
+                            <td><p style="font-size:12px; max-width:250px;">${rev.content}</p></td>
+                            <td>${rev.date}</td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteReview(${rev.id})" style="color:red; border:none; background:none; cursor:pointer;">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function deleteReview(reviewId) {
+    if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+        let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+        allReviews = allReviews.filter(r => r.id !== reviewId);
+        localStorage.setItem('moonlight_all_reviews', JSON.stringify(allReviews));
+        renderAdminReviews(); // Load lại bảng
+        showToast({ title: 'Đã xóa', message: 'Đánh giá đã được loại bỏ.', type: 'info' });
+    }
+}
+
+// --- FIX LỖI CHUYỂN TAB ---
+function switchTab(tabName) {
+    const menuItems = document.querySelectorAll('.admin-menu a');
+    menuItems.forEach(item => item.classList.remove('active'));
+
+    const activeItem = document.querySelector(`.admin-menu a[onclick*="'${tabName}'"]`);
+    if (activeItem) activeItem.classList.add('active');
+
+    if (tabName === 'dashboard') {
+        location.reload(); 
+    } else if (tabName === 'products') {
+        renderAdminProducts();
+    } else if (tabName === 'orders') {
+        renderAdminOrders();
+    } else if (tabName === 'reviews') {
+        renderAdminReviews();
+    } else if (tabName === 'staff') {
+        renderAdminStaff();
+    }
+}
+function deleteReview(reviewId) {
+    if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+        let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+        allReviews = allReviews.filter(r => r.id !== reviewId);
+        localStorage.setItem('moonlight_all_reviews', JSON.stringify(allReviews));
+        renderAdminReviews(); // Load lại bảng
+        showToast({ title: 'Đã xóa', message: 'Đánh giá đã được loại bỏ.', type: 'info' });
+    }
 }
 
 // Scroll Effect
@@ -583,16 +737,16 @@ function toggleWishlistSidebar() {
     const overlay = document.getElementById('wishlistOverlay');
     sidebar.classList.toggle('open');
     overlay.classList.toggle('open');
-    if(sidebar.classList.contains('open')) renderWishlistUI();
+    if (sidebar.classList.contains('open')) renderWishlistUI();
 }
 
 // Cập nhật lại hàm toggleWishlist hiện có của bạn
 function toggleWishlist(btn, id) {
     btn.classList.toggle('active');
     const icon = btn.querySelector('i');
-    if(btn.classList.contains('active')) {
+    if (btn.classList.contains('active')) {
         icon.classList.remove('far'); icon.classList.add('fas');
-        if(!wishlist.includes(id)) wishlist.push(id);
+        if (!wishlist.includes(id)) wishlist.push(id);
         showToast({ title: 'Đã yêu thích!', message: 'Sản phẩm đã được lưu vào danh sách.', type: 'info' });
     } else {
         icon.classList.remove('fas'); icon.classList.add('far');
@@ -600,19 +754,19 @@ function toggleWishlist(btn, id) {
     }
     localStorage.setItem('moonlight_wishlist', JSON.stringify(wishlist));
     // Nếu đang mở sidebar yêu thích thì cập nhật luôn
-    if(document.getElementById('wishlistSidebar').classList.contains('open')) renderWishlistUI();
+    if (document.getElementById('wishlistSidebar').classList.contains('open')) renderWishlistUI();
 }
 
 // Hàm hiển thị sản phẩm yêu thích
 function renderWishlistUI() {
     const list = document.getElementById('wishlistItems');
-    if(!list) return;
-    
+    if (!list) return;
+
     const allProducts = [...products, ...bestSellers];
     const likedProducts = allProducts.filter(p => wishlist.includes(p.id));
-    
+
     list.innerHTML = '';
-    if(likedProducts.length === 0) {
+    if (likedProducts.length === 0) {
         list.innerHTML = '<p style="text-align:center; margin-top:50px;">Bạn chưa yêu thích sản phẩm nào.</p>';
         return;
     }
@@ -656,7 +810,6 @@ function handleLogin() {
 // Kiểm tra quyền truy cập (Dùng ở admin.html)
 function checkAuth() {
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user'));
-    
     if (!loggedUser) {
         window.location.href = 'login.html';
         return;
@@ -669,10 +822,12 @@ function checkAuth() {
     }
 
     // Xử lý ẩn/hiện menu theo quyền
-    if (loggedUser.role === 'Admin') {
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+    if (loggedUser.role !== 'Admin') {
+        // Ẩn tab nhân sự nếu không phải Admin
+        const staffMenu = document.querySelector('[onclick="switchTab(\'staff\')"]');
+        if (staffMenu) staffMenu.style.display = 'none';
     }
-    
+
     // Nếu là Staff thì không được vào mục quản lý nhân sự (bảo vệ thêm bằng logic)
     if (loggedUser.role === 'Staff' && window.location.pathname.includes('admin.html')) {
         // Có thể ẩn thêm các nút Xóa sản phẩm...
@@ -685,16 +840,692 @@ function handleLogout() {
 }
 
 function renderAdminStats() {
-    // Thống kê đơn giản từ dữ liệu có sẵn
-    if (document.getElementById('prodCount')) {
-        document.getElementById('prodCount').innerText = products.length;
-        document.getElementById('orderCount').innerText = "12"; // Giả lập
-        document.getElementById('totalRev').innerText = "45.000.000₫"; // Giả lập
+    // Lấy dữ liệu thực tế từ LocalStorage
+    const products = JSON.parse(localStorage.getItem('moonlight_products')) || [];
+    const orders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+    const accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || []; // Dùng đếm khách hàng giả định
+
+    // 1. Tính tổng doanh thu (Chỉ tính đơn đã hoàn thành 'completed')
+    const totalRevenue = orders
+        .filter(o => o.status === 'completed')
+        .reduce((sum, o) => sum + o.total, 0);
+
+    // 2. Đếm số đơn hàng mới (Trạng thái 'pending')
+    const newOrdersCount = orders.filter(o => o.status === 'pending').length;
+
+    // 3. Cập nhật lên giao diện
+    if (document.getElementById('totalRev')) {
+        document.getElementById('totalRev').innerText = totalRevenue.toLocaleString() + '₫';
+        document.getElementById('orderCount').innerText = newOrdersCount; // Đơn hàng mới
+        document.getElementById('prodCount').innerText = products.length; // Tổng sản phẩm
+        
+        // Giả lập số khách hàng (bằng số đơn hàng x 1.5 cho sinh động)
+        document.getElementById('customerCount').innerText = Math.floor(orders.length * 1.5) + 50; 
     }
+
+    // Render bảng Log và Biểu đồ
+    renderAuditLogs();
+    renderCharts();
 }
 
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.altKey && e.shiftKey && e.code === 'KeyA') {
         window.location.href = 'login.html';
     }
 });
+
+function renderAdminProducts() {
+    const container = document.querySelector('.admin-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <header class="admin-header">
+            <h2>QUẢN LÝ SẢN PHẨM</h2>
+            <button class="btn-primary" onclick="showAddProductForm()">+ THÊM SẢN PHẨM</button>
+        </header>
+
+        <div class="data-table-container">
+            <table class="admin-table product-table">
+                <thead>
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Cấu hình (Màu - Giá - Kho)</th>
+                        <th>Đã bán</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${products.map(p => {
+                        const variants = Array.isArray(p.variants) ? p.variants : [];
+                        const prices = variants.map(v => v.price || 0);
+                        const minPrice = Math.min(...prices);
+                        const maxPrice = Math.max(...prices);
+                        const priceDisplay = minPrice === maxPrice ? `${minPrice.toLocaleString()}₫` : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}₫`;
+                        
+                        // Tính tổng kho hiển thị
+                        const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+
+                        return `
+                        <tr>
+                            <td><img src="${p.img}" onerror="this.src='https://via.placeholder.com/50'"></td>
+                            <td>
+                                <strong>${p.name}</strong>
+                                <div style="font-size:12px; color:var(--gold); font-weight:700; margin-top:4px;">${priceDisplay}</div>
+                                <div style="font-size:11px; color:#888">Tổng kho: <span style="color:${totalStock < 10 ? '#ff4444' : '#47d864'}">${totalStock}</span></div>
+                            </td>
+                            <td>
+                                <div style="font-size:12px; line-height:1.6;">
+                                    ${variants.map(v => `
+                                        <div class="variant-info-line">
+                                            <span class="v-dot" style="background:${v.hex}"></span>
+                                            <span style="color:#eee">${v.color}</span> | 
+                                            <span style="color:var(--gold)">${Number(v.price).toLocaleString()}₫</span> | 
+                                            <span>Kho: <strong style="color:#fff">${v.stock}</strong></span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </td>
+                            <td><strong>${p.sold || 0}</strong></td>
+                            <td style="text-align:center">
+                                <div class="action-group">
+                                    <button class="adm-btn" onclick="editProduct(${p.id})" style="color:#3498db"><i class="fas fa-edit"></i></button>
+                                    <button class="adm-btn" onclick="deleteProduct(${p.id})" style="color:#e74c3c"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="productModal">
+            <div class="modal-content" style="max-width: 850px;">
+                <h3 id="modalTitle">Cấu hình sản phẩm</h3>
+                <form id="productForm" onsubmit="handleSaveProduct(event)">
+                    <input type="hidden" id="editId">
+                    
+                    <div class="form-row-split">
+                        <div class="form-group">
+                            <label>Tên sản phẩm</label>
+                            <input type="text" id="pName" required placeholder="Ví dụ: Áo sơ mi Luxury">
+                        </div>
+                        <div class="form-group">
+                            <label>Giảm giá chung (%)</label>
+                            <input type="number" id="pSale" placeholder="Nhập 0 nếu không giảm">
+                        </div>
+                    </div>
+
+                    <div class="variant-section">
+                        <div class="variant-header">
+                            <span>BIẾN THỂ (MÀU - ẢNH - GIÁ - KHO - SIZE)</span>
+                            <button type="button" class="btn-add-v" onclick="addVariantRow()">+ THÊM MÀU</button>
+                        </div>
+                        <div id="variantContainer"></div>
+                    </div>
+
+                    <div class="modal-btns">
+                        <button type="submit" class="btn-confirm">LƯU DỮ LIỆU</button>
+                        <button type="button" class="btn-cancel" onclick="closeModal()">ĐÓNG</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+// --- 1. HÀM THÊM DÒNG BIẾN THỂ (CÓ Ô NHẬP GIÁ RIÊNG) ---
+function addVariantRow(color = '', hex = '#000000', img = '', price = '', stock = '', sizes = '') {
+    const container = document.getElementById('variantContainer');
+    const div = document.createElement('div');
+    div.className = 'variant-row';
+    div.innerHTML = `
+        <input type="text" placeholder="Màu" class="v-color" value="${color}" required title="Tên màu">
+        <input type="color" class="v-hex" value="${hex}" title="Mã màu">
+        <input type="text" placeholder="Link ảnh" class="v-img" value="${img}" required title="Link ảnh">
+        <input type="number" placeholder="Giá" class="v-price" value="${price}" required title="Giá bán">
+        <input type="number" placeholder="Kho" class="v-stock" value="${stock}" required title="Số lượng trong kho">
+        <input type="text" placeholder="Sizes" class="v-sizes" value="${sizes}" required title="Ví dụ: S, M, L">
+        <button type="button" onclick="this.parentElement.remove()" class="v-del-btn"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(div);
+}
+// --- LOGIC XỬ LÝ (FIX LỖI) ---
+// --- LOGIC: THÊM / SỬA ---
+function showAddProductForm() {
+    document.getElementById('productForm').reset();
+    document.getElementById('editId').value = '';
+    document.getElementById('variantContainer').innerHTML = '';
+    addVariantRow(); // Thêm sẵn 1 dòng trống
+    document.getElementById('modalTitle').innerText = 'Thêm sản phẩm mới';
+    document.getElementById('productModal').classList.add('open');
+}
+
+function closeModal() {
+    document.getElementById('productModal').classList.remove('open');
+}
+
+function handleSaveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('pName').value;
+    const salePercent = parseInt(document.getElementById('pSale').value) || 0;
+
+    const variantRows = document.querySelectorAll('.variant-row');
+    const variants = [];
+    let totalStock = 0;
+    
+    variantRows.forEach(row => {
+        const vPrice = parseInt(row.querySelector('.v-price').value);
+        const vStock = parseInt(row.querySelector('.v-stock').value) || 0;
+        const vSizes = row.querySelector('.v-sizes').value.split(',').map(s => s.trim()).filter(s => s !== '');
+        
+        totalStock += vStock;
+
+        let vOldPrice = vPrice;
+        if (salePercent > 0) {
+            vOldPrice = Math.round(vPrice / (1 - salePercent / 100));
+        }
+
+        variants.push({
+            color: row.querySelector('.v-color').value,
+            hex: row.querySelector('.v-hex').value,
+            img: row.querySelector('.v-img').value,
+            price: vPrice,
+            oldPrice: vOldPrice,
+            stock: vStock,
+            sizes: vSizes
+        });
+    });
+
+    if (variants.length === 0) return alert("Vui lòng thêm ít nhất 1 biến thể!");
+
+    const productData = {
+        name, salePercent, variants,
+        stock: totalStock, // Lưu tổng kho để hiển thị nhanh bên ngoài
+        img: variants[0].img,
+        price: variants[0].price,
+        oldPrice: variants[0].oldPrice,
+        rating: 5.0, reviews: 0, sold: 0
+    };
+
+    if (id) {
+        const idx = products.findIndex(p => p.id == id);
+        if (idx !== -1) products[idx] = { ...products[idx], ...productData, id: parseInt(id) };
+    } else {
+        productData.id = Date.now();
+        products.unshift(productData);
+    }
+
+    saveProductsToLocal();
+    closeModal();
+    renderAdminProducts();
+    showToast({ title: 'Thành công', message: 'Sản phẩm đã được cập nhật kho và giá.', type: 'success' });
+}
+
+function editProduct(id) {
+    const p = products.find(prod => prod.id === id);
+    if (!p) return;
+
+    document.getElementById('editId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pSale').value = p.salePercent || 0;
+
+    const vContainer = document.getElementById('variantContainer');
+    vContainer.innerHTML = '';
+    
+    if (p.variants && p.variants.length > 0) {
+        p.variants.forEach(v => {
+            const sizeStr = Array.isArray(v.sizes) ? v.sizes.join(', ') : '';
+            addVariantRow(v.color, v.hex, v.img, v.price, v.stock, sizeStr);
+        });
+    }
+
+    document.getElementById('modalTitle').innerText = 'Chỉnh sửa sản phẩm';
+    document.getElementById('productModal').classList.add('open');
+}
+
+function deleteProduct(id) {
+    if (confirm('Bạn muốn xóa sản phẩm này khỏi hệ thống?')) {
+        products = products.filter(p => p.id !== id);
+        saveProductsToLocal();
+        renderAdminProducts();
+        logActivity('Xóa sản phẩm', `Đã xóa sản phẩm ID: ${id}`); // Thêm dòng này
+        showToast({ title: 'Đã xóa', message: 'Sản phẩm đã biến mất khỏi kho.', type: 'info' });
+    }
+}
+
+// --- FIX LỖI LỆCH BẢNG ĐƠN HÀNG ---
+// --- QUẢN LÝ ĐƠN HÀNG (PHÂN LOẠI ONLINE/TẠI QUẦY & HIGHLIGHT) ---
+function renderAdminOrders() {
+    const container = document.querySelector('.admin-content');
+    if (!container) return;
+
+    let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+
+    container.innerHTML = `
+        <header class="admin-header"><h2>QUẢN LÝ ĐƠN HÀNG</h2></header>
+        <div class="data-table-container">
+            <table class="admin-table order-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th class="col-customer">Khách hàng & Loại đơn</th>
+                        <th class="col-product">Sản phẩm</th>
+                        <th class="col-payment">Thanh toán</th>
+                        <th class="col-total">Tổng tiền</th>
+                        <th class="col-status">Trạng thái</th>
+                        <th class="col-action">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${allOrders.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:50px;">Chưa có đơn hàng nào.</td></tr>' : 
+                    allOrders.map((order) => {
+                        const customer = order.customer || {};
+                        const address = customer.address || '';
+                        const isStoreOrder = address.toLowerCase().includes('tại cửa hàng') || address === '';
+                        
+                        let orderTypeDisplay = isStoreOrder 
+                            ? `<div class="order-type store"><i class="fas fa-store"></i> Tại cửa hàng</div>`
+                            : `<div class="order-type online"><i class="fas fa-shipping-fast"></i> <span class="shipping-addr">${address}</span></div>`;
+
+                        const paymentStr = (order.paymentMethod || '').toString();
+                        const isBanking = paymentStr.includes('Chuyển khoản') || paymentStr.includes('Banking');
+                        let paymentBadge = isBanking 
+                            ? (order.status === 'completed' ? '<span class="adm-badge success">Đã thanh toán</span>' : '<span class="adm-badge danger">Chưa thanh toán</span>')
+                            : '<span class="adm-badge dark">COD</span>';
+
+                        let statusBadge = '';
+                        if(order.status === 'completed') statusBadge = '<span class="adm-badge success">Hoàn tất</span>';
+                        else if(order.status === 'cancelled') statusBadge = '<span class="adm-badge danger">Đã hủy</span>';
+                        else statusBadge = '<span class="adm-badge warning">Chờ duyệt</span>';
+
+                        return `
+                        <tr>
+                            <td>#${(order.id || '').toString().slice(-4)}</td>
+                            <td>
+                                <div class="cus-name">${customer.name || 'Khách vãng lai'}</div>
+                                <div class="cus-phone">${customer.phone || '---'}</div>
+                                ${orderTypeDisplay}
+                            </td>
+                            <td>
+                                ${(order.items || []).map(i => `
+                                    <div class="order-item-row">• ${i.name} <span class="item-meta">(${i.size || 'F'})</span> x${i.quantity || 1}</div>
+                                `).join('')}
+                            </td>
+                            <td>${paymentBadge}</td>
+                            <td>${(order.total || 0).toLocaleString()}₫</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                ${order.status === 'pending' ? `
+                                    <button class="adm-btn" onclick="approveOrder('${order.id}')" style="color:#2ecc71"><i class="fas fa-check"></i></button>
+                                    <button class="adm-btn" onclick="cancelOrder('${order.id}')" style="color:#e74c3c"><i class="fas fa-times"></i></button>
+                                ` : `<button class="adm-btn" onclick="deleteOrder('${order.id}')" style="color:#888"><i class="fas fa-trash"></i></button>`}
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+function approveOrder(orderId) {
+    let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+    const orderIndex = allOrders.findIndex(o => o.id === orderId);
+
+    if (orderIndex !== -1) {
+        const order = allOrders[orderIndex];
+
+        // 1. Cập nhật số lượng sản phẩm trong kho (Stock & Sold)
+        order.items.forEach(item => {
+            // Tìm sản phẩm gốc trong biến 'products'
+            const productIndex = products.findIndex(p => p.id === item.id);
+            if (productIndex !== -1) {
+                // Giảm Stock và tăng Sold
+                products[productIndex].stock = Math.max(0, (products[productIndex].stock || 0) - item.quantity);
+                products[productIndex].sold = (products[productIndex].sold || 0) + item.quantity;
+            }
+        });
+
+        // 2. Cập nhật trạng thái đơn hàng
+        allOrders[orderIndex].status = 'completed';
+
+        // 3. Lưu lại tất cả vào LocalStorage
+        saveProductsToLocal(); // Lưu kho sản phẩm mới
+        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders)); // Lưu trạng thái đơn
+
+        // 4. Thông báo và render lại
+        renderAdminOrders();
+        logActivity('Duyệt đơn hàng', `Đã duyệt đơn hàng #${id}`);
+        showToast({ title: 'Đã duyệt đơn!', message: 'Kho hàng và số lượng bán đã được cập nhật.', type: 'success' });
+    }
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+        let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+        const index = allOrders.findIndex(o => o.id === orderId);
+        allOrders[index].status = 'cancelled';
+        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+        renderAdminOrders();
+    }
+}
+
+function deleteOrder(orderId) {
+    if (confirm('Xóa vĩnh viễn đơn hàng này khỏi danh sách?')) {
+        let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+        allOrders = allOrders.filter(o => o.id !== orderId);
+        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+        renderAdminOrders();
+    }
+}
+
+function renderAdminStaff() {
+    const container = document.querySelector('.admin-content');
+    if (!container) return;
+
+    const loggedUser = JSON.parse(localStorage.getItem('moonlight_user'));
+
+    container.innerHTML = `
+        <header class="admin-header">
+            <h2>QUẢN LÝ NHÂN SỰ</h2>
+            <button class="btn-primary" onclick="showAddStaffForm()"><i class="fas fa-user-plus"></i> THÊM NHÂN VIÊN</button>
+        </header>
+
+        <div class="data-table-container">
+            <table class="admin-table staff-table">
+                <thead>
+                    <tr>
+                        <th>Nhân sự</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Quyền hạn</th>
+                        <th style="text-align:center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${accounts.map(acc => {
+                        // Xác định class cho từng vai trò
+                        const roleClass = acc.role.toLowerCase();
+                        return `
+                        <tr>
+                            <td>
+                                <div class="staff-info-cell">
+                                    <div class="staff-avatar">${acc.name.charAt(0)}</div>
+                                    <div class="staff-name-box">
+                                        <strong style="color:#fff">${acc.name}</strong>
+                                        <small style="color:#666">ID: #${acc.id.toString().slice(-4)}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code style="color:var(--gold)">${acc.username}</code></td>
+                            <td><span class="role-badge ${roleClass}">${acc.role}</span></td>
+                            <td style="text-align:center">
+                                ${acc.username !== loggedUser.username && acc.role !== 'Admin' ? `
+                                    <button class="adm-btn" onclick="deleteStaff(${acc.id})" style="color:#e74c3c" title="Xóa tài khoản">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                ` : '<small style="color:#444"><i class="fas fa-lock"></i> Hệ thống</small>'}
+                            </td>
+                        </tr>
+                    `}).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="staffModal">
+            <div class="modal-content" style="max-width: 500px;">
+                <h3>Thêm nhân sự mới</h3>
+                <form id="staffForm" onsubmit="handleSaveStaff(event)">
+                    <div class="form-group">
+                        <label>Họ và tên</label>
+                        <input type="text" id="sName" required placeholder="Ví dụ: Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label>Tên đăng nhập</label>
+                        <input type="text" id="sUser" required placeholder="Viết liền không dấu">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu</label>
+                        <input type="password" id="sPass" required placeholder="******">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select id="sRole">
+                            <option value="Staff">Nhân viên (Staff)</option>
+                            <option value="Owner">Chủ doanh nghiệp (Owner)</option>
+                        </select>
+                    </div>
+                    <div class="modal-btns">
+                        <button type="submit" class="btn-confirm">TẠO TÀI KHOẢN</button>
+                        <button type="button" class="btn-cancel" onclick="closeStaffModal()">HỦY BỎ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}
+function showAddStaffForm() {
+    document.getElementById('staffModal').classList.add('open');
+}
+
+function closeStaffModal() {
+    document.getElementById('staffModal').classList.remove('open');
+}
+
+// Cập nhật luôn cho Modal Sản Phẩm (Nếu chưa có)
+function showAddProductForm() {
+    document.getElementById('productForm').reset();
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').innerText = 'Thêm sản phẩm mới';
+    document.getElementById('productModal').classList.add('open');
+}
+
+function closeModal() {
+    document.getElementById('productModal').classList.remove('open');
+}
+
+function handleSaveStaff(e) {
+    e.preventDefault();
+    const name = document.getElementById('sName').value;
+    const username = document.getElementById('sUser').value;
+    const password = document.getElementById('sPass').value;
+    const role = document.getElementById('sRole').value;
+
+    // Kiểm tra trùng lặp tài khoản
+    if (accounts.some(acc => acc.username === username)) {
+        showToast({ title: 'Lỗi', message: 'Tên tài khoản đã tồn tại!', type: 'error' });
+        return;
+    }
+
+    const newStaff = { id: Date.now(), username, password, name, role };
+    accounts.push(newStaff);
+
+    saveAccountsToLocal();
+    closeStaffModal();
+    renderAdminStaff();
+    showToast({ title: 'Thành công', message: 'Đã tạo tài khoản nhân sự mới.', type: 'success' });
+}
+
+function deleteStaff(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+        accounts = accounts.filter(acc => acc.id !== id);
+        saveAccountsToLocal();
+        renderAdminStaff();
+        showToast({ title: 'Đã xóa', message: 'Tài khoản nhân sự đã bị hủy.', type: 'info' });
+    }
+}
+
+// Hàm ghi lại hoạt động
+function logActivity(action, details) {
+    const user = JSON.parse(localStorage.getItem('moonlight_user')) || { name: 'Unknown', username: 'guest' };
+    const newLog = {
+        time: new Date().toLocaleString('vi-VN'),
+        user: user.name + ` (${user.username})`,
+        action: action,
+        details: details
+    };
+
+    let logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
+    logs.unshift(newLog); // Thêm vào đầu mảng
+    if (logs.length > 50) logs.pop(); // Chỉ giữ 50 log gần nhất
+    localStorage.setItem('moonlight_logs', JSON.stringify(logs));
+}
+
+// Hàm render bảng Log ra Dashboard
+function renderAuditLogs() {
+    const tbody = document.getElementById('auditLogTable');
+    if (!tbody) return;
+
+    let logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
+    if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#666;">Chưa có hoạt động nào ghi nhận.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+        // Tự động gán class màu sắc dựa trên từ khóa hành động
+        let actionClass = '';
+        if (log.action.includes('Xóa')) actionClass = 'delete';
+        else if (log.action.includes('Thêm')) actionClass = 'add';
+        else if (log.action.includes('Sửa') || log.action.includes('Cập nhật')) actionClass = 'edit';
+
+        return `
+        <tr>
+            <td><span class="log-time">${log.time}</span></td>
+            <td><span class="log-user"><i class="fas fa-user-shield"></i> ${log.user}</span></td>
+            <td><span class="log-action-badge ${actionClass}">${log.action}</span></td>
+            <td><span class="log-details">${log.details}</span></td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function renderCharts() {
+    // 1. Biểu đồ Doanh thu (Giả lập dữ liệu hoặc lấy thật nếu có cấu trúc ngày tháng)
+    const ctxRev = document.getElementById('revenueChart');
+    if (ctxRev) {
+        if (revenueChartInstance) revenueChartInstance.destroy(); // Xóa biểu đồ cũ nếu có
+        revenueChartInstance = new Chart(ctxRev, {
+            type: 'line',
+            data: {
+                labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'],
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: [1500000, 3200000, 1800000, 4500000, 2100000, 5600000, 3900000], // Dữ liệu mẫu
+                    borderColor: '#d4af37',
+                    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#fff' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } },
+                    x: { grid: { display: false }, ticks: { color: '#aaa' } }
+                }
+            }
+        });
+    }
+
+    // 2. Biểu đồ Trạng thái Đơn hàng
+    const ctxStatus = document.getElementById('orderStatusChart');
+    if (ctxStatus) {
+        const orders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+        const pending = orders.filter(o => o.status === 'pending').length;
+        const completed = orders.filter(o => o.status === 'completed').length;
+        const cancelled = orders.filter(o => o.status === 'cancelled').length;
+
+        if (statusChartInstance) statusChartInstance.destroy();
+        statusChartInstance = new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ duyệt', 'Hoàn thành', 'Đã hủy'],
+                datasets: [{
+                    data: [pending, completed, cancelled],
+                    backgroundColor: ['#f1c40f', '#47d864', '#ff4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+            }
+        });
+    }
+}
+
+/* ==========================================================================
+   HÀM TẠO DỮ LIỆU MẪU (CHẠY 1 LẦN ĐỂ TEST ADMIN)
+   ========================================================================== */
+function initSampleData() {
+    // Chỉ tạo dữ liệu nếu localStorage chưa có đơn hàng nào
+    if (localStorage.getItem('moonlight_orders')) return;
+
+    console.log("Đang khởi tạo dữ liệu mẫu...");
+
+    // 1. DỮ LIỆU SẢN PHẨM (Cập nhật Stock & Sold cho hợp lý)
+    const sampleProducts = [
+        { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 12, sold: 154, stock: 12, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
+        { id: 2, name: "Sơ Mi Lụa Premium", price: 550000, oldPrice: 750000, rating: 4.9, reviews: 8, sold: 342, stock: 8, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500", sizes: ["M", "L", "XL"], variants: [{ color: "Trắng", hex: "#fff", price: 550000, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800" }], desc: "Sơ mi lụa mềm mại." },
+        { id: 3, name: "Quần Âu Slimfit", price: 650000, oldPrice: 800000, rating: 4.5, reviews: 5, sold: 89, stock: 45, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500", sizes: ["29", "30", "31", "32"], variants: [{color:"Đen", hex:"#000", price: 650000, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800" }], desc: "Quần âu form chuẩn." },
+        { id: 4, name: "Đồng Hồ Cổ Điển", price: 2500000, oldPrice: 3000000, rating: 5.0, reviews: 20, sold: 12, stock: 5, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 2500000, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800" }], desc: "Đồng hồ cơ tự động." }
+    ];
+    localStorage.setItem('moonlight_products', JSON.stringify(sampleProducts));
+
+    // 2. DỮ LIỆU ĐƠN HÀNG (Đủ trạng thái để vẽ biểu đồ)
+    const sampleOrders = [
+        {
+            id: "DH17092301", customer: { name: "Nguyễn Văn An", phone: "0901234567" },
+            items: [{ name: "Áo Vest Italian Cut", quantity: 1, price: 1500000, color: "Đen", size: "L" }],
+            total: 1500000, status: "completed", date: "20/02/2026", paymentMethod: "COD"
+        },
+        {
+            id: "DH17092302", customer: { name: "Trần Thị Bích", phone: "0912345678" },
+            items: [{ name: "Sơ Mi Lụa Premium", quantity: 2, price: 550000, color: "Trắng", size: "M" }],
+            total: 1100000, status: "pending", date: "28/02/2026", paymentMethod: "Banking"
+        },
+        {
+            id: "DH17092303", customer: { name: "Lê Hoàng Nam", phone: "0987654321" },
+            items: [{ name: "Đồng Hồ Cổ Điển", quantity: 1, price: 2500000, color: "Đen", size: "Free" }],
+            total: 2500000, status: "completed", date: "25/02/2026", paymentMethod: "Banking"
+        },
+        {
+            id: "DH17092304", customer: { name: "Phạm Minh Tú", phone: "0933445566" },
+            items: [{ name: "Quần Âu Slimfit", quantity: 1, price: 650000, color: "Đen", size: "30" }],
+            total: 650000, status: "cancelled", date: "26/02/2026", paymentMethod: "COD"
+        },
+        {
+            id: "DH17092305", customer: { name: "Hoàng Gia Bảo", phone: "0944556677" },
+            items: [{ name: "Áo Vest Italian Cut", quantity: 1, price: 1500000, color: "Đen", size: "XL" }],
+            total: 1500000, status: "pending", date: "01/03/2026", paymentMethod: "Banking"
+        }
+    ];
+    localStorage.setItem('moonlight_orders', JSON.stringify(sampleOrders));
+
+    // 3. DỮ LIỆU NHẬT KÝ HOẠT ĐỘNG (AUDIT LOG)
+    const sampleLogs = [
+        { time: "01/03/2026 09:30", user: "Vũ Phạm Luân (Admin)", action: "Đăng nhập", details: "Truy cập hệ thống quản trị" },
+        { time: "01/03/2026 09:35", user: "Vũ Phạm Luân (Admin)", action: "Sửa sản phẩm", details: "Cập nhật giá Áo Vest Italian Cut" },
+        { time: "28/02/2026 14:20", user: "Nhân viên kho (Staff)", action: "Duyệt đơn hàng", details: "Đã duyệt đơn hàng #DH17092301" },
+        { time: "28/02/2026 10:15", user: "Chủ doanh nghiệp (Owner)", action: "Thêm nhân sự", details: "Tạo tài khoản cho NV mới" },
+        { time: "28/02/2026 08:00", user: "Hệ thống", action: "Sao lưu", details: "Sao lưu dữ liệu tự động" }
+    ];
+    localStorage.setItem('moonlight_logs', JSON.stringify(sampleLogs));
+
+    // 4. DỮ LIỆU ĐÁNH GIÁ (REVIEWS)
+    const sampleReviews = [
+        { id: 1, productId: 1, productName: "Áo Vest Italian Cut", name: "Nguyễn Văn A", rating: 5, content: "Áo đẹp, vải xịn, giao hàng nhanh.", date: "20/02/2026", status: "approved" },
+        { id: 2, productId: 2, productName: "Sơ Mi Lụa Premium", name: "Trần B", rating: 4, content: "Mặc mát nhưng size hơi rộng một chút.", date: "22/02/2026", status: "approved" },
+        { id: 3, productId: 4, productName: "Đồng Hồ Cổ Điển", name: "Lê C", rating: 5, content: "Đẳng cấp, rất đáng tiền.", date: "25/02/2026", status: "approved" }
+    ];
+    localStorage.setItem('moonlight_all_reviews', JSON.stringify(sampleReviews));
+
+    console.log("Đã nạp dữ liệu mẫu thành công!");
+    location.reload(); // Tải lại trang để hiện dữ liệu
+}
+
+// Gọi hàm này 1 lần duy nhất khi file JS chạy
+// Sau khi chạy xong lần đầu, bạn có thể comment dòng này lại
+initSampleData();
