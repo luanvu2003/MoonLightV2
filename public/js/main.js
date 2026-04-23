@@ -1,22 +1,14 @@
 // --- 1. DỮ LIỆU SẢN PHẨM MẪU (DATABASE) ---
-let products = JSON.parse(localStorage.getItem('moonlight_products')) || [
-    { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 120, sold: 500, stock: 50, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
-    // Các sản phẩm khác...
-];
-
-let bestSellers = JSON.parse(localStorage.getItem('moonlight_products')) || [
-    { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 120, sold: 500, stock: 50, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
-    // Các sản phẩm khác...
-];
-
+let products = JSON.parse(localStorage.getItem('moonlight_products')) || [];
 let accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || [
-    { id: 1, username: "admin", password: "123", name: "Vũ Phạm Luân", role: "Admin" },
-    { id: 2, username: "owner", password: "123", name: "Chủ doanh nghiệp", role: "Owner" },
-    { id: 3, username: "staff", password: "123", name: "Nhân viên kho", role: "Staff" }
+    { id: 1, username: "admin", password: "123", name: "Admin", role: "Admin" }
 ];
+let bestSellers = JSON.parse(localStorage.getItem('moonlight_products')) || [];
+
 
 let revenueChartInstance = null;
 let statusChartInstance = null;
+let currentOrderFilter = 'all'; // all, store, online
 
 function saveAccountsToLocal() {
     localStorage.setItem('moonlight_accounts', JSON.stringify(accounts));
@@ -33,6 +25,13 @@ let currentProduct = null;
 let selectedColor = null;
 let selectedSize = null;
 let quantity = 1; // Mặc định số lượng là 1
+
+let posCart = [];
+let currentPosSelection = {
+    product: null,
+    variantIndex: 0,
+    size: ''
+};
 
 // --- 3. SỰ KIỆN KHI WEB LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -93,7 +92,7 @@ function loadProductDetail() {
 
 function renderDetailHTML() {
     const container = document.getElementById('productDetailContainer');
-    
+
     // Tính % giảm giá thực tế để hiển thị
     const percent = selectedColor.oldPrice ? Math.round(((selectedColor.oldPrice - selectedColor.price) / selectedColor.oldPrice) * 100) : 0;
     const isLiked = wishlist.includes(currentProduct.id) ? 'active' : '';
@@ -151,9 +150,9 @@ function renderDetailHTML() {
             </div>
         </div>
     `;
-    
+
     // Reset chọn size khi mới vào
-    selectedSize = null; 
+    selectedSize = null;
 }
 
 function renderSizeButtons(sizes) {
@@ -166,11 +165,11 @@ function renderSizeButtons(sizes) {
 // Logic chọn biến thể
 function selectVariant(index, btn) {
     selectedColor = currentProduct.variants[index];
-    
+
     // 1. Cập nhật Ảnh & Giá
     document.getElementById('mainDetailImg').src = selectedColor.img;
     document.getElementById('detailPrice').innerText = selectedColor.price.toLocaleString() + '₫';
-    
+
     // 2. Cập nhật Giá cũ (nếu có sale)
     const oldPriceEl = document.getElementById('detailOldPrice');
     const saleTagEl = document.getElementById('detailSaleTag');
@@ -700,7 +699,7 @@ function switchTab(tabName) {
     if (activeItem) activeItem.classList.add('active');
 
     if (tabName === 'dashboard') {
-        location.reload(); 
+        location.reload();
     } else if (tabName === 'products') {
         renderAdminProducts();
     } else if (tabName === 'orders') {
@@ -840,32 +839,222 @@ function handleLogout() {
 }
 
 function renderAdminStats() {
-    // Lấy dữ liệu thực tế từ LocalStorage
+    const container = document.querySelector('.admin-content');
+    if (!container) return;
+
+    // Lấy dữ liệu thực tế
     const products = JSON.parse(localStorage.getItem('moonlight_products')) || [];
     const orders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
-    const accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || []; // Dùng đếm khách hàng giả định
+    const logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
 
-    // 1. Tính tổng doanh thu (Chỉ tính đơn đã hoàn thành 'completed')
-    const totalRevenue = orders
-        .filter(o => o.status === 'completed')
-        .reduce((sum, o) => sum + o.total, 0);
+    // Tính toán số liệu thống kê
+    const totalRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0);
+    const newOrders = orders.filter(o => o.status === 'pending').length;
 
-    // 2. Đếm số đơn hàng mới (Trạng thái 'pending')
-    const newOrdersCount = orders.filter(o => o.status === 'pending').length;
+    // Kiểm tra hàng sắp hết (Tổng kho < 10)
+    const lowStockProducts = products.filter(p => (p.stock || 0) < 10);
 
-    // 3. Cập nhật lên giao diện
-    if (document.getElementById('totalRev')) {
-        document.getElementById('totalRev').innerText = totalRevenue.toLocaleString() + '₫';
-        document.getElementById('orderCount').innerText = newOrdersCount; // Đơn hàng mới
-        document.getElementById('prodCount').innerText = products.length; // Tổng sản phẩm
-        
-        // Giả lập số khách hàng (bằng số đơn hàng x 1.5 cho sinh động)
-        document.getElementById('customerCount').innerText = Math.floor(orders.length * 1.5) + 50; 
-    }
+    container.innerHTML = `
+        <header class="admin-header">
+            <h2>DASHBOARD</h2>
+            <div style="font-size:12px; color:#888;">Cập nhật: ${new Date().toLocaleString('vi-VN')}</div>
+        </header>
 
-    // Render bảng Log và Biểu đồ
-    renderAuditLogs();
-    renderCharts();
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <h3>Doanh thu tổng</h3>
+                <p style="color:var(--gold)">${totalRevenue.toLocaleString()}₫</p>
+            </div>
+            <div class="stat-card">
+                <h3>Đơn hàng chờ xử lý</h3>
+                <p>${newOrders}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Tổng sản phẩm</h3>
+                <p>${products.length}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Khách hàng</h3>
+                <p>${Math.floor(orders.length * 1.2) + 20}</p> </div>
+        </div>
+
+        ${lowStockProducts.length > 0 ? `
+            <div class="low-stock-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="low-stock-content">
+                    <strong>CẢNH BÁO: ${lowStockProducts.length} sản phẩm sắp hết hàng!</strong>
+                    <p>Vui lòng kiểm tra kho: ${lowStockProducts.map(p => p.name).slice(0, 3).join(', ')}...</p>
+                </div>
+                <button onclick="switchTab('products')" style="margin-left:auto; background:transparent; border:1px solid #ff4444; color:#ff4444; padding:5px 15px; border-radius:4px; cursor:pointer;">Kiểm tra</button>
+            </div>
+        ` : ''}
+
+        <div class="charts-section">
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>Biểu đồ Doanh Thu</h3>
+                        <div class="chart-filters">
+                            <button class="chart-btn active" onclick="updateCharts('7days', this)">7 Ngày</button>
+                            <button class="chart-btn" onclick="updateCharts('30days', this)">30 Ngày</button>
+                            <button class="chart-btn" onclick="updateCharts('month', this)">Tháng</button>
+                            <button class="chart-btn" onclick="updateCharts('year', this)">Năm</button>
+                        </div>
+                    </div>
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>Hàng Đã Bán</h3>
+                    </div>
+                    <canvas id="soldChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-table-container">
+            <h3 style="padding: 20px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; font-size:14px; text-transform:uppercase;">
+                Nhật Ký Hệ Thống Gần Đây
+            </h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Thời gian</th><th>Nhân sự</th><th>Hành động</th><th>Chi tiết</th></tr>
+                </thead>
+                <tbody id="auditLogTable">
+                    ${logs.length > 0 ? logs.slice(0, 5).map(log => `
+                        <tr>
+                            <td><span class="log-time">${log.time}</span></td>
+                            <td><span class="log-user"><i class="fas fa-user-shield"></i> ${log.user}</span></td>
+                            <td><span class="log-action-badge ${log.action.includes('Xóa') ? 'delete' : (log.action.includes('Thêm') ? 'add' : 'edit')}">${log.action}</span></td>
+                            <td><span class="log-details">${log.details}</span></td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666">Chưa có dữ liệu</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Khởi tạo biểu đồ mặc định (7 ngày)
+    initCharts();
+}
+
+// --- HÀM KHỞI TẠO BIỂU ĐỒ (FIX LỖI TRƯỢT DÀI) ---
+function initCharts() {
+    // Dữ liệu giả lập (Giữ nguyên phần data của bạn)
+    const chartData = {
+        '7days': {
+            labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+            revenue: [1500000, 2200000, 1800000, 3500000, 2100000, 4600000, 3900000],
+            sold: [5, 8, 6, 12, 7, 15, 10]
+        },
+        '30days': {
+            labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
+            revenue: [12000000, 15000000, 11000000, 18000000],
+            sold: [40, 55, 38, 60]
+        },
+        'month': {
+            labels: ['1-10', '11-20', '21-30'],
+            revenue: [45000000, 52000000, 48000000],
+            sold: [150, 180, 160]
+        },
+        'year': {
+            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+            revenue: [150000000, 200000000, 180000000, 250000000],
+            sold: [500, 650, 600, 850]
+        }
+    };
+
+    // 1. Biểu đồ Doanh thu
+    const ctxRev = document.getElementById('revenueChart').getContext('2d');
+    revenueChartInstance = new Chart(ctxRev, {
+        type: 'line',
+        data: {
+            labels: chartData['7days'].labels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: chartData['7days'].revenue,
+                borderColor: '#d4af37',
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#000',
+                pointBorderColor: '#d4af37',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, /* <--- QUAN TRỌNG: Thêm dòng này để fix lỗi trượt dài */
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#888' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#888' }
+                }
+            }
+        }
+    });
+
+    // 2. Biểu đồ Hàng bán
+    const ctxSold = document.getElementById('soldChart').getContext('2d');
+    soldChartInstance = new Chart(ctxSold, {
+        type: 'bar',
+        data: {
+            labels: chartData['7days'].labels,
+            datasets: [{
+                label: 'Sản phẩm',
+                data: chartData['7days'].sold,
+                backgroundColor: '#3498db',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, /* <--- QUAN TRỌNG: Thêm dòng này */
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#888' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#888' }
+                }
+            }
+        }
+    });
+
+    window.chartMockData = chartData;
+}
+
+// Hàm cập nhật biểu đồ khi bấm nút lọc
+function updateCharts(period, btn) {
+    // 1. Cập nhật UI nút bấm
+    document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 2. Lấy dữ liệu tương ứng
+    const data = window.chartMockData[period];
+
+    // 3. Cập nhật biểu đồ Doanh thu
+    revenueChartInstance.data.labels = data.labels;
+    revenueChartInstance.data.datasets[0].data = data.revenue;
+    revenueChartInstance.update();
+
+    // 4. Cập nhật biểu đồ Hàng bán
+    soldChartInstance.data.labels = data.labels;
+    soldChartInstance.data.datasets[0].data = data.sold;
+    soldChartInstance.update();
 }
 
 document.addEventListener('keydown', function (e) {
@@ -874,6 +1063,7 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+// --- RENDER BẢNG SẢN PHẨM (VARIANTS & STOCK FIX) ---
 function renderAdminProducts() {
     const container = document.querySelector('.admin-content');
     if (!container) return;
@@ -897,73 +1087,60 @@ function renderAdminProducts() {
                 </thead>
                 <tbody>
                     ${products.map(p => {
-                        const variants = Array.isArray(p.variants) ? p.variants : [];
-                        const prices = variants.map(v => v.price || 0);
-                        const minPrice = Math.min(...prices);
-                        const maxPrice = Math.max(...prices);
-                        const priceDisplay = minPrice === maxPrice ? `${minPrice.toLocaleString()}₫` : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}₫`;
-                        
-                        // Tính tổng kho hiển thị
-                        const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+        const variants = Array.isArray(p.variants) ? p.variants : [];
+        const prices = variants.map(v => v.price || 0);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const priceDisplay = minPrice === maxPrice ? `${minPrice.toLocaleString()}₫` : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}₫`;
+        const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
 
-                        return `
+        return `
                         <tr>
                             <td><img src="${p.img}" onerror="this.src='https://via.placeholder.com/50'"></td>
                             <td>
-                                <strong>${p.name}</strong>
+                                <strong style="color:#fff">${p.name}</strong>
                                 <div style="font-size:12px; color:var(--gold); font-weight:700; margin-top:4px;">${priceDisplay}</div>
-                                <div style="font-size:11px; color:#888">Tổng kho: <span style="color:${totalStock < 10 ? '#ff4444' : '#47d864'}">${totalStock}</span></div>
+                                <div style="font-size:11px; color:#888; margin-top:2px;">Tổng kho: <span style="color:${totalStock < 10 ? '#ff4444' : '#47d864'}">${totalStock}</span></div>
                             </td>
                             <td>
                                 <div style="font-size:12px; line-height:1.6;">
                                     ${variants.map(v => `
                                         <div class="variant-info-line">
                                             <span class="v-dot" style="background:${v.hex}"></span>
-                                            <span style="color:#eee">${v.color}</span> | 
-                                            <span style="color:var(--gold)">${Number(v.price).toLocaleString()}₫</span> | 
-                                            <span>Kho: <strong style="color:#fff">${v.stock}</strong></span>
+                                            <span style="color:#eee; width:50px; display:inline-block;">${v.color}</span>
+                                            <span style="color:var(--gold); width:80px; display:inline-block;">${Number(v.price).toLocaleString()}₫</span>
+                                            <span>Kho: <strong style="color:${v.stock < 5 ? '#ff4444' : '#fff'}">${v.stock}</strong></span>
                                         </div>
                                     `).join('')}
                                 </div>
                             </td>
                             <td><strong>${p.sold || 0}</strong></td>
                             <td style="text-align:center">
-                                <div class="action-group">
-                                    <button class="adm-btn" onclick="editProduct(${p.id})" style="color:#3498db"><i class="fas fa-edit"></i></button>
-                                    <button class="adm-btn" onclick="deleteProduct(${p.id})" style="color:#e74c3c"><i class="fas fa-trash"></i></button>
-                                </div>
+                                <button class="adm-btn" onclick="editProduct(${p.id})" title="Sửa"><i class="fas fa-edit"></i></button>
+                                <button class="adm-btn" onclick="deleteProduct(${p.id})" title="Xóa"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`;
-                    }).join('')}
+    }).join('')}
                 </tbody>
             </table>
         </div>
 
         <div id="productModal">
-            <div class="modal-content" style="max-width: 850px;">
+            <div class="modal-content">
                 <h3 id="modalTitle">Cấu hình sản phẩm</h3>
                 <form id="productForm" onsubmit="handleSaveProduct(event)">
                     <input type="hidden" id="editId">
-                    
                     <div class="form-row-split">
-                        <div class="form-group">
-                            <label>Tên sản phẩm</label>
-                            <input type="text" id="pName" required placeholder="Ví dụ: Áo sơ mi Luxury">
-                        </div>
-                        <div class="form-group">
-                            <label>Giảm giá chung (%)</label>
-                            <input type="number" id="pSale" placeholder="Nhập 0 nếu không giảm">
-                        </div>
+                        <div class="form-group"><label>Tên sản phẩm</label><input type="text" id="pName" required placeholder="Tên sản phẩm..."></div>
+                        <div class="form-group"><label>Giảm giá (%)</label><input type="number" id="pSale" placeholder="0"></div>
                     </div>
-
                     <div class="variant-section">
                         <div class="variant-header">
-                            <span>BIẾN THỂ (MÀU - ẢNH - GIÁ - KHO - SIZE)</span>
-                            <button type="button" class="btn-add-v" onclick="addVariantRow()">+ THÊM MÀU</button>
+                            <span>DANH SÁCH BIẾN THỂ</span>
+                            <button type="button" class="btn-primary" onclick="addVariantRow()" style="padding:5px 15px; font-size:11px;">+ THÊM MÀU</button>
                         </div>
                         <div id="variantContainer"></div>
                     </div>
-
                     <div class="modal-btns">
                         <button type="submit" class="btn-confirm">LƯU DỮ LIỆU</button>
                         <button type="button" class="btn-cancel" onclick="closeModal()">ĐÓNG</button>
@@ -1014,12 +1191,12 @@ function handleSaveProduct(e) {
     const variantRows = document.querySelectorAll('.variant-row');
     const variants = [];
     let totalStock = 0;
-    
+
     variantRows.forEach(row => {
         const vPrice = parseInt(row.querySelector('.v-price').value);
         const vStock = parseInt(row.querySelector('.v-stock').value) || 0;
         const vSizes = row.querySelector('.v-sizes').value.split(',').map(s => s.trim()).filter(s => s !== '');
-        
+
         totalStock += vStock;
 
         let vOldPrice = vPrice;
@@ -1073,7 +1250,7 @@ function editProduct(id) {
 
     const vContainer = document.getElementById('variantContainer');
     vContainer.innerHTML = '';
-    
+
     if (p.variants && p.variants.length > 0) {
         p.variants.forEach(v => {
             const sizeStr = Array.isArray(v.sizes) ? v.sizes.join(', ') : '';
@@ -1103,14 +1280,35 @@ function renderAdminOrders() {
 
     let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
 
+    // Lọc dữ liệu theo tab đang chọn
+    const filteredOrders = allOrders.filter(order => {
+        const address = (order.customer.address || '').toLowerCase();
+        const isStore = address.includes('tại cửa hàng') || address === '';
+
+        if (currentOrderFilter === 'store') return isStore;
+        if (currentOrderFilter === 'online') return !isStore;
+        return true; // 'all'
+    });
+
     container.innerHTML = `
-        <header class="admin-header"><h2>QUẢN LÝ ĐƠN HÀNG</h2></header>
+        <header class="admin-header">
+            <h2>QUẢN LÝ ĐƠN HÀNG</h2>
+        </header>
+
         <div class="data-table-container">
+            <div style="padding: 20px 20px 0 20px;">
+                <div class="order-filter-bar">
+                    <button class="filter-btn ${currentOrderFilter === 'all' ? 'active' : ''}" onclick="setOrderFilter('all')">Tất cả (${allOrders.length})</button>
+                    <button class="filter-btn ${currentOrderFilter === 'store' ? 'active' : ''}" onclick="setOrderFilter('store')">Tại cửa hàng</button>
+                    <button class="filter-btn ${currentOrderFilter === 'online' ? 'active' : ''}" onclick="setOrderFilter('online')">Đặt Online</button>
+                </div>
+            </div>
+
             <table class="admin-table order-table">
                 <thead>
                     <tr>
-                        <th class="col-id">ID</th>
-                        <th class="col-customer">Khách hàng & Loại đơn</th>
+                        <th class="col-id">Mã đơn</th>
+                        <th class="col-customer">Khách hàng</th>
                         <th class="col-product">Sản phẩm</th>
                         <th class="col-payment">Thanh toán</th>
                         <th class="col-total">Tổng tiền</th>
@@ -1119,56 +1317,114 @@ function renderAdminOrders() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${allOrders.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:50px;">Chưa có đơn hàng nào.</td></tr>' : 
-                    allOrders.map((order) => {
-                        const customer = order.customer || {};
-                        const address = customer.address || '';
-                        const isStoreOrder = address.toLowerCase().includes('tại cửa hàng') || address === '';
-                        
-                        let orderTypeDisplay = isStoreOrder 
-                            ? `<div class="order-type store"><i class="fas fa-store"></i> Tại cửa hàng</div>`
-                            : `<div class="order-type online"><i class="fas fa-shipping-fast"></i> <span class="shipping-addr">${address}</span></div>`;
+                    ${filteredOrders.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:50px; color:#666;">Không có đơn hàng nào.</td></tr>' :
+            filteredOrders.map((order) => {
+                // Xác định loại đơn
+                const address = order.customer.address || '';
+                const isStoreOrder = address.toLowerCase().includes('tại cửa hàng') || address === '';
+                let orderTypeDisplay = isStoreOrder
+                    ? `<div class="order-type store"><i class="fas fa-store"></i> Tại quầy</div>`
+                    : `<div class="order-type online"><i class="fas fa-shipping-fast"></i> Online</div>`;
 
-                        const paymentStr = (order.paymentMethod || '').toString();
-                        const isBanking = paymentStr.includes('Chuyển khoản') || paymentStr.includes('Banking');
-                        let paymentBadge = isBanking 
-                            ? (order.status === 'completed' ? '<span class="adm-badge success">Đã thanh toán</span>' : '<span class="adm-badge danger">Chưa thanh toán</span>')
-                            : '<span class="adm-badge dark">COD</span>';
+                // Xác định trạng thái thanh toán Banking
+                const isBanking = (order.paymentMethod || '').includes('Banking') || (order.paymentMethod || '').includes('Chuyển khoản');
+                // Nếu là Banking mà chưa có cờ isPaid -> coi như chưa thanh toán
+                const isPaid = order.isPaid || false;
 
-                        let statusBadge = '';
-                        if(order.status === 'completed') statusBadge = '<span class="adm-badge success">Hoàn tất</span>';
-                        else if(order.status === 'cancelled') statusBadge = '<span class="adm-badge danger">Đã hủy</span>';
-                        else statusBadge = '<span class="adm-badge warning">Chờ duyệt</span>';
+                let paymentDisplay = '';
+                let actionButtons = '';
 
-                        return `
+                // LOGIC THANH TOÁN & NÚT BẤM
+                if (order.status === 'completed' || order.status === 'cancelled') {
+                    // Đơn đã xong/hủy -> Chỉ hiện nút Xóa
+                    actionButtons = `<button class="adm-btn" onclick="deleteOrder('${order.id}')" title="Xóa lịch sử" style="color:#888"><i class="fas fa-trash"></i></button>`;
+                    paymentDisplay = isBanking ? '<span class="adm-badge success">Đã thanh toán</span>' : '<span class="adm-badge dark">COD</span>';
+                } else {
+                    // Đơn đang xử lý (Pending)
+                    if (isBanking) {
+                        if (isPaid) {
+                            // Banking + Đã nhận tiền -> Cho phép Duyệt
+                            paymentDisplay = `<div>Banking <span class="payment-status-badge payment-paid">Đã nhận</span></div>`;
+                            actionButtons = `
+                                        <button class="adm-btn" onclick="approveOrder('${order.id}')" title="Hoàn tất đơn" style="color:#2ecc71"><i class="fas fa-check"></i></button>
+                                        <button class="adm-btn" onclick="cancelOrder('${order.id}')" title="Hủy đơn" style="color:#e74c3c"><i class="fas fa-times"></i></button>
+                                    `;
+                        } else {
+                            // Banking + Chưa nhận tiền -> Hiện nút xác nhận tiền, Ẩn nút duyệt
+                            paymentDisplay = `<div>Banking <span class="payment-status-badge payment-unpaid">Chờ tiền</span></div>`;
+                            actionButtons = `
+                                        <button class="btn-confirm-payment" onclick="confirmPayment('${order.id}')">Xác nhận tiền về</button>
+                                        <div style="margin-top:5px; text-align:center;">
+                                            <button class="adm-btn" onclick="cancelOrder('${order.id}')" style="color:#e74c3c"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    `;
+                        }
+                    } else {
+                        // COD -> Cho phép Duyệt luôn
+                        paymentDisplay = '<span class="adm-badge dark">COD</span>';
+                        actionButtons = `
+                                    <button class="adm-btn" onclick="approveOrder('${order.id}')" title="Hoàn tất đơn" style="color:#2ecc71"><i class="fas fa-check"></i></button>
+                                    <button class="adm-btn" onclick="cancelOrder('${order.id}')" title="Hủy đơn" style="color:#e74c3c"><i class="fas fa-times"></i></button>
+                                `;
+                    }
+                }
+
+                // Badge trạng thái đơn
+                let statusBadge = '';
+                if (order.status === 'completed') statusBadge = '<span class="adm-badge success">Hoàn tất</span>';
+                else if (order.status === 'cancelled') statusBadge = '<span class="adm-badge danger">Đã hủy</span>';
+                else statusBadge = '<span class="adm-badge warning">Chờ xử lý</span>';
+
+                return `
                         <tr>
-                            <td>#${(order.id || '').toString().slice(-4)}</td>
-                            <td>
-                                <div class="cus-name">${customer.name || 'Khách vãng lai'}</div>
-                                <div class="cus-phone">${customer.phone || '---'}</div>
+                            <td class="col-id">
+                                <strong>#${order.id.toString().slice(-4)}</strong>
                                 ${orderTypeDisplay}
                             </td>
-                            <td>
-                                ${(order.items || []).map(i => `
-                                    <div class="order-item-row">• ${i.name} <span class="item-meta">(${i.size || 'F'})</span> x${i.quantity || 1}</div>
+                            <td class="col-customer">
+                                <div class="cus-name">${order.customer.name || 'Khách lẻ'}</div>
+                                <div class="cus-phone">${order.customer.phone || ''}</div>
+                                <div style="font-size:10px; color:#666; margin-top:3px;">${isStoreOrder ? '' : (order.customer.address || '')}</div>
+                            </td>
+                            <td class="col-product">
+                                ${order.items.map(i => `
+                                    <div class="order-item-row">• ${i.name} <span class="item-meta">(${i.size}/${i.color})</span> x<strong>${i.quantity}</strong></div>
                                 `).join('')}
                             </td>
-                            <td>${paymentBadge}</td>
-                            <td>${(order.total || 0).toLocaleString()}₫</td>
-                            <td>${statusBadge}</td>
-                            <td>
-                                ${order.status === 'pending' ? `
-                                    <button class="adm-btn" onclick="approveOrder('${order.id}')" style="color:#2ecc71"><i class="fas fa-check"></i></button>
-                                    <button class="adm-btn" onclick="cancelOrder('${order.id}')" style="color:#e74c3c"><i class="fas fa-times"></i></button>
-                                ` : `<button class="adm-btn" onclick="deleteOrder('${order.id}')" style="color:#888"><i class="fas fa-trash"></i></button>`}
-                            </td>
-                        </tr>`;
-                    }).join('')}
+                            <td class="col-payment">${paymentDisplay}</td>
+                            <td class="col-total">${order.total.toLocaleString()}₫</td>
+                            <td class="col-status">${statusBadge}</td>
+                            <td class="col-action">${actionButtons}</td>
+                        </tr>
+                        `;
+            }).join('')}
                 </tbody>
             </table>
         </div>
     `;
 }
+
+// --- 2. HÀM LỌC ĐƠN HÀNG ---
+function setOrderFilter(filterType) {
+    currentOrderFilter = filterType;
+    renderAdminOrders(); // Vẽ lại bảng với dữ liệu đã lọc
+}
+function confirmPayment(orderId) {
+    if (confirm('Bạn xác nhận đã nhận được tiền chuyển khoản cho đơn hàng này?')) {
+        let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+        const index = allOrders.findIndex(o => o.id === orderId);
+
+        if (index !== -1) {
+            allOrders[index].isPaid = true; // Đánh dấu đã trả tiền
+            localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+
+            showToast({ title: 'Đã xác nhận', message: 'Trạng thái thanh toán đã cập nhật. Bạn có thể duyệt đơn ngay.', type: 'success' });
+            renderAdminOrders(); // Vẽ lại để hiện nút Duyệt
+        }
+    }
+}
+
+// --- 4. HÀM DUYỆT ĐƠN (GIỮ NGUYÊN LOGIC TRỪ KHO) ---
 function approveOrder(orderId) {
     let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
     const orderIndex = allOrders.findIndex(o => o.id === orderId);
@@ -1176,50 +1432,57 @@ function approveOrder(orderId) {
     if (orderIndex !== -1) {
         const order = allOrders[orderIndex];
 
-        // 1. Cập nhật số lượng sản phẩm trong kho (Stock & Sold)
+        // Trừ kho
         order.items.forEach(item => {
-            // Tìm sản phẩm gốc trong biến 'products'
-            const productIndex = products.findIndex(p => p.id === item.id);
-            if (productIndex !== -1) {
-                // Giảm Stock và tăng Sold
-                products[productIndex].stock = Math.max(0, (products[productIndex].stock || 0) - item.quantity);
-                products[productIndex].sold = (products[productIndex].sold || 0) + item.quantity;
+            const pIdx = products.findIndex(p => p.id === item.id);
+            if (pIdx !== -1) {
+                // Trừ kho tổng
+                products[pIdx].stock = Math.max(0, (products[pIdx].stock || 0) - item.quantity);
+                products[pIdx].sold = (products[pIdx].sold || 0) + item.quantity;
+
+                // Trừ kho biến thể (Nâng cao)
+                const vIdx = products[pIdx].variants.findIndex(v => v.color === item.color);
+                if (vIdx !== -1) {
+                    products[pIdx].variants[vIdx].stock = Math.max(0, (products[pIdx].variants[vIdx].stock || 0) - item.quantity);
+                }
             }
         });
 
-        // 2. Cập nhật trạng thái đơn hàng
         allOrders[orderIndex].status = 'completed';
 
-        // 3. Lưu lại tất cả vào LocalStorage
-        saveProductsToLocal(); // Lưu kho sản phẩm mới
-        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders)); // Lưu trạng thái đơn
+        // Nếu là COD thì duyệt xong coi như đã trả tiền luôn
+        if (!allOrders[orderIndex].isPaid) allOrders[orderIndex].isPaid = true;
 
-        // 4. Thông báo và render lại
+        saveProductsToLocal();
+        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+
         renderAdminOrders();
-        logActivity('Duyệt đơn hàng', `Đã duyệt đơn hàng #${id}`);
-        showToast({ title: 'Đã duyệt đơn!', message: 'Kho hàng và số lượng bán đã được cập nhật.', type: 'success' });
+        logActivity('Duyệt đơn', `Hoàn tất đơn hàng #${orderId}`);
+        showToast({ title: 'Thành công', message: 'Đơn hàng đã hoàn tất & trừ kho.', type: 'success' });
     }
 }
 
 function cancelOrder(orderId) {
-    if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+    if (confirm('Hủy đơn hàng này?')) {
         let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
         const index = allOrders.findIndex(o => o.id === orderId);
-        allOrders[index].status = 'cancelled';
-        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
-        renderAdminOrders();
+        if (index !== -1) {
+            allOrders[index].status = 'cancelled';
+            localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+            renderAdminOrders();
+            showToast({ title: 'Đã hủy', message: 'Đơn hàng đã bị hủy.', type: 'info' });
+        }
     }
 }
 
 function deleteOrder(orderId) {
-    if (confirm('Xóa vĩnh viễn đơn hàng này khỏi danh sách?')) {
+    if (confirm('Xóa vĩnh viễn khỏi lịch sử?')) {
         let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
         allOrders = allOrders.filter(o => o.id !== orderId);
         localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
         renderAdminOrders();
     }
 }
-
 function renderAdminStaff() {
     const container = document.querySelector('.admin-content');
     if (!container) return;
@@ -1244,9 +1507,9 @@ function renderAdminStaff() {
                 </thead>
                 <tbody>
                     ${accounts.map(acc => {
-                        // Xác định class cho từng vai trò
-                        const roleClass = acc.role.toLowerCase();
-                        return `
+        // Xác định class cho từng vai trò
+        const roleClass = acc.role.toLowerCase();
+        return `
                         <tr>
                             <td>
                                 <div class="staff-info-cell">
@@ -1469,8 +1732,8 @@ function initSampleData() {
     const sampleProducts = [
         { id: 1, name: "Áo Vest Italian Cut", price: 1500000, oldPrice: 2000000, rating: 4.8, reviews: 12, sold: 154, stock: 12, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", sizes: ["S", "M", "L", "XL"], variants: [{ color: "Đen", hex: "#000", price: 1500000, img: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=800" }], desc: "Thiết kế Ý lịch lãm." },
         { id: 2, name: "Sơ Mi Lụa Premium", price: 550000, oldPrice: 750000, rating: 4.9, reviews: 8, sold: 342, stock: 8, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500", sizes: ["M", "L", "XL"], variants: [{ color: "Trắng", hex: "#fff", price: 550000, img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800" }], desc: "Sơ mi lụa mềm mại." },
-        { id: 3, name: "Quần Âu Slimfit", price: 650000, oldPrice: 800000, rating: 4.5, reviews: 5, sold: 89, stock: 45, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500", sizes: ["29", "30", "31", "32"], variants: [{color:"Đen", hex:"#000", price: 650000, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800" }], desc: "Quần âu form chuẩn." },
-        { id: 4, name: "Đồng Hồ Cổ Điển", price: 2500000, oldPrice: 3000000, rating: 5.0, reviews: 20, sold: 12, stock: 5, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", sizes: ["Free"], variants: [{color:"Đen", hex:"#000", price: 2500000, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800" }], desc: "Đồng hồ cơ tự động." }
+        { id: 3, name: "Quần Âu Slimfit", price: 650000, oldPrice: 800000, rating: 4.5, reviews: 5, sold: 89, stock: 45, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500", sizes: ["29", "30", "31", "32"], variants: [{ color: "Đen", hex: "#000", price: 650000, img: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800" }], desc: "Quần âu form chuẩn." },
+        { id: 4, name: "Đồng Hồ Cổ Điển", price: 2500000, oldPrice: 3000000, rating: 5.0, reviews: 20, sold: 12, stock: 5, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", sizes: ["Free"], variants: [{ color: "Đen", hex: "#000", price: 2500000, img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800" }], desc: "Đồng hồ cơ tự động." }
     ];
     localStorage.setItem('moonlight_products', JSON.stringify(sampleProducts));
 
@@ -1529,3 +1792,292 @@ function initSampleData() {
 // Gọi hàm này 1 lần duy nhất khi file JS chạy
 // Sau khi chạy xong lần đầu, bạn có thể comment dòng này lại
 initSampleData();
+
+// 1. Khởi tạo POS và Đồng bộ dữ liệu
+function initPosSystem() {
+    const user = JSON.parse(localStorage.getItem('moonlight_user'));
+    if (user && document.getElementById('staffName')) {
+        document.getElementById('staffName').innerText = user.name;
+    }
+    
+    // Reset và load lại sản phẩm mới nhất từ LocalStorage
+    renderPosProducts();
+    renderPosCart();
+}
+
+// 2. Render danh sách sản phẩm
+function renderPosProducts(keyword = '') {
+    const grid = document.getElementById('posProductGrid');
+    if (!grid) return;
+
+    let allProducts = JSON.parse(localStorage.getItem('moonlight_products')) || [];
+    
+    if (keyword) {
+        allProducts = allProducts.filter(p => p.name.toLowerCase().includes(keyword.toLowerCase()));
+    }
+
+    grid.innerHTML = allProducts.map(p => {
+        // Lấy thông tin hiển thị đại diện (biến thể đầu tiên)
+        const firstVar = p.variants[0] || { img: '', price: 0, stock: 0 };
+        const totalStock = p.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+        
+        return `
+        <div class="pos-product-card" onclick="openPosVariantModal(${p.id})">
+            <span class="pos-stock-badge" style="background:${totalStock > 0 ? 'rgba(0,0,0,0.6)' : '#ff4444'}">Kho: ${totalStock}</span>
+            <img src="${firstVar.img}" class="pos-card-img" onerror="this.src='https://via.placeholder.com/150'">
+            <div class="pos-card-info">
+                <div class="pos-card-name">${p.name}</div>
+                <div class="pos-card-price">${Number(firstVar.price).toLocaleString()}₫</div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+function searchPosProduct() {
+    const keyword = document.getElementById('posSearchInput').value;
+    renderPosProducts(keyword);
+}
+
+// 3. Mở Modal & Render Option (Màu/Size) - LOGIC MỚI
+function openPosVariantModal(id) {
+    const allProducts = JSON.parse(localStorage.getItem('moonlight_products')) || [];
+    const product = allProducts.find(p => p.id === id);
+    if (!product) return;
+
+    // Lưu vào biến tạm
+    currentPosSelection.product = product;
+    currentPosSelection.variantIndex = 0; // Mặc định chọn màu đầu tiên
+    currentPosSelection.size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free';
+
+    // Render HTML
+    const container = document.getElementById('posVariantContainer');
+    
+    // A. Render danh sách Màu (Variants)
+    let html = `<div class="pos-v-section-title">Chọn Phiên Bản & Màu Sắc</div>
+                <div class="pos-v-options" id="posColorOptions">`;
+    
+    product.variants.forEach((v, idx) => {
+        html += `
+            <div class="pos-v-btn ${idx === 0 ? 'selected' : ''}" onclick="setPosVariant(${idx})">
+                <span style="display:inline-block;width:10px;height:10px;background:${v.hex};border-radius:50%;border:1px solid #fff;"></span>
+                ${v.color} 
+                <span class="pos-v-stock">| Giá: ${Number(v.price).toLocaleString()}₫ | Kho: ${v.stock}</span>
+            </div>
+        `;
+    });
+    html += `</div>`;
+
+    // B. Render danh sách Size
+    html += `<div class="pos-v-section-title">Chọn Kích Thước</div>
+             <div class="pos-v-options" id="posSizeOptions">`;
+    
+    if (product.sizes && product.sizes.length > 0) {
+        product.sizes.forEach((s, idx) => {
+            html += `<div class="pos-v-btn ${idx === 0 ? 'selected' : ''}" onclick="setPosSize('${s}')">${s}</div>`;
+        });
+    } else {
+        html += `<div class="pos-v-btn selected" onclick="setPosSize('Free')">Free Size</div>`;
+    }
+    html += `</div>`;
+
+    container.innerHTML = html;
+    document.getElementById('posVariantModal').classList.add('open');
+}
+
+// 4. Hàm chọn Màu (Update UI + Logic)
+function setPosVariant(index) {
+    currentPosSelection.variantIndex = index;
+    
+    // Update UI (Xóa class selected cũ, thêm vào cái mới)
+    const btns = document.querySelectorAll('#posColorOptions .pos-v-btn');
+    btns.forEach(b => b.classList.remove('selected'));
+    btns[index].classList.add('selected');
+}
+
+// 5. Hàm chọn Size (Update UI + Logic)
+function setPosSize(sizeStr) {
+    currentPosSelection.size = sizeStr;
+
+    // Update UI (Tìm button có text khớp với size chọn)
+    const btns = document.querySelectorAll('#posSizeOptions .pos-v-btn');
+    btns.forEach(b => {
+        if (b.innerText === sizeStr || (sizeStr === 'Free' && b.innerText === 'Free Size')) {
+            b.classList.add('selected');
+        } else {
+            b.classList.remove('selected');
+        }
+    });
+}
+
+function closePosModal() {
+    document.getElementById('posVariantModal').classList.remove('open');
+}
+
+// 6. Xác nhận thêm vào giỏ (Dựa trên biến currentPosSelection)
+function confirmPosAddToCart() {
+    const { product, variantIndex, size } = currentPosSelection;
+    if (!product) return;
+
+    const selectedVar = product.variants[variantIndex];
+
+    // Check kho
+    if ((selectedVar.stock || 0) <= 0) {
+        alert("Màu này đã hết hàng trong kho!");
+        return;
+    }
+
+    const cartItem = {
+        id: product.id,
+        name: product.name,
+        price: Number(selectedVar.price),
+        img: selectedVar.img,
+        color: selectedVar.color,
+        size: size,
+        quantity: 1,
+        maxStock: selectedVar.stock // Lưu max để chặn nhập quá
+    };
+
+    // Check trùng trong giỏ
+    const exist = posCart.find(i => i.id === cartItem.id && i.color === cartItem.color && i.size === cartItem.size);
+    if (exist) {
+        if (exist.quantity < exist.maxStock) {
+            exist.quantity++;
+        } else {
+            alert(`Kho chỉ còn ${exist.maxStock} sản phẩm này!`);
+        }
+    } else {
+        posCart.push(cartItem);
+    }
+
+    renderPosCart();
+    closePosModal();
+}
+
+// 7. Render Giỏ hàng POS
+function renderPosCart() {
+    const container = document.getElementById('posCartItems');
+    if (!container) return;
+
+    let total = 0;
+    let count = 0;
+
+    container.innerHTML = posCart.map((item, index) => {
+        total += item.price * item.quantity;
+        count += item.quantity;
+        return `
+        <div class="pos-item">
+            <img src="${item.img}">
+            <div class="pos-item-info">
+                <span class="pos-item-name">${item.name}</span>
+                <span class="pos-item-meta">${item.color} | Size: ${item.size}</span>
+                <div class="pos-item-price">${item.price.toLocaleString()}₫</div>
+            </div>
+            <div class="pos-qty-ctrl">
+                <button class="pos-qty-btn" onclick="updatePosQty(${index}, -1)">-</button>
+                <input type="text" class="pos-qty-val" value="${item.quantity}" readonly>
+                <button class="pos-qty-btn" onclick="updatePosQty(${index}, 1)">+</button>
+            </div>
+            <button class="pos-qty-btn" style="background:transparent; color:#ff4444; margin-left:5px;" onclick="removePosItem(${index})"><i class="fas fa-trash"></i></button>
+        </div>`;
+    }).join('');
+
+    document.getElementById('posTotalPrice').innerText = total.toLocaleString() + '₫';
+    document.getElementById('posTotalQty').innerText = count;
+}
+
+function updatePosQty(index, change) {
+    const item = posCart[index];
+    const newQty = item.quantity + change;
+    
+    if (newQty > item.maxStock) {
+        alert("Đã đạt giới hạn tồn kho!");
+        return;
+    }
+    if (newQty <= 0) {
+        if (confirm("Xóa sản phẩm này khỏi đơn?")) posCart.splice(index, 1);
+    } else {
+        item.quantity = newQty;
+    }
+    renderPosCart();
+}
+
+function removePosItem(index) {
+    posCart.splice(index, 1);
+    renderPosCart();
+}
+
+// 8. Thanh toán POS (Trừ kho ngay lập tức)
+function processPosCheckout() {
+    if (posCart.length === 0) {
+        alert("Giỏ hàng đang trống!");
+        return;
+    }
+
+    const cusName = document.getElementById('posCusName').value || "Khách lẻ";
+    const cusPhone = document.getElementById('posCusPhone').value || "";
+    // Lấy radio button được check
+    const paymentEl = document.querySelector('input[name="posPayment"]:checked');
+    const paymentMethod = paymentEl ? paymentEl.value : 'Tiền mặt';
+    
+    const total = posCart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+    if (confirm(`Xác nhận thanh toán ${total.toLocaleString()}₫ ?`)) {
+        
+        // A. Tạo đơn hàng mới
+        const newOrder = {
+            id: "POS" + Date.now().toString().slice(-6),
+            customer: { name: cusName, phone: cusPhone, address: "Tại cửa hàng" },
+            items: [...posCart],
+            total: total,
+            status: 'completed', // Đơn POS coi như xong luôn
+            paymentMethod: paymentMethod,
+            isPaid: true,
+            date: new Date().toLocaleString('vi-VN')
+        };
+
+        // B. Lưu đơn hàng
+        let allOrders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+        allOrders.unshift(newOrder);
+        localStorage.setItem('moonlight_orders', JSON.stringify(allOrders));
+
+        // C. Trừ kho (Đồng bộ dữ liệu)
+        let products = JSON.parse(localStorage.getItem('moonlight_products')) || [];
+        
+        posCart.forEach(cartItem => {
+            const pIndex = products.findIndex(p => p.id === cartItem.id);
+            if (pIndex !== -1) {
+                // Trừ kho biến thể
+                const vIndex = products[pIndex].variants.findIndex(v => v.color === cartItem.color);
+                if (vIndex !== -1) {
+                    products[pIndex].variants[vIndex].stock = Math.max(0, products[pIndex].variants[vIndex].stock - cartItem.quantity);
+                }
+                // Trừ kho tổng & Tăng lượt bán
+                products[pIndex].stock = Math.max(0, products[pIndex].stock - cartItem.quantity);
+                products[pIndex].sold += cartItem.quantity;
+            }
+        });
+        localStorage.setItem('moonlight_products', JSON.stringify(products));
+
+        // D. Ghi log
+        const user = JSON.parse(localStorage.getItem('moonlight_user')) || { name: 'Staff' };
+        let logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
+        logs.unshift({
+            time: new Date().toLocaleString('vi-VN'),
+            user: user.name,
+            action: 'Bán hàng POS',
+            details: `Đơn ${newOrder.id} - ${total.toLocaleString()}₫`
+        });
+        localStorage.setItem('moonlight_logs', JSON.stringify(logs));
+
+        // E. Reset & Thông báo
+        alert("Thanh toán thành công!");
+        posCart = [];
+        renderPosCart();
+        renderPosProducts(); // Refresh lại lưới sản phẩm để cập nhật số kho mới
+        
+        // Reset form
+        document.getElementById('posCusName').value = "";
+        document.getElementById('posCusPhone').value = "";
+    }
+}

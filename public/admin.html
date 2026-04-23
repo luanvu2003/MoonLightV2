@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard - Moon Light</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./css/admin.css">
 </head>
-
 <body class="admin-body">
     <div class="admin-wrapper">
         <aside class="admin-sidebar">
@@ -17,84 +15,26 @@
                 <small id="adminRole">Quyền hạn: Admin</small>
             </div>
             <nav class="admin-menu">
-                <a href="#" class="active" onclick="switchTab('dashboard')"><i class="fas fa-chart-line"></i>
-                    Dashboard</a>
+                <a href="#" class="active" onclick="switchTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="#" onclick="switchTab('products')"><i class="fas fa-box"></i> Quản lý sản phẩm</a>
                 <a href="#" onclick="switchTab('orders')"><i class="fas fa-shopping-cart"></i> Quản lý đơn hàng</a>
                 <a href="#" onclick="switchTab('reviews')"><i class="fas fa-star"></i> Quản lý đánh giá</a>
-                <a href="#" class="admin-only" onclick="switchTab('staff')"><i class="fas fa-users-cog"></i> Quản lý
-                    nhân sự</a>
+                <a href="#" class="admin-only" onclick="switchTab('staff')"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a>
                 <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
             </nav>
         </aside>
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
         <main class="admin-content">
-            <header class="admin-header">
-                <h2>BÁO CÁO TỔNG QUAN</h2>
-            </header>
-
-            <div class="dashboard-stats">
-                <div class="stat-card">
-                    <h3>Doanh thu tháng này</h3>
-                    <p id="totalRev">0₫</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Đơn hàng mới</h3>
-                    <p id="orderCount">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Tổng sản phẩm</h3>
-                    <p id="prodCount">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Khách hàng</h3>
-                    <p id="customerCount">0</p>
-                </div>
-            </div>
-
-            <div class="charts-grid"
-                style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px;">
-                <div class="chart-box"
-                    style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 6px;">
-                    <h3 style="color:#d4af37; margin-bottom:15px; font-size:14px; text-transform:uppercase;">Biểu đồ
-                        Doanh thu (7 ngày qua)</h3>
-                    <canvas id="revenueChart"></canvas>
-                </div>
-                <div class="chart-box"
-                    style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 6px;">
-                    <h3 style="color:#d4af37; margin-bottom:15px; font-size:14px; text-transform:uppercase;">Tỷ lệ đơn
-                        hàng</h3>
-                    <canvas id="orderStatusChart"></canvas>
-                </div>
-            </div>
-
-            <div class="data-table-container">
-                <h3 style="padding: 20px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0;">NHẬT
-                    KÝ HOẠT ĐỘNG</h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Thời gian</th>
-                            <th>Nhân sự</th>
-                            <th>Hành động</th>
-                            <th>Chi tiết</th>
-                        </tr>
-                    </thead>
-                    <tbody id="auditLogTable">
-                    </tbody>
-                </table>
-            </div>
-        </main>
+            </main>
     </div>
-    <script src="./js/main.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./js/admin.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth(); // Kiểm tra quyền truy cập khi load trang
-            renderAdminStats();
+            checkAuth();
+            renderAdminStats(); // Mặc định vào Dashboard
         });
     </script>
 </body>
-
 </html>
