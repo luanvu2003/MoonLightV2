@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán - Moon Light</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+    <header id="navbar" style="background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position:relative;">
+        <div class="container nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration:none; color:#000;">MOON<span class="highlight">LIGHT</span>.</a></h1>
+            </div>
+            <div class="checkout-step">
+                <span>GIỎ HÀNG</span> <i class="fas fa-chevron-right"></i> <span style="color:var(--gold); font-weight:700">THANH TOÁN</span>
+            </div>
+        </div>
+    </header>
+
+    <section class="checkout-section section-padding">
+        <div class="container">
+            <div class="checkout-grid">
+                <div class="checkout-form-col">
+                    <h3 class="checkout-title">THÔNG TIN GIAO HÀNG</h3>
+                    <form id="checkoutForm" onsubmit="handleCheckout(event)">
+                        <div class="form-group"><label>Họ và tên *</label><input type="text" id="cusName" required placeholder="Ví dụ: Nguyễn Văn A"></div>
+                        <div class="form-group"><label>Số điện thoại *</label><input type="tel" id="cusPhone" required placeholder="Ví dụ: 0912345678"></div>
+                        <div class="form-group"><label>Địa chỉ nhận hàng *</label><input type="text" id="cusAddress" required placeholder="Số nhà, đường, phường/xã..."></div>
+                        <div class="form-group"><label>Ghi chú đơn hàng</label><textarea id="cusNote" rows="2" placeholder="Ví dụ: Giao giờ hành chính..."></textarea></div>
+                        
+                        <div class="payment-section-wrapper">
+                            <h3 class="checkout-title" style="margin-top: 30px;">PHƯƠNG THỨC THANH TOÁN</h3>
+                            <label class="payment-card selected" onclick="selectPayment('cod')">
+                                <div class="radio-mark"><input type="radio" name="payment" id="payment_cod" value="cod" checked><span class="custom-radio"></span></div>
+                                <div class="card-content"><div class="card-icon"><i class="fas fa-truck-moving"></i></div><div class="card-text"><h4>Thanh toán khi nhận hàng (COD)</h4><p>Kiểm tra hàng trước khi thanh toán</p></div></div>
+                            </label>
+                            <label class="payment-card" onclick="selectPayment('banking')">
+                                <div class="radio-mark"><input type="radio" name="payment" id="payment_banking" value="banking"><span class="custom-radio"></span></div>
+                                <div class="card-content"><div class="card-icon"><i class="fas fa-university"></i></div><div class="card-text"><h4>Chuyển khoản ngân hàng</h4><p>Quét mã QR hoặc chuyển khoản 24/7</p></div></div>
+                            </label>
+                            <div id="bankingInfo" class="banking-info-box" style="display: none;">
+                                <div class="bank-details">
+                                    <p><strong>Ngân hàng:</strong> MB Bank (Quân Đội)</p>
+                                    <p><strong>Số tài khoản:</strong> <span class="highlight-text">0393203037</span></p>
+                                    <p><strong>Chủ tài khoản:</strong> VU PHAM LUAN</p>
+                                    <p><strong>Nội dung CK:</strong> Tên + SĐT</p>
+                                </div>
+                                <div class="qr-code-placeholder"><i class="fas fa-qrcode"></i><span>Mã QR nhận tiền</span></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-place-order">ĐẶT HÀNG NGAY</button>
+                        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Tiếp tục mua sắm</a>
+                    </form>
+                </div>
+                <div class="checkout-summary-col">
+                    <div class="order-summary-box">
+                        <h3 class="checkout-title">ĐƠN HÀNG CỦA BẠN</h3>
+                        <div class="order-items" id="checkoutItems"></div>
+                        <div class="order-divider"></div>
+                        <div class="order-row"><span>Tạm tính:</span><span id="checkoutSubtotal">0₫</span></div>
+                        <div class="order-row"><span>Phí vận chuyển:</span><span>Miễn phí</span></div>
+                        <div class="order-divider"></div>
+                        <div class="order-row total"><span>TỔNG CỘNG:</span><span id="checkoutTotal" style="color:var(--gold); font-size:24px;">0₫</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="margin-top:0; padding:30px 0; background:#f9f9f9; color:#666; border:none; text-align:center;">
+        <div class="container"><p>&copy; 2026 Moon Light. All rights reserved.</p></div>
+    </footer>
+
+    <script src="./js/shop.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { renderCheckoutPage(); });
+        function selectPayment(type) {
+            document.querySelectorAll('.payment-card').forEach(el => el.classList.remove('selected'));
+            const bankBox = document.getElementById('bankingInfo');
+            if (type === 'banking') {
+                document.getElementById('payment_banking').closest('.payment-card').classList.add('selected');
+                document.getElementById('payment_banking').checked = true;
+                bankBox.style.display = 'flex';
+            } else {
+                document.getElementById('payment_cod').closest('.payment-card').classList.add('selected');
+                document.getElementById('payment_cod').checked = true;
+                bankBox.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

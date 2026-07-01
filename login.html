@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Nhập - Quản Trị Moon Light</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body style="background: #f4f4f4; display: flex; align-items: center; justify-content: center; height: 100vh;">
+    <div class="login-box" style="background: #fff; padding: 40px; border-radius: 8px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <h2 style="text-align: center; margin-bottom: 30px;">HỆ THỐNG QUẢN TRỊ</h2>
+        <form id="loginForm">
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Tài khoản</label>
+                <input type="text" id="username" placeholder="Nhập tài khoản..." required style="width:100%; padding:12px; border:1px solid #ddd;">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Mật khẩu</label>
+                <input type="password" id="password" placeholder="Nhập mật khẩu..." required style="width:100%; padding:12px; border:1px solid #ddd;">
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 15px;">ĐĂNG NHẬP</button>
+        </form>
+    </div>
+    <script src="./js/main.js"></script>
+    <script>
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            handleLogin();
+        };
+    </script>
+</body>
+</html>

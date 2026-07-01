@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon Light - Luxury Fashion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-content">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm (ví dụ: Vest, Sơ mi)...">
+            <button class="close-search" onclick="toggleSearch()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <header id="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <h1><a href="index.html">MOON<span class="highlight">LIGHT</span>.</a></h1>
+            </div>
+
+            <nav class="menu">
+                <a href="index.html" class="active">Trang chủ</a>
+                <a href="#shop">Cửa hàng</a>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="dropdown-toggle">Bộ sưu tập <i class="fas fa-chevron-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li class="has-submenu">
+                            <a href="#">Thời trang Nam <i class="fas fa-chevron-right"></i></a>
+                            <ul class="submenu">
+                                <li class="group-title">ÁO NAM</li>
+                                <li><a href="#">Áo Vest / Blazer</a></li>
+                                <li><a href="#">Áo Sơ Mi Luxury</a></li>
+                                <li><a href="#">Áo Polo Premium</a></li>
+                                <li class="group-title">QUẦN NAM</li>
+                                <li><a href="#">Quần Âu Slimfit</a></li>
+                                <li><a href="#">Quần Jeans</a></li>
+                            </ul>
+                        </li>
+                        <li class="has-submenu">
+                            <a href="#">Thời trang Nữ <i class="fas fa-chevron-right"></i></a>
+                            <ul class="submenu">
+                                <li class="group-title">ÁO NỮ</li>
+                                <li><a href="#">Áo Croptop</a></li>
+                                <li><a href="#">Sơ mi lụa</a></li>
+                                <li class="group-title">VÁY & ĐẦM</li>
+                                <li><a href="#">Chân váy</a></li>
+                                <li><a href="#">Đầm dạ hội</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#">Phụ kiện</a></li>
+                    </ul>
+                </div>
+
+                <a href="#footer">Liên hệ</a>
+            </nav>
+
+            <div class="nav-icons">
+                <div class="icon-item" onclick="toggleSearch()"><i class="fas fa-search"></i></div>
+                <div class="icon-item" onclick="toggleCart()">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge">0</span>
+                </div>
+            </div>
+            <div class="mobile-toggle"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content reveal">
+            <p class="subtitle">SUMMER COLLECTION 2026</p>
+            <h2>ELEGANCE IN EVERY DETAIL</h2>
+            <p class="desc">Phong cách tối giản, chất liệu thượng hạng. Định hình đẳng cấp quý ông hiện đại.</p>
+            <button class="btn-primary"
+                onclick="document.getElementById('shop').scrollIntoView({behavior: 'smooth'})">MUA NGAY</button>
+        </div>
+    </section>
+
+    <section class="shop section-padding" id="shop">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>SẢN PHẨM MỚI</h2>
+                <div class="underline"></div>
+                <p class="sub-heading">Những thiết kế mới nhất vừa cập bến Moon Light</p>
+            </div>
+
+            <div class="product-grid" id="product-grid"></div>
+
+            <div class="load-more-container" id="loadMoreContainer">
+                <button class="btn-outline" onclick="loadMoreProducts()">XEM THÊM SẢN PHẨM</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="shop section-padding bg-gray" id="best-seller">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>BEST SELLERS</h2>
+                <div class="underline"></div>
+                <p class="sub-heading">Các sản phẩm được yêu thích nhất tháng này</p>
+            </div>
+            <div class="product-grid" id="best-seller-grid"></div>
+
+            <div class="load-more-container" id="loadMoreBestSeller">
+                <button class="btn-outline" onclick="loadMoreBestSellers()">XEM THÊM BEST SELLER</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="container feature-grid">
+            <div class="feature-box">
+                <i class="fas fa-shipping-fast"></i>
+                <h3>MIỄN PHÍ VẬN CHUYỂN</h3>
+                <p>Cho đơn hàng từ 1.000.000₫</p>
+            </div>
+            <div class="feature-box">
+                <i class="fas fa-undo-alt"></i>
+                <h3>ĐỔI TRẢ DỄ DÀNG</h3>
+                <p>Trong vòng 30 ngày</p>
+            </div>
+            <div class="feature-box">
+                <i class="fas fa-shield-alt"></i>
+                <h3>THANH TOÁN AN TOÀN</h3>
+                <p>Bảo mật thông tin tuyệt đối</p>
+            </div>
+            <div class="feature-box">
+                <i class="fas fa-headset"></i>
+                <h3>HỖ TRỢ 24/7</h3>
+                <p>Hotline: 0393.203.037</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="brand-story-section section-padding">
+        <div class="container story-grid">
+            <div class="story-img reveal">
+                <img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800" alt="Brand Story">
+            </div>
+            <div class="story-content reveal">
+                <p class="subtitle">VỀ MOON LIGHT</p>
+                <h2>TÔI LÀ VŨ PHẠM LUÂN.</h2>
+                <p>Chúng tôi tin rằng thời trang không chỉ là trang phục, mà là ngôn ngữ của sự tự tin. Moon Light ra
+                    đời với sứ mệnh mang đến phong cách tối giản, tinh tế nhưng không kém phần sang trọng cho quý ông
+                    hiện đại.</p>
+                <p>Mỗi sản phẩm là một tác phẩm được chăm chút từ chất liệu đến từng đường kim mũi chỉ.</p>
+                <a href="#shop" class="btn-text">KHÁM PHÁ CỬA HÀNG <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <section class="instagram-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>THE LOOKBOOK</h2>
+                <div class="underline"></div>
+                <p class="sub-heading">Gắn thẻ @MoonLight để có cơ hội xuất hiện trong Lookbook của chúng tôi</p>
+            </div>
+            <div class="insta-grid">
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1488161628813-04466f872be2?w=400">
+                </div>
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400">
+                </div>
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400">
+                </div>
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1550246140-5119ae4790b8?w=400">
+                </div>
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=400">
+                </div>
+                <div class="insta-item"><img src="https://images.unsplash.com/photo-1504593811423-6dd665756598?w=400">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="wishlist-overlay" id="wishlistOverlay" onclick="toggleWishlistSidebar()"></div>
+    <div class="wishlist-sidebar" id="wishlistSidebar">
+        <div class="cart-header">
+            <h3>SẢN PHẨM YÊU THÍCH</h3>
+            <button class="close-cart" onclick="toggleWishlistSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="wishlistItems">
+        </div>
+    </div>
+
+    <section class="testimonials-section section-padding">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>KHÁCH HÀNG NÓI GÌ</h2>
+                <div class="underline"></div>
+            </div>
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                            class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="review-text">"Chất lượng vải tuyệt vời, đường may rất tỉ mỉ. Tôi đã mua bộ Vest ở đây và
+                        rất hài lòng về form dáng."</p>
+                    <div class="customer-info">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" alt="Customer">
+                        <div>
+                            <h4>Nguyễn Văn A</h4><span>CEO TechGroup</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                            class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="review-text">"Dịch vụ chăm sóc khách hàng rất tốt. Giao hàng nhanh, đóng gói sang trọng.
+                        Sẽ ủng hộ Moon Light dài dài."</p>
+                    <div class="customer-info">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" alt="Customer">
+                        <div>
+                            <h4>Trần Minh B</h4><span>Designer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                            class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p class="review-text">"Sản phẩm thực tế đẹp hơn trên ảnh. Rất thích phong cách tối giản mà tinh tế
+                        của shop."</p>
+                    <div class="customer-info">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt="Customer">
+                        <div>
+                            <h4>Lê Thị C</h4><span>Model</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="newsletter-section">
+        <div class="newsletter-overlay"></div>
+        <div class="container newsletter-content reveal">
+            <h2>ĐĂNG KÝ NHẬN ƯU ĐÃI</h2>
+            <p>Nhập email để nhận mã giảm giá <strong>10%</strong> cho đơn hàng đầu tiên.</p>
+            <form class="newsletter-form">
+                <input type="email" placeholder="Nhập địa chỉ email của bạn...">
+                <button type="button">ĐĂNG KÝ</button>
+            </form>
+        </div>
+    </section>
+
+    <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>GIỎ HÀNG</h3>
+            <button class="close-cart" onclick="toggleCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total-box"><span class="total-label">TỔNG CỘNG:</span><span class="total-amount"
+                    id="cartTotal">0₫</span></div>
+            <button class="checkout-btn">THANH TOÁN</button>
+        </div>
+    </div>
+
+    <div class="floating-container">
+        <button id="scrollTopBtn" title="Lên đầu trang"><i class="fas fa-arrow-up"></i></button>
+        <div class="contact-wrapper">
+            <div class="contact-list">
+                <a href="https://zalo.me/0393203037" target="_blank" class="contact-item zalo" title="Zalo"><img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/1200px-Icon_of_Zalo.svg.png"></a>
+                <a href="#" class="contact-item mess" title="Messenger"><i class="fab fa-facebook-messenger"></i></a>
+                <a href="tel:0393203037" class="contact-item phone" title="Gọi ngay"><i
+                        class="fas fa-phone-alt"></i></a>
+            </div>
+            <div class="contact-main-btn"><i class="fas fa-headset shake-anim"></i></div>
+        </div>
+    </div>
+
+    <footer id="footer">
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>MOON<span class="highlight">LIGHT</span>.</h3>
+                    <p class="footer-desc">Nâng tầm phong cách quý ông Việt. Sự lựa chọn hoàn hảo cho những ai yêu thích
+                        sự tối giản và tinh tế.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-tiktok"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>HỖ TRỢ KHÁCH HÀNG</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Hướng dẫn chọn size</a></li>
+                        <li><a href="#">Chính sách đổi trả</a></li>
+                        <li><a href="#">Chính sách bảo mật</a></li>
+                        <li><a href="#">Tra cứu đơn hàng</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>LIÊN HỆ</h3>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-map-marker-alt"></i> 127 Tăng Bạt Hổ, Bảo Lộc</li>
+                        <li><i class="fas fa-phone"></i> 0393.203.037</li>
+                        <li><i class="fas fa-envelope"></i> luanvutk123@gmail.com</li>
+                        <li><i class="fas fa-clock"></i> 8:00 - 22:00 (Hàng ngày)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Moon Light. Designed by <strong style="cursor: default;">Vũ Phạm Luân</strong><a href="login.html" style="color: inherit; opacity: 0; cursor: default;">.</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="./js/shop.js"></script>
+</body>
+
+</html>

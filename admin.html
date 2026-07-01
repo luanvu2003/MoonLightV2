@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Moon Light</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="user-info">
+                <span id="adminName">Admin</span>
+                <small id="adminRole">Quyền hạn: Admin</small>
+            </div>
+            <nav class="admin-menu">
+                <a href="#" class="active" onclick="switchTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="#" onclick="switchTab('products')"><i class="fas fa-box"></i> Quản lý sản phẩm</a>
+                <a href="#" onclick="switchTab('orders')"><i class="fas fa-shopping-cart"></i> Quản lý đơn hàng</a>
+                <a href="#" onclick="switchTab('reviews')"><i class="fas fa-star"></i> Quản lý đánh giá</a>
+                <a href="#" class="admin-only" onclick="switchTab('staff')"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a>
+                <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+            </nav>
+        </aside>
+
+        <main class="admin-content">
+            </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            renderAdminStats(); // Mặc định vào Dashboard
+        });
+    </script>
+</body>
+</html>
