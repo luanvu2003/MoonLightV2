@@ -1,11 +1,13 @@
 {
+  "homepage": "https://luanvu2003.github.io/MoonLightV2/",
   "name": "moonlightv2",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "deploy": "node deploy.js"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +19,8 @@
     "express": "^5.2.1",
     "mongoose": "^9.2.3",
     "nodemon": "^3.1.14"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
