@@ -500,7 +500,143 @@ function showToast({ title, message, type }) {
     }, 3000);
 }
 
-// --- REVIEW ---
+// --- REVIEW CHO TỪNG SẢN PHẨM RIÊNG BIỆT (LIÊM KHIẾT - TỰ ĐỘNG HIỂN THỊ) ---
+let selectedRating = 0;
+
+function rateStar(star) {
+    selectedRating = star;
+    const ratingInput = document.getElementById('ratingValue');
+    if (ratingInput) ratingInput.value = star;
+
+    const stars = document.querySelectorAll('.star-rating-input i');
+    stars.forEach((s, index) => {
+        if (index < star) {
+            s.classList.remove('far');
+            s.classList.add('fas');
+            s.style.color = '#f59e0b';
+        } else {
+            s.classList.remove('fas');
+            s.classList.add('far');
+            s.style.color = '';
+        }
+    });
+}
+
 function renderProductReviews(pid) {
-    // (Logic render review tương tự trước, lấy từ moonlight_all_reviews)
+    const listContainer = document.getElementById('reviewsList');
+    if (!listContainer) return;
+
+    let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+    
+    // LỌC ĐÁNH GIÁ RIÊNG CỦA SẢN PHẨM NÀY
+    const productReviews = allReviews.filter(r => String(r.productId) === String(pid));
+
+    // Cập nhật số sao trung bình và số lượng đánh giá của riêng sản phẩm này
+    const avgScore = productReviews.length > 0
+        ? (productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length).toFixed(1)
+        : (currentProduct && currentProduct.rating ? currentProduct.rating : '5.0');
+    
+    const count = productReviews.length;
+
+    const avgEl = document.querySelector('.average-rating');
+    if (avgEl) avgEl.innerText = avgScore;
+
+    const totalEl = document.querySelector('.total-reviews');
+    if (totalEl) totalEl.innerText = `(${count} đánh giá thực tế)`;
+
+    const starsStatic = document.querySelector('.stars-static');
+    if (starsStatic) {
+        const rounded = Math.round(Number(avgScore) || 5);
+        starsStatic.innerHTML = '★'.repeat(Math.min(5, rounded)) + '☆'.repeat(Math.max(0, 5 - rounded));
+    }
+
+    if (productReviews.length === 0) {
+        listContainer.innerHTML = `
+            <div style="text-align:center; padding:35px 20px; color:#888;">
+                <i class="far fa-comment-dots" style="font-size:32px; margin-bottom:10px; opacity:0.5; display:block;"></i>
+                Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên chia sẻ cảm nhận của bạn!
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = productReviews.map(rev => {
+        const initials = (rev.name || 'K').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+        return `
+            <div class="review-item" style="margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:14px; align-items:flex-start;">
+                <div class="review-avatar" style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, rgba(91, 80, 246, 0.4), rgba(212, 175, 55, 0.4)); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; flex-shrink:0;">
+                    ${initials}
+                </div>
+                <div class="review-content" style="flex:1;">
+                    <div class="review-top" style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#fff; font-size:14px;">${rev.name}</strong>
+                        <span class="review-date" style="font-size:12px; color:#888;">${rev.date || 'Gần đây'}</span>
+                    </div>
+                    <div class="stars-display" style="color:#f59e0b; font-size:12px; margin:4px 0;">
+                        ${'★'.repeat(rev.rating)}${'☆'.repeat(Math.max(0, 5 - rev.rating))}
+                        <span style="font-size:11px; color:#10b981; margin-left:8px; font-weight:600;">
+                            <i class="fas fa-check-circle"></i> Đánh giá thực tế
+                        </span>
+                    </div>
+                    <p style="margin:6px 0; color:#e2e8f0; line-height:1.45; font-size:13.5px;">${rev.content}</p>
+                    ${rev.shopReply ? `
+                        <div class="shop-reply-customer-view" style="margin-top:10px; background:rgba(91, 80, 246, 0.08); border-left:3px solid #5b50f6; border-radius:0 10px 10px 0; padding:10px 14px; font-size:13px;">
+                            <div class="customer-reply-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                                <span class="customer-reply-brand" style="color:#818cf8; font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:5px;">
+                                    <i class="fas fa-shield-halved" style="color:#fbbf24;"></i> Phản Hồi Từ MoonLight
+                                </span>
+                                <small style="color:#94a3b8; font-size:11px;">${rev.shopReplyDate || ''}</small>
+                            </div>
+                            <p class="customer-reply-content" style="margin:0; color:#e2e8f0; line-height:1.5; font-size:13px;">${rev.shopReply}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function submitReview(e) {
+    e.preventDefault();
+    if (selectedRating === 0) {
+        showToast('Chưa chọn số sao!', 'Vui lòng chọn số sao đánh giá sản phẩm.', 'warning');
+        return;
+    }
+
+    const nameInput = document.getElementById('reviewerName');
+    const contentInput = document.getElementById('reviewContent');
+    const name = nameInput ? nameInput.value.trim() : 'Khách hàng';
+    const content = contentInput ? contentInput.value.trim() : '';
+
+    if (!content) {
+        showToast('Nội dung trống', 'Vui lòng viết đôi lời cảm nhận về sản phẩm.', 'warning');
+        return;
+    }
+
+    const pid = currentProduct ? currentProduct.id : 1;
+    const pName = currentProduct ? currentProduct.name : 'Sản phẩm';
+
+    // Đánh giá mới - Liêm khiết: Luôn hiển thị công khai ngay lập tức
+    const newReview = {
+        id: Date.now(),
+        productId: pid,
+        productName: pName,
+        name: name,
+        rating: selectedRating,
+        content: content,
+        date: new Date().toLocaleDateString('vi-VN'),
+        status: 'approved' // Luôn hiển thị thực tế không qua kiểm duyệt
+    };
+
+    let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
+    allReviews.unshift(newReview);
+    localStorage.setItem('moonlight_all_reviews', JSON.stringify(allReviews));
+
+    // Reset Form
+    const form = document.getElementById('reviewForm');
+    if (form) form.reset();
+    rateStar(0);
+
+    showToast('Cảm ơn quý khách!', 'Đánh giá thực tế của bạn đã được hiển thị công khai.', 'success');
+    renderProductReviews(pid);
 }

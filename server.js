@@ -41,7 +41,52 @@ app.get('/api/products/:type', async (req, res) => {
     }
 });
 
-// 5. Route cho Frontend (Trang chủ)
+// API: Thêm sản phẩm mới vào MongoDB (nếu có kết nối)
+app.post('/api/products', async (req, res) => {
+    try {
+        const newProduct = new Product(req.body);
+        const saved = await newProduct.save();
+        res.status(201).json(saved);
+    } catch (error) {
+        res.status(400).json({ message: "Lỗi lưu sản phẩm", error: error.message });
+    }
+});
+
+// API: Cập nhật sản phẩm
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (error) {
+        res.status(400).json({ message: "Lỗi cập nhật sản phẩm", error: error.message });
+    }
+});
+
+// API: Xóa sản phẩm
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        await Product.findByIdAndDelete(req.params.id);
+        res.json({ message: "Đã xóa sản phẩm thành công" });
+    } catch (error) {
+        res.status(400).json({ message: "Lỗi xóa sản phẩm", error: error.message });
+    }
+});
+
+// 5. Routes cho Frontend chuyên biệt
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get('/staff', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'staff.html'));
+});
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+app.get('/checkout', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
+});
+
+// Catch-all route cho Frontend (Trang chủ)
 app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

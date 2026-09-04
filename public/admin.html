@@ -2,39 +2,561 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard - Moon Light</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Trị - Moon Light Luxury Admin</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./css/admin.css">
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('moonlight_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
-<body class="admin-body">
+<body class="admin-body" data-theme="dark">
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('moonlight_theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'light') document.body.classList.add('theme-light');
+        })();
+    </script>
+
     <div class="admin-wrapper">
-        <aside class="admin-sidebar">
-            <div class="admin-logo">MOON<span class="highlight">LIGHT</span>.</div>
-            <div class="user-info">
-                <span id="adminName">Admin</span>
-                <small id="adminRole">Quyền hạn: Admin</small>
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-logo">
+                <span class="logo-moon-icon"><i class="fas fa-moon"></i></span>
+                <span class="logo-text">MOON<span class="highlight">LIGHT</span></span>
+                <span class="admin-logo-badge">Admin</span>
             </div>
+
+            <div class="user-info" onclick="switchTab('settings')" style="cursor: pointer;" title="Xem hồ sơ, đổi mật khẩu & ảnh đại diện">
+                <div class="user-avatar" id="adminAvatar">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="user-details">
+                    <span id="adminName">Quản Trị Viên</span>
+                    <small id="adminRole"><span class="user-status-dot"></span> Admin</small>
+                </div>
+                <i class="fas fa-gear" style="color:#64748b; font-size:12px; margin-left:auto;" title="Cài đặt tài khoản"></i>
+            </div>
+
             <nav class="admin-menu">
-                <a href="#" class="active" onclick="switchTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</a>
-                <a href="#" onclick="switchTab('products')"><i class="fas fa-box"></i> Quản lý sản phẩm</a>
-                <a href="#" onclick="switchTab('orders')"><i class="fas fa-shopping-cart"></i> Quản lý đơn hàng</a>
-                <a href="#" onclick="switchTab('reviews')"><i class="fas fa-star"></i> Quản lý đánh giá</a>
-                <a href="#" class="admin-only" onclick="switchTab('staff')"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a>
-                <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                <a href="javascript:void(0)" class="active" onclick="switchTab('dashboard')" data-roles="Admin,Owner">
+                    <i class="fas fa-house"></i>
+                    <span>Tổng quan</span>
+                </a>
+
+                <div class="menu-category-label">QUẢN LÝ</div>
+                <a href="javascript:void(0)" onclick="switchTab('orders')" data-roles="Admin,Owner,Staff">
+                    <i class="far fa-calendar-check"></i>
+                    <span>Đơn hàng</span>
+                    <span class="menu-badge" id="pendingOrderBadge">2</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('products')" data-roles="Admin,Owner,Staff">
+                    <i class="fas fa-cubes"></i>
+                    <span>Sản phẩm & Kho</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('customers')" data-roles="Admin,Owner,Staff">
+                    <i class="far fa-user"></i>
+                    <span>Khách hàng</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('reviews')" data-roles="Admin,Owner,Staff">
+                    <i class="far fa-star"></i>
+                    <span>Đánh giá khách hàng</span>
+                </a>
+
+                <div class="menu-category-label" id="menuLabelPOS">ĐIỂM BÁN HÀNG (POS)</div>
+                <a href="staff.html" target="_blank" class="menu-pos-link" style="color:var(--gold); background:rgba(197,160,89,0.08); border:1px dashed rgba(197,160,89,0.3); margin:4px 12px; border-radius:8px;">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Màn hình Thu Ngân POS</span>
+                    <span class="menu-badge" style="background:var(--gold); color:#000; font-weight:800;">POS</span>
+                </a>
+
+                <div class="menu-category-label" id="menuLabelSystem">HỆ THỐNG</div>
+                <a href="javascript:void(0)" onclick="switchTab('staff')" data-roles="Admin">
+                    <i class="fas fa-users-gear"></i>
+                    <span>Quản lý nhân sự</span>
+                    <span class="menu-badge" style="background:rgba(212,175,55,0.2); color:var(--gold); font-size:9.5px;">Admin</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('schedule')" data-roles="Admin,Owner,Staff">
+                    <i class="far fa-calendar-days"></i>
+                    <span>Lịch làm việc nhân viên</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('reports')" data-roles="Admin,Owner">
+                    <i class="far fa-file-lines"></i>
+                    <span>Báo cáo & Thống kê</span>
+                    <span class="menu-badge" style="background:rgba(91,80,246,0.2); color:#818cf8; font-size:9.5px;">Mật</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('settings')" data-roles="Admin,Owner,Staff">
+                    <i class="fas fa-sliders"></i>
+                    <span>Cài đặt hệ thống</span>
+                </a>
+
+                <div class="menu-category-label">TRÍ TUỆ NHÂN TẠO</div>
+                <a href="javascript:void(0)" onclick="toggleAIAgent()" class="menu-ai-link" data-roles="Admin,Owner,Staff">
+                    <i class="fas fa-robot"></i>
+                    <span>Trợ lý AI Copilot</span>
+                    <span class="menu-ai-badge">AI</span>
+                </a>
             </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-system-info">
+                    <span class="system-brand">
+                        <span class="system-moon-dot"></span>
+                        MoonLight POS
+                    </span>
+                    <span class="system-version">Version 2.0.0</span>
+                </div>
+                <a href="javascript:void(0)" class="btn-sidebar-logout" onclick="handleLogout()">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </div>
         </aside>
 
-        <main class="admin-content">
+        <!-- MAIN APP AREA -->
+        <div class="admin-main-area">
+            <!-- TOPBAR HEADER -->
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="btn-toggle-sidebar" onclick="toggleMobileSidebar()" title="Đóng/Mở menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="topbar-welcome-box">
+                        <h1 class="welcome-heading" id="pageTitleHeading">Tổng Quan</h1>
+                        <p class="welcome-sub" id="pageTitleSubtitle">Theo dõi chỉ số kinh doanh & hoạt động thời gian thực</p>
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="date-filter-pill" id="currentDatePill">
+                        <span>Hôm nay: <strong id="currentDateText">09/04/2026</strong></span>
+                        <i class="far fa-calendar-alt"></i>
+                    </div>
+                    <button class="btn-export-report" onclick="exportAdminReport()">
+                        <i class="fas fa-file-export"></i>
+                        <span>Xuất báo cáo</span>
+                    </button>
+                    <a href="staff.html" target="_blank" class="btn-pos-quick">
+                        <i class="fas fa-bolt"></i>
+                        <span>POS Nhanh</span>
+                    </a>
+                    <button class="btn-topbar-icon" title="Thông báo" onclick="showAdminNotifications()">
+                        <i class="far fa-bell"></i>
+                        <span class="notification-badge-red" id="topbarNotifBadge">3</span>
+                    </button>
+                    <button class="btn-topbar-icon" id="themeToggleBtn" onclick="toggleAdminTheme()" title="Chuyển đổi giao diện Sáng / Tối">
+                        <i class="fas fa-moon" id="themeToggleIcon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- INTERACTIVE ADMIN ONBOARDING TOUR BANNER -->
+            <div id="aiTourContainer" style="padding: 16px 24px 0 24px; display: none;"></div>
+
+            <!-- DYNAMIC CONTENT CONTAINER -->
+            <main class="admin-content" id="adminContent">
+                <!-- Nội dung các tab được render động ở đây -->
             </main>
+        </div>
     </div>
 
+    <!-- ==========================================================================
+         MODALS
+         ========================================================================== -->
+
+    <!-- 1. Modal Thêm / Chỉnh sửa Sản phẩm -->
+    <div class="admin-modal" id="productModal">
+        <div class="modal-content" style="max-width: 860px;">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fas fa-box-open"></i> Cấu hình sản phẩm</h3>
+                <button class="btn-close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="productForm" onsubmit="handleSaveProduct(event)" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+                <input type="hidden" id="editId">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tên sản phẩm *</label>
+                            <input type="text" id="pName" placeholder="Ví dụ: Áo Vest Italian Cut" required>
+                        </div>
+                        <div class="form-group">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label>Danh mục / Phân loại *</label>
+                                <span style="font-size:11px; color:var(--gold-light); cursor:pointer; font-weight:600;" onclick="toggleCustomCategoryInput()" title="Bấm để tự nhập tên danh mục tùy ý">+ Nhập danh mục khác</span>
+                            </div>
+                            <select id="pType" required onchange="handleCategorySelectChange(this)">
+                                <option value="ao-vest">Áo Vest / Blazer</option>
+                                <option value="so-mi">Áo Sơ Mi</option>
+                                <option value="quan-tay">Quần Tây / Quần Âu</option>
+                                <option value="ao-thun">Áo Thun / Polo</option>
+                                <option value="dong-ho">Đồng Hồ Luxury</option>
+                                <option value="giay-da">Giày Da / Loafer</option>
+                                <option value="phu-kien">Phụ Kiện & Thắt Lưng</option>
+                                <option value="custom">+ Tùy chỉnh danh mục mới...</option>
+                            </select>
+                            <div id="customCategoryWrap" style="display:none; margin-top:6px;">
+                                <input type="text" id="pCustomType" placeholder="Nhập tên danh mục mới của bạn..." style="width:100%; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Giá niêm yết (VNĐ) *</label>
+                            <input type="number" id="pBasePrice" placeholder="Ví dụ: 1500000" min="0" required oninput="calculateProductFinalPrice()">
+                        </div>
+                        <div class="form-group">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label>Giảm giá (%)</label>
+                                <span id="pFinalPriceBadge" style="font-size:11px; color:var(--gold-light); font-weight:700;"></span>
+                            </div>
+                            <input type="number" id="pSale" placeholder="0" min="0" max="99" oninput="calculateProductFinalPrice()">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Mô tả ngắn sản phẩm</label>
+                            <textarea id="pDesc" rows="2" placeholder="Chất liệu vải cao cấp, thiết kế form chuẩn Ý..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Quản lý Biến thể Màu & Kích thước (Trực quan & Dễ dùng) -->
+                    <div class="variant-section">
+                        <div class="variant-header">
+                            <div>
+                                <h4><i class="fas fa-palette" style="color:var(--primary-indigo);"></i> Phân Loại Màu Sắc & Kích Cỡ Kho Hàng</h4>
+                                <small style="color:var(--text-secondary); font-size:11.5px;">Bấm chọn nhanh các kích cỡ (S, M, L...) và điền số lượng tồn kho trực quan</small>
+                            </div>
+                            <button type="button" class="btn-primary" style="padding:7px 14px; font-size:12px;" onclick="addVariantCard()">
+                                <i class="fas fa-plus"></i> THÊM MÀU MỚI
+                            </button>
+                        </div>
+                        <div id="variantContainer">
+                            <!-- Cards biến thể được thêm động -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer chuẩn, nằm cố định dưới chân modal, khoảng cách cân đối -->
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeModal()">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary" style="padding:10px 24px;"><i class="fas fa-check"></i> LƯU SẢN PHẨM</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Modal Thêm Nhân viên mới -->
+    <div class="admin-modal" id="staffModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Thêm Nhân Sự Mới</h3>
+                <button class="btn-close-modal" onclick="closeStaffModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="staffForm" onsubmit="handleSaveStaff(event)">
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Họ và tên nhân sự *</label>
+                        <input type="text" id="sName" placeholder="Ví dụ: Nguyễn Văn A" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Tên đăng nhập *</label>
+                        <input type="text" id="sUser" placeholder="Viết liền không dấu (vd: nva_staff)" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Mật khẩu khởi tạo *</label>
+                        <input type="password" id="sPass" placeholder="Tối thiểu 6 ký tự" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label>Phân quyền vai trò *</label>
+                        <select id="sRole">
+                            <option value="Staff">Nhân viên (Bán hàng POS & Xử lý đơn)</option>
+                            <option value="Owner">Chủ cửa hàng (Xem báo cáo & Toàn quyền đơn)</option>
+                            <option value="Admin">Quản trị viên cấp cao (Admin hệ thống)</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer" style="padding: 15px 0 0 0;">
+                        <button type="button" class="btn-outline" onclick="closeStaffModal()">Hủy</button>
+                        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> TẠO TÀI KHOẢN</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Modal Chi Tiết Đơn Hàng -->
+    <div class="admin-modal" id="orderDetailModal">
+        <div class="modal-content" style="max-width: 780px;">
+            <div class="modal-header">
+                <h3 id="orderDetailTitle"><i class="fas fa-receipt"></i> Chi Tiết Đơn Hàng</h3>
+                <button class="btn-close-modal" onclick="closeOrderDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="orderDetailBody">
+                <!-- Nội dung đơn hàng chi tiết render ở đây -->
+            </div>
+            <div class="modal-footer" id="orderDetailFooter">
+                <!-- Nút thao tác động -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Modal In Hóa Đơn Bán Hàng -->
+    <div class="admin-modal" id="invoicePrintModal">
+        <div class="modal-content" style="max-width: 600px; background:#fff; color:#000;">
+            <div class="modal-header" style="border-bottom:1px solid #ddd; background:#f9f9f9;">
+                <h3 style="color:#000;"><i class="fas fa-print" style="color:var(--gold)"></i> Hóa Đơn Bán Hàng</h3>
+                <button class="btn-close-modal" onclick="closeInvoiceModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="invoicePrintArea" style="background:#fff; color:#000;">
+                <!-- Mẫu hóa đơn in -->
+            </div>
+            <div class="modal-footer" style="background:#f9f9f9; border-top:1px solid #ddd;">
+                <button type="button" class="btn-outline" style="color:#666; border-color:#ccc;" onclick="closeInvoiceModal()">Đóng</button>
+                <button type="button" class="btn-primary" onclick="triggerPrint()"><i class="fas fa-print"></i> IN HÓA ĐƠN</button>
+            </div>
+        </div>
+    </div>
+    <!-- 5. Modal Hộp Thoại Xác Nhận Hành Động (Thay thế window.confirm) -->
+    <div class="admin-modal" id="actionConfirmModal">
+        <div class="modal-content confirm-dialog-card" style="max-width: 440px; text-align: center;">
+            <div class="confirm-icon-wrapper" id="confirmIconWrapper">
+                <i class="fas fa-exclamation-triangle" id="confirmIcon"></i>
+            </div>
+            <h3 class="confirm-title" id="confirmTitle">Xác nhận thao tác</h3>
+            <p class="confirm-desc" id="confirmMessage">Bạn có chắc chắn muốn thực hiện hành động này không?</p>
+            <div class="confirm-btns-row">
+                <button type="button" class="btn-outline" id="confirmCancelBtn" onclick="closeConfirmModal()">HỦY BỎ</button>
+                <button type="button" class="btn-primary" id="confirmAcceptBtn">ĐỒNG Ý</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Modal Thông Báo Kết Quả Thành Công / Thất Bại (Popup Result Card) -->
+    <div class="admin-modal" id="statusResultModal">
+        <div class="modal-content status-result-card" style="max-width: 420px; text-align: center;">
+            <div class="result-icon-wrapper success" id="resultIconWrapper">
+                <i class="fas fa-check" id="resultIcon"></i>
+            </div>
+            <h3 class="result-title" id="resultTitle">Thao tác thành công!</h3>
+            <p class="result-desc" id="resultMessage">Dữ liệu đã được cập nhật vào hệ thống.</p>
+            <button type="button" class="btn-primary" id="resultCloseBtn" style="width: 100%; justify-content: center; margin-top: 20px;" onclick="closeResultModal()">
+                TIẾP TỤC
+            </button>
+        </div>
+    </div>
+
+    <!-- 7. Modal Bảng Container Phản Hồi Đánh Giá Khách Hàng (Shop Reply) -->
+    <div class="admin-modal" id="shopReplyModal">
+        <div class="modal-content" style="max-width: 600px; border-radius: 18px; background: linear-gradient(135deg, #161926, #10121d); border: 1px solid rgba(91, 80, 246, 0.35); box-shadow: 0 25px 60px rgba(0,0,0,0.6); overflow: hidden;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
+                <h3 id="shopReplyTitle" style="font-size: 15.5px; margin: 0; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-reply-all" style="color: var(--primary-indigo);"></i> PHẢN HỒI ĐÁNH GIÁ KHÁCH HÀNG
+                </h3>
+                <span class="close-btn" onclick="closeShopReplyModal()" style="font-size: 22px; color: #94a3b8; cursor: pointer; line-height: 1;">&times;</span>
+            </div>
+            <div class="modal-body" id="shopReplyBody" style="padding: 22px 24px;">
+                <!-- Dữ liệu được inject động -->
+            </div>
+            <div class="modal-footer" id="shopReplyFooter" style="padding: 16px 24px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0, 0, 0, 0.25);">
+                <button type="button" class="btn-outline" onclick="closeShopReplyModal()">HỦY BỎ</button>
+                <button type="button" class="btn-primary" onclick="saveShopReply()"><i class="fas fa-paper-plane"></i> GỬI PHẢN HỒI</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Modal Phân Công Ca Trực Nhân Viên (Staff Shift Scheduling Modal) -->
+    <div class="admin-modal" id="shiftScheduleModal">
+        <div class="modal-content" style="max-width: 580px; border-radius: 18px; background: linear-gradient(135deg, #161926, #10121d); border: 1px solid rgba(197, 160, 89, 0.35); box-shadow: 0 25px 60px rgba(0,0,0,0.7); overflow: hidden;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25);">
+                <h3 id="shiftModalTitle" style="font-size: 16px; margin: 0; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <i class="far fa-calendar-plus" style="color: var(--gold);"></i> PHÂN CÔNG CA TRỰC NHÂN VIÊN
+                </h3>
+                <span class="close-btn" onclick="closeShiftModal()" style="font-size: 22px; color: #94a3b8; cursor: pointer; line-height: 1;">&times;</span>
+            </div>
+            <form id="shiftScheduleForm" onsubmit="saveShiftSchedule(event)">
+                <input type="hidden" id="shiftEditId" value="">
+                <div class="modal-body" style="padding: 22px 24px; max-height: 75vh; overflow-y: auto;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                            Nhân viên phụ trách *
+                        </label>
+                        <select id="shiftStaffSelect" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                            <!-- Populated dynamically from accounts -->
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Ngày trực *
+                            </label>
+                            <input type="date" id="shiftDateInput" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Khung ca trực *
+                            </label>
+                            <select id="shiftTypeSelect" onchange="handleShiftTypeChange()" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                                <option value="morning">🌅 Ca Sáng (08:00 - 15:00)</option>
+                                <option value="evening">🌙 Ca Tối (15:00 - 22:00)</option>
+                                <option value="full">⚡ Cả Ngày (08:00 - 22:00)</option>
+                                <option value="custom">⏱ Giờ tùy chỉnh...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Giờ tùy chỉnh (nếu chọn custom) -->
+                    <div id="customShiftTimeBox" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.15);">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-muted);">Giờ bắt đầu</label>
+                            <input type="time" id="shiftCustomStart" value="09:00" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 13px;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-muted);">Giờ kết thúc</label>
+                            <input type="time" id="shiftCustomEnd" value="17:00" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 13px;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Vị trí công việc *
+                            </label>
+                            <select id="shiftRoleSelect" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                                <option value="Thu Ngân POS & Quầy">💳 Thu Ngân POS & Quầy</option>
+                                <option value="Tư Vấn Thời Trang & Khách VIP">👗 Tư Vấn Thời Trang & VIP</option>
+                                <option value="Quản Lý Showroom & Giám Sát">👑 Quản Lý Showroom & Giám Sát</option>
+                                <option value="Kiểm Kho & Đóng Gói Đơn Online">📦 Kiểm Kho & Đóng Gói</option>
+                                <option value="Hỗ Trợ Bán Hàng Tổng Hợp">✨ Hỗ Trợ Bán Hàng Tổng Hợp</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Trạng thái ca *
+                            </label>
+                            <select id="shiftStatusSelect" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                                <option value="scheduled">📅 Đã lên lịch</option>
+                                <option value="active">🟢 Đang trực ca</option>
+                                <option value="completed">✅ Đã hoàn thành</option>
+                                <option value="off">⛔ Nghỉ phép / Vắng</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                            Ghi chú phân công / Nhiệm vụ cụ thể
+                        </label>
+                        <textarea id="shiftNoteInput" rows="2" placeholder="Ví dụ: Kiểm kê bàn giao ca, đối soát tiền mặt cuối ngày, hỗ trợ tiếp khách VIP..." style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 13.5px; resize: none;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0, 0, 0, 0.25);">
+                    <button type="button" class="btn-outline" onclick="closeShiftModal()">HỦY</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-check"></i> XÁC NHẬN LỊCH TRỰC</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         MOONLIGHT AI COPILOT AGENT WIDGET
+         ========================================================================== -->
+    <!-- Floating AI Launcher Button -->
+    <button class="ai-agent-launcher" id="aiAgentLauncher" onclick="toggleAIAgent()" title="Mở Trợ lý AI MoonLight">
+        <div class="ai-launcher-icon">
+            <i class="fas fa-sparkles"></i>
+        </div>
+        <div class="ai-launcher-label">
+            <span class="ai-launcher-title">MoonLight AI</span>
+            <span class="ai-launcher-sub">Trợ lý điều hành</span>
+        </div>
+        <span class="ai-launcher-badge" id="aiAlertBadge">1</span>
+    </button>
+
+    <!-- AI Copilot Slide Drawer / Panel -->
+    <div class="ai-agent-drawer" id="aiAgentDrawer">
+        <!-- Drawer Header -->
+        <div class="ai-drawer-header">
+            <div class="ai-header-info">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                    <span class="ai-online-dot"></span>
+                </div>
+                <div>
+                    <h3 class="ai-title">MoonLight AI Copilot</h3>
+                    <p class="ai-subtitle">Trợ Lý Quản Trị & Điều Hành 24/7</p>
+                </div>
+            </div>
+            <div class="ai-header-actions">
+                <button class="ai-btn-icon" onclick="clearAIChat()" title="Làm mới hội thoại">
+                    <i class="fas fa-rotate-right"></i>
+                </button>
+                <button class="ai-btn-icon" onclick="toggleAIAgent()" title="Thu nhỏ">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Executive Daily Briefing Card -->
+        <div class="ai-briefing-card" id="aiBriefingCard">
+            <div class="ai-briefing-header">
+                <span><i class="fas fa-bolt" style="color:var(--gold);"></i> TÌNH HÌNH CỬA HÀNG</span>
+                <span class="ai-briefing-time" id="aiBriefingTime">Thời gian thực</span>
+            </div>
+            <div class="ai-briefing-stats" id="aiBriefingStats">
+                <!-- Dynamic snapshot stats -->
+            </div>
+        </div>
+
+        <!-- Quick Prompt Chips -->
+        <div class="ai-quick-chips">
+            <button class="ai-chip" onclick="askAIAgent('Hướng dẫn quản trị cho người mới')">
+                <i class="fas fa-graduation-cap"></i> Hướng dẫn
+            </button>
+            <button class="ai-chip" onclick="askAIAgent('Cập nhật nhật ký hoạt động gần đây')">
+                <i class="fas fa-history"></i> Nhật ký
+            </button>
+            <button class="ai-chip" onclick="askAIAgent('Báo cáo doanh thu và tình hình tài chính')">
+                <i class="fas fa-chart-line"></i> Doanh thu
+            </button>
+            <button class="ai-chip" onclick="askAIAgent('Kiểm tra hàng tồn kho và các món sắp hết')">
+                <i class="fas fa-box-archive"></i> Tồn kho
+            </button>
+            <button class="ai-chip" onclick="askAIAgent('Kiểm tra các đơn hàng đang chờ duyệt')">
+                <i class="fas fa-clock"></i> Đơn chờ
+            </button>
+            <button class="ai-chip" onclick="askAIAgent('Gợi ý chiến lược bán hàng hôm nay')">
+                <i class="fas fa-lightbulb"></i> Gợi ý
+            </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div class="ai-chat-body" id="aiChatMessages">
+            <!-- Messages rendered dynamically -->
+        </div>
+
+        <!-- Input Bar -->
+        <div class="ai-chat-footer">
+            <form class="ai-input-form" onsubmit="handleAISubmit(event)">
+                <input type="text" id="aiInputText" class="ai-input-field" placeholder="Hỏi doanh thu, kiểm tra kho, duyệt đơn..." autocomplete="off" />
+                <button type="submit" class="ai-btn-send" id="aiSendBtn" title="Gửi yêu cầu">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+            <div class="ai-footer-hint">
+                <span>💡 Gợi ý: Gõ <b>"hướng dẫn"</b>, <b>"nhật ký 1 tiếng trước"</b>, <b>"duyệt #DH1001"</b>, hoặc <b>"nhập thêm 10 cái"</b>.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer"></div>
+
+    <!-- External Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./js/admin.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            renderAdminStats(); // Mặc định vào Dashboard
-        });
-    </script>
 </body>
 </html>

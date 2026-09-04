@@ -6,8 +6,8 @@ const connectDB = async () => {
         const conn = await mongoose.connect(process.env.MONGO_URI);
         console.log(`✅ MongoDB đã kết nối: ${conn.connection.host}`);
     } catch (error) {
-        console.error(`❌ Lỗi kết nối MongoDB: ${error.message}`);
-        process.exit(1); // Dừng chương trình nếu lỗi
+        console.error(`❌ Cảnh báo kết nối MongoDB thất bại: ${error.message}`);
+        console.log(`⚠️ Hệ thống chuyển sang chế độ phục vụ Frontend và bộ nhớ dữ liệu Client.`);
     }
 };
 

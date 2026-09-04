@@ -2,30 +2,156 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đăng Nhập - Quản Trị Moon Light</title>
-    <link rel="stylesheet" href="./css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập Quản Trị - Moon Light Luxury</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/admin.css">
+    <style>
+        body {
+            background: #08080a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.08), transparent 45%),
+                radial-gradient(circle at 80% 80%, rgba(30, 30, 50, 0.4), transparent 50%);
+        }
+        .login-card {
+            background: #121319;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(212, 175, 55, 0.15);
+        }
+        .login-logo {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .login-sub {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 28px;
+        }
+        .demo-accounts {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .demo-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .demo-chips {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .demo-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--gold);
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .demo-btn:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+        }
+    </style>
 </head>
-<body style="background: #f4f4f4; display: flex; align-items: center; justify-content: center; height: 100vh;">
-    <div class="login-box" style="background: #fff; padding: 40px; border-radius: 8px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        <h2 style="text-align: center; margin-bottom: 30px;">HỆ THỐNG QUẢN TRỊ</h2>
-        <form id="loginForm">
-            <div class="form-group" style="margin-bottom: 20px;">
+<body>
+
+    <div class="login-card">
+        <div class="login-logo">
+            MOON<span class="highlight" style="color:var(--gold)">LIGHT</span>.
+        </div>
+        <div class="login-sub">Hệ Thống Quản Trị Trung Tâm</div>
+
+        <form id="loginForm" onsubmit="handleAdminLogin(event)">
+            <div class="form-group" style="margin-bottom: 18px;">
                 <label>Tài khoản</label>
-                <input type="text" id="username" placeholder="Nhập tài khoản..." required style="width:100%; padding:12px; border:1px solid #ddd;">
+                <input type="text" id="username" placeholder="Nhập tên đăng nhập..." required autofocus>
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 24px;">
                 <label>Mật khẩu</label>
-                <input type="password" id="password" placeholder="Nhập mật khẩu..." required style="width:100%; padding:12px; border:1px solid #ddd;">
+                <input type="password" id="password" placeholder="Nhập mật khẩu..." required>
             </div>
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 15px;">ĐĂNG NHẬP</button>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 14px; justify-content: center;">
+                <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP HỆ THỐNG
+            </button>
         </form>
+
+        <div class="demo-accounts">
+            <div class="demo-title"><i class="fas fa-key"></i> Tài khoản mẫu nhanh:</div>
+            <div class="demo-chips">
+                <button type="button" class="demo-btn" onclick="fillDemo('admin', '123')">Admin (123)</button>
+                <button type="button" class="demo-btn" onclick="fillDemo('owner', '123')">Owner (123)</button>
+                <button type="button" class="demo-btn" onclick="fillDemo('staff', '123')">Staff (123)</button>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="index.html" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Quay lại trang mua sắm
+            </a>
+        </div>
     </div>
-    <script src="./js/main.js"></script>
+
     <script>
-        document.getElementById('loginForm').onsubmit = (e) => {
+        function fillDemo(u, p) {
+            document.getElementById('username').value = u;
+            document.getElementById('password').value = p;
+        }
+
+        function handleAdminLogin(e) {
             e.preventDefault();
-            handleLogin();
-        };
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+
+            let accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || [
+                { id: 1, username: "admin", password: "123", name: "Quản Trị Viên", role: "Admin" },
+                { id: 2, username: "owner", password: "123", name: "Chủ Cửa Hàng", role: "Owner" },
+                { id: 3, username: "staff", password: "123", name: "Thu Ngân 01", role: "Staff" }
+            ];
+
+            const found = accounts.find(acc => acc.username.toLowerCase() === u.toLowerCase() && acc.password === p);
+            if (found) {
+                localStorage.setItem('moonlight_user', JSON.stringify(found));
+                // Ghi log đăng nhập
+                let logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
+                logs.unshift({
+                    time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
+                    user: `${found.name} (${found.role})`,
+                    action: "Đăng nhập",
+                    details: `Đăng nhập thành công vào phiên làm việc`
+                });
+                localStorage.setItem('moonlight_logs', JSON.stringify(logs));
+                window.location.href = 'admin.html';
+            } else {
+                alert("Tài khoản hoặc mật khẩu không chính xác!");
+            }
+        }
     </script>
 </body>
 </html>
