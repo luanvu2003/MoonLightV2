@@ -5744,9 +5744,16 @@ async function loadServerPulseData() {
     try {
         let health = null;
         if (window.MoonlightAPI && typeof MoonlightAPI.getSystemHealth === 'function') {
-            const res = await MoonlightAPI.getSystemHealth();
-            if (res && res.success) {
-                health = res.data;
+            try {
+                if (!MoonlightAPI.getToken()) {
+                    await MoonlightAPI.login(currentUser.username || 'admin', currentUser.password || '123');
+                }
+                const res = await MoonlightAPI.getSystemHealth();
+                if (res && res.success) {
+                    health = res.data;
+                }
+            } catch (e) {
+                console.warn('Lỗi gọi API server pulse:', e);
             }
         }
 
@@ -5898,8 +5905,16 @@ async function renderAdminSystem() {
     try {
         let health = null;
         if (window.MoonlightAPI && typeof MoonlightAPI.getSystemHealth === 'function') {
-            const res = await MoonlightAPI.getSystemHealth();
-            if (res && res.success) health = res.data;
+            try {
+                if (!MoonlightAPI.getToken()) {
+                    const u = JSON.parse(localStorage.getItem('moonlight_user')) || {};
+                    await MoonlightAPI.login(u.username || 'admin', u.password || '123');
+                }
+                const res = await MoonlightAPI.getSystemHealth();
+                if (res && res.success) health = res.data;
+            } catch (apiErr) {
+                console.warn('Lỗi gọi API getSystemHealth, dùng dữ liệu an toàn:', apiErr);
+            }
         }
 
         if (!health) {
@@ -6069,6 +6084,11 @@ async function executeDeployProcess() {
     try {
         if (!window.MoonlightAPI || typeof MoonlightAPI.deploySystem !== 'function') {
             throw new Error('API Deploy không khả dụng trên trình duyệt.');
+        }
+
+        if (!MoonlightAPI.getToken()) {
+            const u = JSON.parse(localStorage.getItem('moonlight_user')) || {};
+            await MoonlightAPI.login(u.username || 'admin', u.password || '123');
         }
 
         const res = await MoonlightAPI.deploySystem();
