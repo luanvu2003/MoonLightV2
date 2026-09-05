@@ -1135,80 +1135,42 @@ function renderProductsGrid(products) {
   const wishlist = getWishlistIds();
 
   grid.innerHTML = products.map((p, idx) => {
-    const isLiked = wishlist.includes(String(p._id || p.id));
-    const displayPrice = p.price ? p.price.toLocaleString('vi-VN') + 'đ' : 'Liên hệ';
-    const oldPrice = p.originalPrice && p.originalPrice > p.price ? p.originalPrice.toLocaleString('vi-VN') + 'đ' : '';
-    
-    // Thu thập danh sách size có sẵn
-    const allSizes = [];
-    if (p.variants) {
-      p.variants.forEach(v => {
-        if (v.sizes) {
-          v.sizes.forEach(s => {
-            if (!allSizes.includes(s.size)) allSizes.push(s.size);
-          });
-        }
-      });
-    }
-
-    const sizesHtml = allSizes.slice(0, 5).map(sz => {
-      const isAdvised = catalogState.selectedSizes.has(sz);
-      return `<span class="card-size-tag ${isAdvised ? 'highlight' : ''}">${sz}</span>`;
-    }).join('');
-
-    // Chấm màu
-    const swatchesHtml = (p.variants || []).slice(0, 4).map((v, vIdx) => `
-      <span class="swatch-dot ${vIdx === 0 ? 'active' : ''}" 
-            style="background: ${v.colorCode || '#000'};" 
-            title="${v.color || ''}"
-            onclick="switchCardVariant(event, '${p._id || p.id}', '${v.img || p.image}', '${v.price ? v.price.toLocaleString('vi-VN') + 'đ' : displayPrice}')">
-      </span>
-    `).join('');
-
-    let badgeClass = 'new';
-    let badgeText = p.badge || (p.salePercent ? `-${p.salePercent}%` : '');
-    if (p.badge === 'HOT') badgeClass = 'hot';
-    if (p.salePercent) badgeClass = 'sale';
+    const prodId = p._id || p.id;
+    const isLiked = wishlist.includes(String(prodId));
+    const firstVariant = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
+    const priceNum = (firstVariant && firstVariant.price) ? firstVariant.price : (p.price || 0);
+    const displayPrice = priceNum ? Number(priceNum).toLocaleString('vi-VN') + '₫' : 'Liên hệ';
+    const oldPrice = (p.originalPrice && p.originalPrice > priceNum) ? Number(p.originalPrice).toLocaleString('vi-VN') + '₫' : '';
+    const imgUrl = (firstVariant && firstVariant.img) ? firstVariant.img : (p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800');
+    const percent = p.salePercent || 0;
+    const iconClass = isLiked ? 'fas' : 'far';
+    const badgeText = percent > 0 ? `-${percent}%` : (p.badge ? p.badge : '');
 
     return `
-      <div class="catalog-card" data-id="${p._id || p.id}">
-        <div class="catalog-card-media">
-          ${badgeText ? `<span class="card-badge-tag ${badgeClass}">${badgeText}</span>` : ''}
-          <button class="btn-card-wishlist ${isLiked ? 'active' : ''}" onclick="toggleWishlist('${p._id || p.id}', event)" title="Lưu vào yêu thích">
-            <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-          </button>
-          <img src="${p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800'}" alt="${p.name}" class="catalog-card-img" id="img-${p._id || p.id}" loading="lazy">
-          
-          <div class="card-quick-actions">
-            <button class="btn-quick-action view" onclick="openQuickView('${p._id || p.id}')">
-              <i class="fas fa-eye"></i> Xem Nhanh
-            </button>
-            <button class="btn-quick-action cart" onclick="quickAddToCart('${p._id || p.id}')">
-              <i class="fas fa-bag-shopping"></i> Thêm Giỏ
-            </button>
+      <div class="product-card" data-id="${prodId}">
+          <div class="card-img">
+              ${badgeText ? `<span class="badge-sale">${badgeText}</span>` : ''}
+              <button class="wishlist-btn ${isLiked ? 'active' : ''}" onclick="toggleWishlist(this, '${prodId}')" title="Thêm vào yêu thích">
+                <i class="${iconClass} fa-heart"></i>
+              </button>
+              <img src="${imgUrl}" alt="${p.name}" loading="lazy">
+              <div class="card-overlay-btns">
+                  <a href="product.html?id=${prodId}" class="view-btn"><i class="far fa-eye"></i> XEM CHI TIẾT</a>
+                  <button class="add-btn" onclick="quickAddToCart('${prodId}')"><i class="fas fa-shopping-cart"></i> THÊM NHANH</button>
+              </div>
           </div>
-        </div>
-
-        <div class="catalog-card-body">
-          <div class="card-cat-gender">${p.gender === 'Nu' ? 'NỮ' : (p.gender === 'Nam' ? 'NAM' : 'UNISEX')} • ${formatCatName(p.category)}</div>
-          <a href="product.html?id=${p._id || p.id}" class="card-product-name" title="${p.name}">${p.name}</a>
-          
-          <div class="card-rating-sold">
-            <span class="card-stars"><i class="fas fa-star"></i> ${p.rating || 5.0}</span>
-            <span>•</span>
-            <span>Đã bán ${p.sold || 0}</span>
+          <div class="card-info">
+              <h3><a href="product.html?id=${prodId}" style="color:inherit; text-decoration:none;">${p.name}</a></h3>
+              <div class="product-meta">
+                  <span class="stars"><i class="fas fa-star" style="color:#f59e0b;"></i> ${p.rating || 5}</span>
+                  <span class="sold-count">Đã bán ${p.sold || 0}</span>
+              </div>
+              <div class="price">
+                  <span class="new-price">${displayPrice}</span>
+                  ${oldPrice ? `<span class="old-price">${oldPrice}</span>` : ''}
+              </div>
           </div>
-
-          ${swatchesHtml ? `<div class="card-swatches">${swatchesHtml}</div>` : ''}
-          ${sizesHtml ? `<div class="card-sizes-row">${sizesHtml}</div>` : ''}
-
-          <div class="card-price-row">
-            <span class="card-price-current" id="price-${p._id || p.id}">${displayPrice}</span>
-            ${oldPrice ? `<span class="card-price-original">${oldPrice}</span>` : ''}
-          </div>
-        </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
@@ -1650,19 +1612,18 @@ function toggleWishlist(arg1, arg2) {
   if (typeof renderWishlistSidebar === 'function') renderWishlistSidebar();
   if (typeof updateWishlistIcon === 'function') updateWishlistIcon();
   
-  // Cập nhật icon trái tim trên catalog card nếu có
-  const cardBtn = document.querySelector(`.catalog-card[data-id="${productId}"] .btn-card-wishlist`);
-  if (cardBtn) {
+  // Cập nhật icon trái tim trên product-card
+  const allCardBtns = document.querySelectorAll(`.product-card[data-id="${productId}"] .wishlist-btn, .catalog-card[data-id="${productId}"] .btn-card-wishlist`);
+  allCardBtns.forEach(cardBtn => {
     cardBtn.classList.toggle('active', !exists);
-    cardBtn.innerHTML = `<i class="${!exists ? 'fas' : 'far'} fa-heart"></i>`;
-  }
+    const icon = cardBtn.querySelector('i');
+    if (icon) icon.className = !exists ? 'fas fa-heart' : 'far fa-heart';
+  });
 
   if (clickedBtn) {
+    clickedBtn.classList.toggle('active', !exists);
     const icon = clickedBtn.querySelector('i');
-    if (icon) {
-      icon.className = !exists ? 'fas fa-heart' : 'far fa-heart';
-      clickedBtn.classList.toggle('active', !exists);
-    }
+    if (icon) icon.className = !exists ? 'fas fa-heart' : 'far fa-heart';
   }
 
   const badge = document.getElementById('wishlistBadge');

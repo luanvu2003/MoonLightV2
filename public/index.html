@@ -86,10 +86,14 @@
 
             <div class="product-grid" id="product-grid"></div>
 
-            <div class="load-more-container" id="loadMoreContainer" style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
-                <button class="btn-outline" onclick="loadMoreProducts()">XEM THÊM TRANG CHỦ</button>
-                <a href="catalog.html" class="btn-primary" style="text-decoration: none; padding: 12px 28px; display: inline-flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-sliders"></i> XEM TOÀN BỘ DANH MỤC & ĐO SIZE
+            <div class="load-more-container" id="loadMoreContainer">
+                <button class="btn-luxury-outline" onclick="loadMoreProducts()">
+                    <span>XEM THÊM TRANG CHỦ</span>
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+                <a href="catalog.html" class="btn-luxury-gold">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>XEM TOÀN BỘ DANH MỤC & ĐO SIZE</span>
                 </a>
             </div>
         </div>
@@ -105,7 +109,10 @@
             <div class="product-grid" id="best-seller-grid"></div>
 
             <div class="load-more-container" id="loadMoreBestSeller">
-                <button class="btn-outline" onclick="loadMoreBestSellers()">XEM THÊM BEST SELLER</button>
+                <button class="btn-luxury-outline" onclick="loadMoreBestSellers()">
+                    <span>XEM THÊM BEST SELLER</span>
+                    <i class="fas fa-arrow-down"></i>
+                </button>
             </div>
         </div>
     </section>
