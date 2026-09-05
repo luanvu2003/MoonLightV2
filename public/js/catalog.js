@@ -1735,24 +1735,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     wlBadge.style.display = wl.length > 0 ? 'flex' : 'none';
   }
 
-  // 2. Tải sản phẩm từ API Backend hoặc Fallback
-  let products = [];
+  // 2. Nạp dữ liệu sản phẩm NGAY LẬP TỨC (0ms) từ LocalStorage hoặc Fallback
+  // Giúp trang luôn hiển thị ngay, không bao giờ bị đơ spinner hay lỗi mạng!
+  let initialProducts = [];
   try {
-    if (window.MoonlightAPI && typeof MoonlightAPI.getProducts === 'function') {
-      const res = await MoonlightAPI.getProducts();
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        products = res.data;
+    const cached = localStorage.getItem('moonlight_products');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        initialProducts = parsed;
       }
     }
-  } catch (e) {
-    console.warn('MoonlightAPI không khả dụng, sử dụng CATALOG_FALLBACK_PRODUCTS:', e);
+  } catch (e) {}
+
+  if (initialProducts.length === 0) {
+    initialProducts = CATALOG_FALLBACK_PRODUCTS;
   }
 
-  if (products.length === 0) {
-    products = CATALOG_FALLBACK_PRODUCTS;
-  }
-
-  catalogState.allProducts = products;
+  catalogState.allProducts = initialProducts;
 
   // 3. Đọc tham số URL (Deep Linking)
   parseURLParams();
@@ -1834,6 +1834,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof renderWishlistSidebar === 'function') renderWishlistSidebar();
   if (typeof renderCartSidebar === 'function') renderCartSidebar();
 
-  // 6. Chạy render lần đầu
+  // 6. RENDER NGAY LẬP TỨC (0ms) để người dùng thấy ngay danh sách sản phẩm
   applyFiltersAndRender();
+
+  // 7. ĐỒNG BỘ DỮ LIỆU TỪ BACKEND REST API NGẦM (Background Sync)
+  try {
+    if (window.MoonlightAPI && typeof MoonlightAPI.getProducts === 'function') {
+      const res = await MoonlightAPI.getProducts();
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        catalogState.allProducts = res.data;
+        try {
+          localStorage.setItem('moonlight_products', JSON.stringify(res.data));
+        } catch (err) {}
+        // Cập nhật lại sản phẩm và số lượng danh mục mà không làm gián đoạn trải nghiệm
+        applyFiltersAndRender(false);
+      }
+    }
+  } catch (err) {
+    console.warn('[Catalog] Dữ liệu API đang tải hoặc dùng dữ liệu cục bộ:', err.message);
+  }
 });

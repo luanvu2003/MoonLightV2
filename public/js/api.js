@@ -41,6 +41,14 @@ const MoonlightAPI = {
     };
 
     try {
+      // Timeout 6 giây để không bao giờ bị treo vĩnh viễn khi VPS đang reload
+      let controller = null;
+      if (!opts.signal && typeof AbortController !== 'undefined') {
+        controller = new AbortController();
+        opts.signal = controller.signal;
+        setTimeout(() => controller.abort(), 6000);
+      }
+
       const res = await fetch(url, opts);
       const data = await res.json().catch(() => null);
 
