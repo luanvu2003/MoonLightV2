@@ -562,41 +562,83 @@
     </div>
 
     <!-- Modal 1-Click Deploy & Restart VPS -->
+    <!-- Modal 1-Click Deploy & Restart VPS với Tiến Trình Chi Tiết -->
     <div class="admin-modal" id="deployModal">
-        <div class="modal-content" style="max-width: 620px; border: 1px solid rgba(223, 186, 115, 0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.7); background: var(--bg-card);">
-            <div class="modal-header" style="background: linear-gradient(135deg, rgba(223,186,115,0.1), rgba(15,23,42,0.8));">
-                <h3 style="color: #fff; display: flex; align-items: center; gap: 8px;"><i class="fas fa-rocket" style="color:var(--gold);"></i> Đồng Bộ Git & Khởi Động Lại VPS</h3>
+        <div class="modal-content" style="max-width: 680px; border: 1px solid rgba(223, 186, 115, 0.35); box-shadow: 0 25px 60px rgba(0,0,0,0.8); background: var(--bg-card);">
+            <div class="modal-header" style="background: linear-gradient(135deg, rgba(223,186,115,0.15), rgba(15,23,42,0.9));">
+                <h3 style="color: #fff; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-rocket" style="color:var(--gold);"></i>
+                    <span>Trung Tâm Triển Khai & Đồng Bộ Git (VPS)</span>
+                </h3>
                 <button class="btn-close-modal" onclick="closeDeployModal()">&times;</button>
             </div>
             <div class="modal-body" id="deployModalBody" style="padding: 24px;">
-                <div id="deployIntroView" style="text-align: center; margin-bottom: 20px;">
-                    <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(223,186,115,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 28px; color: var(--gold); border: 1px solid rgba(223,186,115,0.3);">
+                <div id="deployIntroView" style="text-align: center; margin-bottom: 22px;">
+                    <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(223,186,115,0.12); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; color: var(--gold); border: 1px solid rgba(223,186,115,0.3); box-shadow: 0 0 25px rgba(223,186,115,0.2);">
                         <i class="fas fa-cloud-arrow-down"></i>
                     </div>
-                    <h4 style="color: #fff; margin: 0 0 8px 0; font-size: 17px; font-weight: 700;">Cập Nhật Mã Nguồn Từ GitHub</h4>
-                    <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.6;">
-                        Hệ thống sẽ tự động thực hiện trên VPS: <br>
-                        <b style="color:var(--gold);">1. git pull</b> kéo code mới nhất ➔ <b style="color:var(--gold);">2. npm run build</b> biên dịch ➔ <b style="color:var(--gold);">3. pm2 reload</b> tải lại ứng dụng không gián đoạn (Zero-Downtime).
+                    <h4 style="color: #fff; margin: 0 0 8px 0; font-size: 18px; font-weight: 700;">Đồng Bộ Mã Nguồn Mới Nhất Từ GitHub</h4>
+                    <p style="color: #94a3b8; font-size: 13.5px; margin: 0; line-height: 1.6;">
+                        Hệ thống sẽ tự động cập nhật VPS của bạn mà không gián đoạn khách hàng. Bấm nút bên dưới để bắt đầu.
                     </p>
                 </div>
 
-                <div id="deployProgressBox" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div class="deploy-spinner" style="width: 24px; height: 24px; border: 3px solid rgba(223,186,115,0.2); border-top-color: var(--gold); border-radius: 50%; animation: deploySpin 1s linear infinite;"></div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 13px; color: #fff;" id="deployStepText">Đang kéo mã nguồn mới từ GitHub...</div>
-                            <div style="font-size: 11px; color: #64748b;">Vui lòng chờ khoảng 5 - 10 giây</div>
+                <!-- Bảng 4 Bước Tiến Trình Trực Quan -->
+                <div id="deployProgressBox" style="display: none; margin-bottom: 20px;">
+                    <!-- Thanh phần trăm và đồng hồ bấm giờ -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: #fff; font-size: 13px;" id="deployStepTitle">Đang chuẩn bị cập nhật...</span>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-family: monospace; font-size: 12px; color: var(--gold);" id="deployStopwatch"><i class="far fa-clock"></i> 00:00s</span>
+                            <span style="font-weight: 800; font-size: 14px; color: var(--gold);" id="deployPercentText">0%</span>
                         </div>
                     </div>
-                    <pre id="deployConsoleOutput" style="background: #090d16; color: #34d399; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 140px; overflow-y: auto; margin: 0; white-space: pre-wrap; border: 1px solid rgba(255,255,255,0.05);"></pre>
+
+                    <!-- Thanh Progress Bar Phát Sáng -->
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div id="deployProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #dfba73, #f59e0b); border-radius: 4px; transition: width 0.3s ease; box-shadow: 0 0 12px rgba(223,186,115,0.5);"></div>
+                    </div>
+
+                    <!-- 4 Khối Bước Cụ Thể -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+                        <div class="deploy-step-chip" id="stepChip1" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.3s;">
+                            <div class="step-icon" id="stepIcon1" style="font-size: 16px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-download"></i></div>
+                            <div style="font-size: 11px; font-weight: 600; color: #cbd5e1;">1. Kéo Git</div>
+                            <small id="stepStatus1" style="font-size: 10px; color: #64748b;">Chờ xử lý</small>
+                        </div>
+                        <div class="deploy-step-chip" id="stepChip2" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.3s;">
+                            <div class="step-icon" id="stepIcon2" style="font-size: 16px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-cubes-stacked"></i></div>
+                            <div style="font-size: 11px; font-weight: 600; color: #cbd5e1;">2. Thư viện</div>
+                            <small id="stepStatus2" style="font-size: 10px; color: #64748b;">Chờ xử lý</small>
+                        </div>
+                        <div class="deploy-step-chip" id="stepChip3" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.3s;">
+                            <div class="step-icon" id="stepIcon3" style="font-size: 16px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-gears"></i></div>
+                            <div style="font-size: 11px; font-weight: 600; color: #cbd5e1;">3. Build Code</div>
+                            <small id="stepStatus3" style="font-size: 10px; color: #64748b;">Chờ xử lý</small>
+                        </div>
+                        <div class="deploy-step-chip" id="stepChip4" style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.3s;">
+                            <div class="step-icon" id="stepIcon4" style="font-size: 16px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-rotate"></i></div>
+                            <div style="font-size: 11px; font-weight: 600; color: #cbd5e1;">4. Tải Lại PM2</div>
+                            <small id="stepStatus4" style="font-size: 10px; color: #64748b;">Chờ xử lý</small>
+                        </div>
+                    </div>
+
+                    <!-- Khung Console Terminal -->
+                    <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; margin-bottom: 8px; font-size: 11px; color: #64748b;">
+                            <span><i class="fas fa-terminal"></i> Terminal Live Log</span>
+                            <span id="terminalDotPulse" style="display: inline-flex; align-items: center; gap: 4px; color: #10b981;"><span class="user-status-dot" style="background:#10b981; width:6px; height:6px;"></span> Đang nhận dữ liệu...</span>
+                        </div>
+                        <pre id="deployConsoleOutput" style="background: transparent; color: #34d399; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 11.5px; line-height: 1.5; padding: 0; max-height: 150px; overflow-y: auto; margin: 0; white-space: pre-wrap;"></pre>
+                    </div>
                 </div>
 
                 <div id="deployResultSummary" style="display: none; margin-bottom: 20px;"></div>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end;" id="deployActionButtons">
                     <button type="button" class="btn-outline" onclick="closeDeployModal()" id="btnCancelDeploy">Hủy Bỏ</button>
-                    <button type="button" class="btn-primary" onclick="executeDeployProcess()" id="btnConfirmDeploy" style="background: linear-gradient(135deg, #dfba73, #c5a059); color: #000; font-weight: 700; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
-                        <i class="fas fa-play"></i> BẮT ĐẦU CẬP NHẬT
+                    <button type="button" class="btn-primary" onclick="executeDeployProcess()" id="btnConfirmDeploy" style="background: linear-gradient(135deg, #dfba73, #c5a059); color: #000; font-weight: 700; border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-play"></i> BẮT ĐẦU CẬP NHẬT NGAY
                     </button>
                 </div>
             </div>

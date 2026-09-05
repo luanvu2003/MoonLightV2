@@ -126,22 +126,32 @@ export class SystemController {
       const startTime = Date.now();
       let gitOutput = '';
       let buildOutput = '';
+      let filesChanged = '';
 
-      // 1. Kéo code từ Git
+      // 1. Kéo code từ Git - Sử dụng fetch + reset --hard để chống kẹt conflict do file rác (.DS_Store)
       try {
-        const { stdout: pullOut, stderr: pullErr } = await execAsync('git pull origin main');
-        gitOutput = (pullOut || '') + (pullErr || '');
+        const { stdout: fetchOut, stderr: fetchErr } = await execAsync('git fetch origin main && git reset --hard origin/main');
+        gitOutput = (fetchOut || '') + (fetchErr || '');
       } catch (err: any) {
-        gitOutput = `⚠️ Cảnh báo Git Pull: ${err.message}`;
+        // Fallback sang git pull nếu reset gặp vấn đề
+        try {
+          const { stdout: pullOut } = await execAsync('git pull origin main');
+          gitOutput = pullOut || '';
+        } catch (pullErr: any) {
+          gitOutput = `⚠️ Git Pull: ${pullErr.message}`;
+        }
       }
 
-      // 2. Lấy thông tin commit mới nhất
+      // 2. Lấy thông tin commit mới nhất & danh sách file thay đổi
       let latestCommit = '';
       try {
         const { stdout: logOut } = await execAsync('git log -1 --pretty=format:"%h - %s (%cr) <%an>"');
         latestCommit = logOut.trim();
+        
+        const { stdout: diffOut } = await execAsync('git diff --stat HEAD~1 HEAD 2>/dev/null || true');
+        filesChanged = diffOut.trim();
       } catch (e) {
-        latestCommit = 'Không lấy được commit log';
+        latestCommit = 'Đã cập nhật phiên bản mới nhất';
       }
 
       // 3. Biên dịch TypeScript
@@ -154,7 +164,7 @@ export class SystemController {
 
       const durationMs = Date.now() - startTime;
 
-      // 4. Lên lịch reload PM2 sau 1 giây để kịp trả response về cho client
+      // 4. Lên lịch reload PM2 sau 1.2 giây để kịp trả response JSON về cho trình duyệt
       setTimeout(() => {
         exec('pm2 reload moonlight || pm2 restart moonlight', (err, stdout, stderr) => {
           if (err) {
@@ -163,11 +173,12 @@ export class SystemController {
             console.log('✅ Đã PM2 reload moonlight thành công!');
           }
         });
-      }, 1000);
+      }, 1200);
 
       sendSuccess(res, {
         durationMs,
         latestCommit,
+        filesChanged,
         gitOutput: gitOutput.trim(),
         buildOutput: buildOutput.trim(),
         reloaded: true

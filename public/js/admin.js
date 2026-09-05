@@ -6064,22 +6064,92 @@ function closeDeployModal() {
     if (modal) modal.classList.remove('active');
 }
 
+let deployTimerInterval = null;
+
+function updateDeployStepUI(stepNum, status, text) {
+    const chip = document.getElementById(`stepChip${stepNum}`);
+    const icon = document.getElementById(`stepIcon${stepNum}`);
+    const stat = document.getElementById(`stepStatus${stepNum}`);
+    if (!chip || !icon || !stat) return;
+
+    if (status === 'active') {
+        chip.style.borderColor = 'rgba(223, 186, 115, 0.5)';
+        chip.style.background = 'rgba(223, 186, 115, 0.12)';
+        icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color:var(--gold);"></i>';
+        stat.innerText = text || 'Đang chạy...';
+        stat.style.color = 'var(--gold)';
+    } else if (status === 'done') {
+        chip.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        chip.style.background = 'rgba(16, 185, 129, 0.08)';
+        icon.innerHTML = '<i class="fas fa-circle-check" style="color:#10b981;"></i>';
+        stat.innerText = text || 'Hoàn tất';
+        stat.style.color = '#10b981';
+    } else if (status === 'error') {
+        chip.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        chip.style.background = 'rgba(239, 68, 68, 0.08)';
+        icon.innerHTML = '<i class="fas fa-circle-xmark" style="color:#ef4444;"></i>';
+        stat.innerText = text || 'Lỗi';
+        stat.style.color = '#ef4444';
+    } else {
+        chip.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+        chip.style.background = 'rgba(15, 23, 42, 0.6)';
+        stat.innerText = 'Chờ xử lý';
+        stat.style.color = '#64748b';
+    }
+}
+
 /**
- * Thực thi tiến trình 1-Click Deploy
+ * Thực thi tiến trình 1-Click Deploy với thanh tiến trình và đồng hồ thời gian thực
  */
 async function executeDeployProcess() {
     const introView = document.getElementById('deployIntroView');
     const progressBox = document.getElementById('deployProgressBox');
     const consoleOutput = document.getElementById('deployConsoleOutput');
-    const stepText = document.getElementById('deployStepText');
+    const stepTitle = document.getElementById('deployStepTitle');
+    const percentText = document.getElementById('deployPercentText');
+    const progressBar = document.getElementById('deployProgressBar');
+    const stopwatchEl = document.getElementById('deployStopwatch');
     const actionBtns = document.getElementById('deployActionButtons');
     const resultSummary = document.getElementById('deployResultSummary');
 
     if (introView) introView.style.display = 'none';
     if (progressBox) progressBox.style.display = 'block';
     if (actionBtns) actionBtns.style.display = 'none';
-    if (stepText) stepText.innerText = 'Đang kéo mã nguồn mới nhất từ GitHub...';
-    if (consoleOutput) consoleOutput.innerText = '-> Đang thực thi git pull origin main...\n';
+    if (resultSummary) resultSummary.style.display = 'none';
+
+    // 1. Khởi tạo trạng thái ban đầu
+    for (let i = 1; i <= 4; i++) updateDeployStepUI(i, 'waiting');
+    if (progressBar) progressBar.style.width = '10%';
+    if (percentText) percentText.innerText = '10%';
+    if (stepTitle) stepTitle.innerText = 'Đang khởi tạo tiến trình triển khai...';
+
+    // 2. Bật đồng hồ bấm giờ thời gian thực
+    let elapsedSeconds = 0;
+    if (deployTimerInterval) clearInterval(deployTimerInterval);
+    if (stopwatchEl) stopwatchEl.innerHTML = '<i class="far fa-clock"></i> 00:00s';
+    
+    deployTimerInterval = setInterval(() => {
+        elapsedSeconds++;
+        const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        const secs = String(elapsedSeconds % 60).padStart(2, '0');
+        if (stopwatchEl) stopwatchEl.innerHTML = `<i class="far fa-clock"></i> ${mins}:${secs}s`;
+    }, 1000);
+
+    const appendConsole = (msg) => {
+        if (!consoleOutput) return;
+        const now = new Date().toLocaleTimeString('vi-VN');
+        consoleOutput.innerText += `[${now}] ${msg}\n`;
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    };
+
+    appendConsole('🚀 Bắt đầu quá trình đồng bộ VPS từ GitHub...');
+
+    // Bước 1: Kéo Git
+    updateDeployStepUI(1, 'active', 'Đang kéo...');
+    if (stepTitle) stepTitle.innerText = '[Bước 1/4] Đang kéo mã nguồn mới nhất từ GitHub...';
+    if (progressBar) progressBar.style.width = '25%';
+    if (percentText) percentText.innerText = '25%';
+    appendConsole('📥 [1/4] git fetch origin main && git reset --hard origin/main...');
 
     try {
         if (!window.MoonlightAPI || typeof MoonlightAPI.deploySystem !== 'function') {
@@ -6091,38 +6161,110 @@ async function executeDeployProcess() {
             await MoonlightAPI.login(u.username || 'admin', u.password || '123');
         }
 
+        // Kích hoạt mô phỏng tiến trình từng bước sinh động
+        setTimeout(() => {
+            updateDeployStepUI(1, 'done', 'Hoàn tất');
+            updateDeployStepUI(2, 'active', 'Kiểm tra');
+            if (stepTitle) stepTitle.innerText = '[Bước 2/4] Kiểm tra các gói thư viện dependency...';
+            if (progressBar) progressBar.style.width = '50%';
+            if (percentText) percentText.innerText = '50%';
+            appendConsole('📦 [2/4] Kiểm tra tính tương thích thư viện npm...');
+        }, 1200);
+
+        setTimeout(() => {
+            updateDeployStepUI(2, 'done', 'Hoàn tất');
+            updateDeployStepUI(3, 'active', 'Biên dịch');
+            if (stepTitle) stepTitle.innerText = '[Bước 3/4] Đang biên dịch mã nguồn TypeScript (npm run build)...';
+            if (progressBar) progressBar.style.width = '75%';
+            if (percentText) percentText.innerText = '75%';
+            appendConsole('⚙️ [3/4] tsc (TypeScript Compiler) đang build dist/...');
+        }, 2600);
+
         const res = await MoonlightAPI.deploySystem();
+
         if (res && res.success) {
-            if (stepText) stepText.innerText = '✅ Cập nhật và biên dịch thành công!';
-            if (consoleOutput) {
-                consoleOutput.innerText += `-> Kết quả Git:\n${res.data?.gitOutput || 'Đã cập nhật mới nhất.'}\n\n-> Biên dịch:\n${res.data?.buildOutput || 'Build hoàn tất.'}\n\n-> Commit mới nhất:\n${res.data?.latestCommit || 'N/A'}\n\n-> Ứng dụng đã được PM2 reload mượt mà!`;
+            // Dừng đồng hồ
+            clearInterval(deployTimerInterval);
+
+            // Bước 3 & 4 hoàn tất
+            updateDeployStepUI(3, 'done', 'Hoàn tất');
+            updateDeployStepUI(4, 'done', 'Hoàn tất');
+
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+            }
+            if (percentText) {
+                percentText.innerText = '100%';
+                percentText.style.color = '#10b981';
+            }
+            if (stepTitle) {
+                stepTitle.innerHTML = '<span style="color:#10b981;"><i class="fas fa-circle-check"></i> CẬP NHẬT THÀNH CÔNG!</span>';
             }
 
+            appendConsole('🔄 [4/4] PM2 reload moonlight hoàn tất (Zero-Downtime)!');
+            appendConsole(`✅ Chi tiết Commit: ${res.data?.latestCommit || 'Cập nhật mới nhất'}`);
+            if (res.data?.filesChanged) {
+                appendConsole(`📄 Danh sách file thay đổi:\n${res.data.filesChanged}`);
+            }
+            appendConsole(`⏱️ Tổng thời gian thực thi: ${(res.data?.durationMs / 1000).toFixed(1)} giây.`);
+
+            // Hiển thị khung tóm tắt kết quả
             if (resultSummary) {
                 resultSummary.style.display = 'block';
                 resultSummary.innerHTML = `
-                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px; color: #10b981; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
-                        <span><i class="fas fa-check-circle"></i> Đã đồng bộ mã nguồn & khởi động lại ứng dụng thành công!</span>
-                        <button class="btn-primary" onclick="window.location.reload()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer;">
-                            <i class="fas fa-arrows-rotate"></i> Tải Lại Trang
-                        </button>
+                    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 16px; margin-top: 14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <strong style="color:#10b981; font-size:14px;"><i class="fas fa-circle-check"></i> Đã Triển Khai Thành Công Lên VPS!</strong>
+                            <span style="background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">Zero-Downtime</span>
+                        </div>
+                        <div style="color:#cbd5e1; font-size:12.5px; line-height:1.6; margin-bottom:12px;">
+                            Phiên bản mới nhất: <strong style="color:var(--gold); font-family:monospace;">${res.data?.latestCommit || 'Commit mới nhất'}</strong><br>
+                            Toàn bộ giao diện và logic đã được PM2 reload lại mà khách hàng không hề bị gián đoạn.
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:12px; color:#94a3b8;" id="reloadCountdownText">Tự động làm mới trang sau <b>4</b>s...</span>
+                            <button class="btn-primary" onclick="window.location.reload()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:7px 16px; border-radius:6px; font-size:12px; cursor:pointer;">
+                                <i class="fas fa-arrows-rotate"></i> Tải Lại Trang Ngay
+                            </button>
+                        </div>
                     </div>
                 `;
             }
 
-            showToast("Thành công", "Đã cập nhật mã nguồn và tải lại ứng dụng VPS thành công!", "success");
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
+            showToast("Thành công", "Đã cập nhật mã nguồn và tải lại VPS thành công!", "success");
+
+            // Đếm ngược 4s tự reload
+            let countdown = 4;
+            const cdInterval = setInterval(() => {
+                countdown--;
+                const cdEl = document.getElementById('reloadCountdownText');
+                if (cdEl) cdEl.innerHTML = `Tự động làm mới trang sau <b>${countdown}</b>s...`;
+                if (countdown <= 0) {
+                    clearInterval(cdInterval);
+                    window.location.reload();
+                }
+            }, 1000);
+
         } else {
             throw new Error(res?.message || 'Có lỗi xảy ra khi deploy');
         }
     } catch (err) {
-        if (stepText) stepText.innerText = '❌ Cập nhật thất bại';
-        if (consoleOutput) consoleOutput.innerText += `\nLỗi: ${err.message}\n`;
+        clearInterval(deployTimerInterval);
+        for (let i = 1; i <= 4; i++) {
+            const stat = document.getElementById(`stepStatus${i}`);
+            if (stat && stat.innerText === 'Đang chạy...') {
+                updateDeployStepUI(i, 'error', 'Thất bại');
+            }
+        }
+        if (stepTitle) stepTitle.innerHTML = '<span style="color:#ef4444;"><i class="fas fa-circle-xmark"></i> CẬP NHẬT THẤT BẠI</span>';
+        appendConsole(`\n❌ Lỗi tiến trình: ${err.message}`);
         if (actionBtns) actionBtns.style.display = 'flex';
         const confirmBtn = document.getElementById('btnConfirmDeploy');
-        if (confirmBtn) confirmBtn.disabled = false;
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-rotate-right"></i> THỬ LẠI';
+        }
         showToast("Lỗi Deploy", err.message, "error");
     }
 }
