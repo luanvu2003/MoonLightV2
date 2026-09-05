@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css?v=2.7">
-    <link rel="stylesheet" href="./css/catalog.css?v=2.7">
+    <link rel="stylesheet" href="./css/style.css?v=3.0">
+    <link rel="stylesheet" href="./css/catalog.css?v=3.0">
 </head>
 <body class="catalog-body">
 
@@ -275,11 +275,11 @@
                 </div>
                 <div class="price-inputs-row">
                     <div class="price-input-box">
-                        <input type="number" id="priceMinInput" placeholder="Từ..." min="0">
+                        <input type="number" id="priceMinInput" placeholder="Từ..." min="0" onkeydown="if(event.key==='Enter')applyCustomPriceInput()">
                     </div>
-                    <span style="color: #64748b;">-</span>
+                    <span class="price-separator">-</span>
                     <div class="price-input-box">
-                        <input type="number" id="priceMaxInput" placeholder="Đến..." min="0">
+                        <input type="number" id="priceMaxInput" placeholder="Đến..." min="0" onkeydown="if(event.key==='Enter')applyCustomPriceInput()">
                     </div>
                     <button type="button" class="btn-apply-price" onclick="applyCustomPriceInput()">Lọc</button>
                 </div>
@@ -314,28 +314,31 @@
 
                 <div class="toolbar-right">
                     <!-- Ô tìm kiếm trực tiếp -->
-                    <div style="position: relative;">
-                        <input type="text" id="catalogSearchInput" placeholder="Tìm kiếm nhanh..." style="padding: 8px 12px 8px 30px; background: rgba(0,0,0,0.3); border: 1px solid var(--catalog-border); border-radius: 8px; color: #fff; font-size: 12.5px; width: 150px;">
-                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #64748b;"></i>
+                    <div class="catalog-search-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="catalogSearchInput" placeholder="Tìm kiếm nhanh..." autocomplete="off">
                     </div>
 
                     <!-- Dropdown sắp xếp -->
                     <div class="sort-select-wrap">
-                        <span>Sắp xếp:</span>
-                        <select class="sort-select" id="catalogSortSelect">
-                            <option value="featured">Đặc Sắc Nhất</option>
-                            <option value="price-asc">Giá: Thấp Đến Cao</option>
-                            <option value="price-desc">Giá: Cao Đến Thấp</option>
-                            <option value="newest">Mới Nhất</option>
-                            <option value="bestseller">Bán Chạy Nhất</option>
-                            <option value="rating">Đánh Giá Cao</option>
-                        </select>
+                        <label for="catalogSortSelect" class="sort-label">Sắp xếp:</label>
+                        <div class="sort-select-custom">
+                            <select class="sort-select" id="catalogSortSelect">
+                                <option value="featured">Đặc Sắc Nhất</option>
+                                <option value="price-asc">Giá: Thấp Đến Cao</option>
+                                <option value="price-desc">Giá: Cao Đến Thấp</option>
+                                <option value="newest">Mới Nhất</option>
+                                <option value="bestseller">Bán Chạy Nhất</option>
+                                <option value="rating">Đánh Giá Cao</option>
+                            </select>
+                            <i class="fas fa-chevron-down sort-arrow"></i>
+                        </div>
                     </div>
 
                     <!-- Bộ chuyển đổi view mode -->
                     <div class="view-mode-switch">
                         <button type="button" class="view-btn active" data-view="grid-3" onclick="setViewMode('grid-3')" title="Hiển thị 3 cột">
-                            <i class="fas fa-grid-2"></i>
+                            <i class="fas fa-table-cells-large"></i>
                         </button>
                         <button type="button" class="view-btn" data-view="grid-4" onclick="setViewMode('grid-4')" title="Hiển thị 4 cột">
                             <i class="fas fa-table-cells"></i>
@@ -523,9 +526,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="./js/api.js?v=2.9"></script>
-    <script src="./js/shop.js?v=2.9"></script>
-    <script src="./js/catalog.js?v=2.9"></script>
+    <script src="./js/api.js?v=3.0"></script>
+    <script src="./js/shop.js?v=3.0"></script>
+    <script src="./js/catalog.js?v=3.0"></script>
     <script>
         window.addEventListener('load', () => {
             if (typeof dismissPreloader === 'function') dismissPreloader();

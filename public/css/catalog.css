@@ -474,68 +474,151 @@ body.catalog-body {
 
 .price-preset-btn {
     text-align: left;
-    padding: 7px 10px;
+    padding: 8px 12px;
     font-size: 12.5px;
-    background: rgba(255, 255, 255, 0.02);
+    font-weight: 500;
+    background: #ffffff;
     border: 1px solid var(--catalog-border);
     border-radius: 6px;
-    color: var(--catalog-text-muted);
+    color: #475569;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .price-preset-btn:hover {
-    border-color: var(--catalog-border-gold);
+    border-color: var(--catalog-gold);
     color: var(--catalog-text-main);
+    background: #fdfaf3;
 }
 
 .price-preset-btn.active {
-    background: rgba(223, 186, 115, 0.12);
+    background: rgba(212, 175, 55, 0.12);
+    border-color: var(--catalog-gold);
+    color: #b8860b;
+    font-weight: 700;
+}
+
+[data-theme="dark"] .price-preset-btn {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--catalog-text-muted);
+}
+
+[data-theme="dark"] .price-preset-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--catalog-text-main);
+}
+
+[data-theme="dark"] .price-preset-btn.active {
+    background: rgba(223, 186, 115, 0.15);
     border-color: var(--catalog-gold);
     color: var(--catalog-gold);
-    font-weight: 700;
 }
 
 .price-inputs-row {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 4px;
 }
 
 .price-input-box {
     flex: 1;
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .price-input-box input {
     width: 100%;
-    padding: 8px 8px 8px 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--catalog-border);
-    border-radius: 6px;
+    height: 38px;
+    padding: 0 10px;
+    background: #ffffff;
+    border: 1.5px solid var(--catalog-border);
+    border-radius: 8px;
     color: var(--catalog-text-main);
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    font-family: inherit;
     box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    -moz-appearance: textfield;
 }
 
-[data-theme="light"] .price-input-box input {
-    background: #ffffff;
+.price-input-box input::-webkit-outer-spin-button,
+.price-input-box input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.price-input-box input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.price-input-box input:hover {
+    border-color: #cbd5e1;
 }
 
 .price-input-box input:focus {
     border-color: var(--catalog-gold);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
     outline: none;
 }
 
+.price-separator {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 14px;
+    user-select: none;
+}
+
 .btn-apply-price {
-    padding: 8px 12px;
-    background: var(--catalog-gold);
+    height: 38px;
+    padding: 0 16px;
+    background: linear-gradient(135deg, #d4af37 0%, #c49925 100%);
     border: none;
-    border-radius: 6px;
-    color: #000;
+    border-radius: 8px;
+    color: #0f172a;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
     cursor: pointer;
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.btn-apply-price:hover {
+    background: linear-gradient(135deg, #dfba73 0%, #d4af37 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.btn-apply-price:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(212, 175, 55, 0.2);
+}
+
+[data-theme="dark"] .price-input-box input {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .price-input-box input:focus {
+    border-color: var(--catalog-gold);
+    background: #162033;
+    box-shadow: 0 0 0 3px rgba(223, 186, 115, 0.2);
+}
+
+[data-theme="dark"] .btn-apply-price {
+    background: linear-gradient(135deg, #dfba73 0%, #c49925 100%);
+    color: #090d16;
 }
 
 /* Style / Fit Pills */
@@ -623,64 +706,213 @@ body.catalog-body {
 .toolbar-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
+    flex-wrap: wrap;
 }
 
+/* Search Box in Toolbar */
+.catalog-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.catalog-search-wrap .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #94a3b8;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+#catalogSearchInput {
+    height: 38px;
+    width: 175px;
+    padding: 0 12px 0 34px;
+    background: #ffffff;
+    border: 1.5px solid var(--catalog-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--catalog-text-main);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    box-sizing: border-box;
+}
+
+#catalogSearchInput::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+#catalogSearchInput:hover {
+    border-color: #cbd5e1;
+}
+
+#catalogSearchInput:focus {
+    width: 215px;
+    border-color: var(--catalog-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.catalog-search-wrap:focus-within .search-icon {
+    color: var(--catalog-gold);
+}
+
+/* Sort Select in Toolbar */
 .sort-select-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.sort-label {
     font-size: 13px;
+    font-weight: 600;
     color: var(--catalog-text-muted);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.sort-select-custom {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
 }
 
 .sort-select {
-    padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--catalog-border);
+    height: 38px;
+    padding: 0 34px 0 14px;
+    background: #ffffff;
+    border: 1.5px solid var(--catalog-border);
     border-radius: 8px;
     color: var(--catalog-text-main);
     font-size: 13px;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
     outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
-[data-theme="light"] .sort-select {
-    background: #ffffff;
+.sort-select:hover {
+    border-color: #cbd5e1;
 }
 
 .sort-select:focus {
     border-color: var(--catalog-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
 }
 
+.sort-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: #64748b;
+    pointer-events: none;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sort-select-custom:focus-within .sort-arrow {
+    color: var(--catalog-gold);
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* View Mode Switch in Toolbar */
 .view-mode-switch {
     display: flex;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 8px;
+    gap: 3px;
+    background: #f1f5f9;
+    border-radius: 10px;
     padding: 3px;
     border: 1px solid var(--catalog-border);
 }
 
 .view-btn {
-    width: 32px;
+    width: 34px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    color: var(--catalog-text-muted);
-    border-radius: 6px;
+    color: #64748b;
+    border-radius: 7px;
     cursor: pointer;
     font-size: 13px;
     transition: all 0.2s ease;
 }
 
+.view-btn:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.7);
+}
+
 .view-btn.active {
-    background: var(--catalog-gold);
-    color: #000;
+    background: linear-gradient(135deg, #d4af37 0%, #c49925 100%);
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.35);
+}
+
+/* Dark Mode Toolbar Adjustments */
+[data-theme="dark"] #catalogSearchInput {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] #catalogSearchInput:focus {
+    border-color: var(--catalog-gold);
+    background: #162033;
+    box-shadow: 0 0 0 3px rgba(223, 186, 115, 0.2);
+}
+
+[data-theme="dark"] .sort-select {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .sort-select:focus {
+    border-color: var(--catalog-gold);
+    background: #162033;
+    box-shadow: 0 0 0 3px rgba(223, 186, 115, 0.2);
+}
+
+[data-theme="dark"] .sort-arrow {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .view-mode-switch {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .view-btn {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .view-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .view-btn.active {
+    background: linear-gradient(135deg, #dfba73 0%, #c49925 100%);
+    color: #090d16;
 }
 
 /* Active Filter Chips Bar */
