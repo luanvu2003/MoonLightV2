@@ -4,7 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moon Light - Luxury Fashion</title>
+    <title>Moon Light - Luxury Fashion & Menswear</title>
+    <meta name="description" content="Moon Light - Thương hiệu thời trang nam cao cấp phong cách tối giản, sang trọng và lịch lãm. Vest, sơ mi lụa, áo polo, quần âu định hình đẳng cấp quý ông.">
+    <meta name="keywords" content="Moon Light, thời trang nam, vest nam, áo sơ mi, polo cao cấp, quần âu, phong cách quý ông">
+    <meta property="og:title" content="Moon Light - Luxury Fashion & Menswear">
+    <meta property="og:description" content="Khám phá bộ sưu tập thời trang nam thượng hạng, tinh tế và đẳng cấp từ Moon Light.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,6 +18,17 @@
 </head>
 
 <body>
+
+    <!-- Luxury Page Preloader -->
+    <div class="moonlight-preloader" id="pagePreloader">
+        <div class="preloader-content">
+            <div class="preloader-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="preloader-tagline">LUXURY FASHION & MENSWEAR</div>
+            <div class="preloader-bar-wrap">
+                <div class="preloader-bar"></div>
+            </div>
+        </div>
+    </div>
 
     <div class="search-overlay" id="searchOverlay">
         <div class="search-content">
@@ -31,32 +48,32 @@
                 <a href="#shop">Cửa hàng</a>
 
                 <div class="nav-item dropdown">
-                    <a href="#" class="dropdown-toggle">Bộ sưu tập <i class="fas fa-chevron-down"></i></a>
+                    <a href="javascript:void(0)" class="dropdown-toggle">Bộ sưu tập <i class="fas fa-chevron-down"></i></a>
                     <ul class="dropdown-menu">
                         <li class="has-submenu">
-                            <a href="#">Thời trang Nam <i class="fas fa-chevron-right"></i></a>
+                            <a href="javascript:void(0)" onclick="filterShopCategory('nam')">Thời trang Nam <i class="fas fa-chevron-right"></i></a>
                             <ul class="submenu">
                                 <li class="group-title">ÁO NAM</li>
-                                <li><a href="#">Áo Vest / Blazer</a></li>
-                                <li><a href="#">Áo Sơ Mi Luxury</a></li>
-                                <li><a href="#">Áo Polo Premium</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('vest')">Áo Vest / Blazer</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('somi')">Áo Sơ Mi Luxury</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('polo')">Áo Polo Premium</a></li>
                                 <li class="group-title">QUẦN NAM</li>
-                                <li><a href="#">Quần Âu Slimfit</a></li>
-                                <li><a href="#">Quần Jeans</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('quan')">Quần Âu Slimfit</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('quan')">Quần Jeans</a></li>
                             </ul>
                         </li>
                         <li class="has-submenu">
-                            <a href="#">Thời trang Nữ <i class="fas fa-chevron-right"></i></a>
+                            <a href="javascript:void(0)" onclick="filterShopCategory('nu')">Thời trang Nữ <i class="fas fa-chevron-right"></i></a>
                             <ul class="submenu">
                                 <li class="group-title">ÁO NỮ</li>
-                                <li><a href="#">Áo Croptop</a></li>
-                                <li><a href="#">Sơ mi lụa</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('ao')">Áo Croptop</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('somi')">Sơ mi lụa</a></li>
                                 <li class="group-title">VÁY & ĐẦM</li>
-                                <li><a href="#">Chân váy</a></li>
-                                <li><a href="#">Đầm dạ hội</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('vay')">Chân váy</a></li>
+                                <li><a href="javascript:void(0)" onclick="filterShopCategory('dam')">Đầm dạ hội</a></li>
                             </ul>
                         </li>
-                        <li><a href="#">Phụ kiện</a></li>
+                        <li><a href="javascript:void(0)" onclick="filterShopCategory('phukien')">Phụ kiện</a></li>
                     </ul>
                 </div>
 
@@ -64,13 +81,17 @@
             </nav>
 
             <div class="nav-icons">
-                <div class="icon-item" onclick="toggleSearch()"><i class="fas fa-search"></i></div>
-                <div class="icon-item" onclick="toggleCart()">
+                <div class="icon-item" onclick="toggleSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></div>
+                <div class="icon-item" onclick="toggleWishlistSidebar()" title="Danh sách yêu thích">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlistBadge">0</span>
+                </div>
+                <div class="icon-item" onclick="toggleCart()" title="Giỏ hàng">
                     <i class="fas fa-shopping-bag"></i>
-                    <span class="badge">0</span>
+                    <span class="badge" id="cartBadge">0</span>
                 </div>
             </div>
-            <div class="mobile-toggle"><i class="fas fa-bars"></i></div>
+            <div class="mobile-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
         </div>
     </header>
 
@@ -90,6 +111,15 @@
                 <h2>SẢN PHẨM MỚI</h2>
                 <div class="underline"></div>
                 <p class="sub-heading">Những thiết kế mới nhất vừa cập bến Moon Light</p>
+            </div>
+
+            <!-- Bộ lọc danh mục nhanh -->
+            <div class="shop-filter-bar">
+                <button class="shop-filter-chip active" data-cat="all" onclick="filterShopCategory('all')">Tất cả</button>
+                <button class="shop-filter-chip" data-cat="vest" onclick="filterShopCategory('vest')">Áo Vest & Blazer</button>
+                <button class="shop-filter-chip" data-cat="somi" onclick="filterShopCategory('somi')">Sơ Mi Lụa</button>
+                <button class="shop-filter-chip" data-cat="polo" onclick="filterShopCategory('polo')">Áo Polo</button>
+                <button class="shop-filter-chip" data-cat="quan" onclick="filterShopCategory('quan')">Quần Âu</button>
             </div>
 
             <div class="product-grid" id="product-grid"></div>
@@ -244,9 +274,9 @@
         <div class="container newsletter-content reveal">
             <h2>ĐĂNG KÝ NHẬN ƯU ĐÃI</h2>
             <p>Nhập email để nhận mã giảm giá <strong>10%</strong> cho đơn hàng đầu tiên.</p>
-            <form class="newsletter-form">
-                <input type="email" placeholder="Nhập địa chỉ email của bạn...">
-                <button type="button">ĐĂNG KÝ</button>
+            <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+                <input type="email" placeholder="Nhập địa chỉ email của bạn..." required>
+                <button type="submit">ĐĂNG KÝ</button>
             </form>
         </div>
     </section>
@@ -261,7 +291,7 @@
         <div class="cart-footer">
             <div class="cart-total-box"><span class="total-label">TỔNG CỘNG:</span><span class="total-amount"
                     id="cartTotal">0₫</span></div>
-            <button class="checkout-btn">THANH TOÁN</button>
+            <button class="checkout-btn" onclick="goToCheckout()">THANH TOÁN</button>
         </div>
     </div>
 
@@ -296,10 +326,10 @@
                 <div class="footer-col">
                     <h3>HỖ TRỢ KHÁCH HÀNG</h3>
                     <ul class="footer-links">
-                        <li><a href="#">Hướng dẫn chọn size</a></li>
-                        <li><a href="#">Chính sách đổi trả</a></li>
-                        <li><a href="#">Chính sách bảo mật</a></li>
-                        <li><a href="#">Tra cứu đơn hàng</a></li>
+                        <li><a href="javascript:void(0)" onclick="openSizeGuideModal()">Hướng dẫn chọn size</a></li>
+                        <li><a href="javascript:void(0)" onclick="openPolicyModal()">Chính sách đổi trả</a></li>
+                        <li><a href="javascript:void(0)" onclick="openPolicyModal('privacy')">Chính sách bảo mật</a></li>
+                        <li><a href="javascript:void(0)" onclick="openOrderTrackingModal()">Tra cứu đơn hàng</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -318,6 +348,104 @@
         </div>
     </footer>
 
+    <!-- Overlay menu mobile -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Modal Tra Cứu Đơn Hàng -->
+    <div class="boutique-modal-overlay" id="orderTrackingModal" onclick="if(event.target === this) closeBoutiqueModal('orderTrackingModal')">
+        <div class="boutique-modal-card">
+            <div class="boutique-modal-header">
+                <h3><i class="fas fa-search-location"></i> TRA CỨU ĐƠN HÀNG</h3>
+                <button class="boutique-modal-close" onclick="closeBoutiqueModal('orderTrackingModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="boutique-modal-body">
+                <p style="color:#777; font-size:13.5px; margin-bottom:16px;">Nhập mã đơn hàng hoặc số điện thoại đặt hàng để kiểm tra tiến trình giao hàng theo thời gian thực.</p>
+                <form onsubmit="handleTrackOrderSubmit(event)">
+                    <div style="display:flex; gap:8px; margin-bottom:16px;">
+                        <input type="text" id="trackOrderInput" placeholder="VD: ML-8899 hoặc 0912345678" required style="flex:1; padding:12px 14px; border:1px solid #ddd; border-radius:4px; font-size:14px; outline:none;">
+                        <button type="submit" class="btn-primary" style="padding:12px 20px; white-space:nowrap;">TRA CỨU</button>
+                    </div>
+                </form>
+                <div id="trackingResultBox" style="display:none; margin-top:16px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hướng Dẫn Chọn Size -->
+    <div class="boutique-modal-overlay" id="sizeGuideModal" onclick="if(event.target === this) closeBoutiqueModal('sizeGuideModal')">
+        <div class="boutique-modal-card" style="max-width: 620px;">
+            <div class="boutique-modal-header">
+                <h3><i class="fas fa-ruler-combined"></i> HƯỚNG DẪN CHỌN SIZE QUÝ ÔNG</h3>
+                <button class="boutique-modal-close" onclick="closeBoutiqueModal('sizeGuideModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="boutique-modal-body">
+                <p style="color:#777; font-size:13.5px; margin-bottom:14px;">Bảng thông số kích thước tiêu chuẩn cho các dòng sản phẩm Moon Light:</p>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center;">
+                        <thead>
+                            <tr style="background:#111; color:#fff;">
+                                <th style="padding:10px;">Size</th>
+                                <th style="padding:10px;">Chiều cao (cm)</th>
+                                <th style="padding:10px;">Cân nặng (kg)</th>
+                                <th style="padding:10px;">Vòng ngực (cm)</th>
+                                <th style="padding:10px;">Vòng eo (cm)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:10px; font-weight:600;">S</td>
+                                <td>160 - 167</td>
+                                <td>50 - 58</td>
+                                <td>86 - 90</td>
+                                <td>72 - 76</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #eee; background:#fafafa;">
+                                <td style="padding:10px; font-weight:600;">M</td>
+                                <td>168 - 173</td>
+                                <td>59 - 66</td>
+                                <td>91 - 95</td>
+                                <td>77 - 81</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:10px; font-weight:600;">L</td>
+                                <td>174 - 179</td>
+                                <td>67 - 75</td>
+                                <td>96 - 100</td>
+                                <td>82 - 86</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #eee; background:#fafafa;">
+                                <td style="padding:10px; font-weight:600;">XL</td>
+                                <td>180 - 186</td>
+                                <td>76 - 84</td>
+                                <td>101 - 106</td>
+                                <td>87 - 92</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top:14px; font-size:12.5px; color:#888; font-style:italic;">* Nếu bạn nằm ở khoảng giữa hai kích thước, vui lòng liên hệ tư vấn viên qua Hotline 0393.203.037 để được may đo hoặc chọn size phù hợp nhất.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chính Sách Đổi Trả & Bảo Mật -->
+    <div class="boutique-modal-overlay" id="policyModal" onclick="if(event.target === this) closeBoutiqueModal('policyModal')">
+        <div class="boutique-modal-card">
+            <div class="boutique-modal-header">
+                <h3 id="policyModalTitle"><i class="fas fa-shield-alt"></i> CHÍNH SÁCH MOON LIGHT</h3>
+                <button class="boutique-modal-close" onclick="closeBoutiqueModal('policyModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="boutique-modal-body" id="policyModalBody" style="line-height:1.7; font-size:13.5px; color:#444;">
+                <p><strong>1. Thời gian đổi hàng:</strong> Hỗ trợ đổi hàng trong vòng 30 ngày kể từ ngày nhận hàng thành công.</p>
+                <p><strong>2. Điều kiện áp dụng:</strong> Sản phẩm còn nguyên tem mác, hộp đựng, chưa qua sử dụng, giặt là hoặc can thiệp chỉnh sửa.</p>
+                <p><strong>3. Chi phí vận chuyển đổi hàng:</strong> Moon Light hỗ trợ 100% phí ship 2 chiều nếu lỗi từ nhà sản xuất hoặc giao sai mẫu.</p>
+                <p><strong>4. Cam kết bảo mật:</strong> Thông tin cá nhân của quý khách được mã hóa an toàn và chỉ sử dụng cho mục đích giao hàng và chăm sóc dịch vụ.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./js/api.js"></script>
     <script src="./js/shop.js"></script>
 </body>
 

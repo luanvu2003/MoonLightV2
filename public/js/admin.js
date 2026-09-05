@@ -1931,8 +1931,11 @@ function renderAdminProducts() {
                                 </td>
                                 <td style="text-align:center;">
                                     <div class="action-btn-group">
+                                        <a href="product.html?id=${p.id || p._id}" target="_blank" class="adm-btn" style="background:rgba(212,175,55,0.15); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Xem sản phẩm ngoài trang bán hàng">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
                                         ${canCreateProduct ? `
-                                            <button class="adm-btn btn-gold" title="Chỉnh sửa sản phẩm" onclick="editProduct(${p.id})">
+                                            <button class="adm-btn btn-gold" title="Chỉnh sửa sản phẩm" onclick="editProduct('${p.id || p._id}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
                                         ` : `
@@ -1941,7 +1944,7 @@ function renderAdminProducts() {
                                             </button>
                                         `}
                                         ${canDeleteProduct ? `
-                                            <button class="adm-btn btn-cancel-ord" title="Xóa sản phẩm" onclick="deleteProduct(${p.id})">
+                                            <button class="adm-btn btn-cancel-ord" title="Xóa sản phẩm" onclick="deleteProduct('${p.id || p._id}')">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         ` : ''}
@@ -2573,26 +2576,35 @@ function handleSaveProduct(e) {
 
     const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
 
+    const existingIndex = id ? products.findIndex(p => String(p.id) === String(id) || String(p._id) === String(id)) : -1;
+    const existing = existingIndex !== -1 ? products[existingIndex] : null;
+
+    const cleanId = id 
+      ? (/^\d+$/.test(String(id)) ? parseInt(id) : String(id)) 
+      : (existing ? (existing.id || existing._id) : Date.now());
+
     const productData = {
-        id: id ? parseInt(id) : Date.now(),
+        id: cleanId,
+        _id: existing?._id || (typeof cleanId === 'string' && cleanId.length === 24 ? cleanId : undefined),
         name,
         type,
+        category: type,
         price: basePrice,
         salePercent,
         desc,
+        description: desc,
+        image: variants[0]?.img || '',
         stock: totalStock,
-        sold: id ? (products.find(p => p.id == id)?.sold || 0) : 0,
+        sold: existing ? (existing.sold || 0) : 0,
+        rating: existing?.rating || 5.0,
         variants
     };
 
-    if (id) {
-        const index = products.findIndex(p => p.id == id);
-        if (index !== -1) {
-            products[index] = productData;
-            logActivity("Sửa sản phẩm", `Cập nhật thông tin [${name}]`);
-            showToast("Thành công", `Đã cập nhật sản phẩm "${name}"`, "success");
-            showResultModal({ type: 'success', title: 'Cập Nhật Thành Công!', message: `Sản phẩm "${name}" đã được cập nhật giá và kho size mới.` });
-        }
+    if (existingIndex !== -1) {
+        products[existingIndex] = { ...existing, ...productData };
+        logActivity("Sửa sản phẩm", `Cập nhật thông tin [${name}]`);
+        showToast("Thành công", `Đã cập nhật sản phẩm "${name}"`, "success");
+        showResultModal({ type: 'success', title: 'Cập Nhật Thành Công!', message: `Sản phẩm "${name}" đã được cập nhật màu sắc, giá và kho size mới.` });
     } else {
         products.unshift(productData);
         logActivity("Thêm sản phẩm", `Thêm mới sản phẩm [${name}]`);
@@ -2601,6 +2613,36 @@ function handleSaveProduct(e) {
     }
 
     localStorage.setItem('moonlight_products', JSON.stringify(products));
+
+    // Đồng bộ lên Backend REST API
+    if (window.MoonlightAPI) {
+        try {
+            const apiPayload = {
+                name: productData.name,
+                category: productData.type,
+                price: productData.price,
+                salePercent: productData.salePercent,
+                description: productData.desc,
+                image: productData.image,
+                stock: productData.stock,
+                variants: productData.variants
+            };
+            const targetId = existing?._id || existing?.id || productData._id || productData.id;
+            if (existingIndex !== -1 && targetId) {
+                window.MoonlightAPI.updateProduct(targetId, apiPayload).catch(e => console.warn('[API Update]', e.message));
+            } else {
+                window.MoonlightAPI.createProduct(apiPayload).then(res => {
+                    if (res && res.data && res.data._id) {
+                        productData._id = res.data._id;
+                        localStorage.setItem('moonlight_products', JSON.stringify(products));
+                    }
+                }).catch(e => console.warn('[API Create]', e.message));
+            }
+        } catch (apiErr) {
+            console.warn('[Admin API Sync]:', apiErr.message);
+        }
+    }
+
     closeModal();
     renderAdminProducts();
 }
@@ -2612,10 +2654,10 @@ function editProduct(id) {
         return;
     }
 
-    const p = products.find(x => x.id === id);
+    const p = products.find(x => String(x.id) === String(id) || String(x._id) === String(id));
     if (!p) return;
 
-    document.getElementById('editId').value = p.id;
+    document.getElementById('editId').value = p.id || p._id;
     document.getElementById('pName').value = p.name;
     
     // Gán danh mục chuẩn xác hoặc kích hoạt ô tùy biến
@@ -2659,7 +2701,7 @@ function deleteProduct(id) {
         return;
     }
 
-    const p = products.find(x => x.id === id);
+    const p = products.find(x => String(x.id) === String(id) || String(x._id) === String(id));
     if (!p) return;
 
     showConfirmDialog({
@@ -2669,12 +2711,19 @@ function deleteProduct(id) {
         isDanger: true,
         confirmText: "XÓA NGAY",
         onConfirm: () => {
-            products = products.filter(x => x.id !== id);
+            products = products.filter(x => String(x.id) !== String(id) && String(x._id) !== String(id));
             localStorage.setItem('moonlight_products', JSON.stringify(products));
             logActivity("Xóa sản phẩm", `Đã xóa sản phẩm [${p.name}]`);
             showToast("Đã xóa", `Sản phẩm "${p.name}" đã được gỡ bỏ`, "info");
             showResultModal({ type: 'success', title: 'Đã Xóa Thành Công!', message: `Sản phẩm "${p.name}" đã được loại bỏ khỏi kho hàng.` });
             renderAdminProducts();
+
+            if (window.MoonlightAPI) {
+                const targetId = p._id || p.id;
+                if (targetId) {
+                    window.MoonlightAPI.deleteProduct(targetId).catch(err => console.warn('Delete product API:', err.message));
+                }
+            }
         }
     });
 }

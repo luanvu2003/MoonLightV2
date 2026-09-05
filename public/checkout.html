@@ -10,13 +10,31 @@
 </head>
 <body>
 
+    <!-- Luxury Page Preloader -->
+    <div class="moonlight-preloader" id="pagePreloader">
+        <div class="preloader-content">
+            <div class="preloader-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="preloader-tagline">LUXURY FASHION & MENSWEAR</div>
+            <div class="preloader-bar-wrap">
+                <div class="preloader-bar"></div>
+            </div>
+        </div>
+    </div>
+
     <header id="navbar" style="background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position:relative;">
-        <div class="container nav-container">
+        <div class="container nav-container" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="logo">
                 <h1><a href="index.html" style="text-decoration:none; color:#000;">MOON<span class="highlight">LIGHT</span>.</a></h1>
             </div>
             <div class="checkout-step">
-                <span>GIỎ HÀNG</span> <i class="fas fa-chevron-right"></i> <span style="color:var(--gold); font-weight:700">THANH TOÁN</span>
+                <a href="index.html#shop" style="color:#64748b; text-decoration:none; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:5px;"><i class="fas fa-shopping-bag"></i> GIỎ HÀNG</a> 
+                <i class="fas fa-chevron-right" style="font-size:10px; margin:0 8px; color:#cbd5e1;"></i> 
+                <span style="color:var(--gold, #dfba73); font-weight:700; font-size:13px;">THANH TOÁN</span>
+            </div>
+            <div>
+                <a href="index.html#shop" class="header-back-btn" title="Tiếp tục xem các mẫu thiết kế khác">
+                    <i class="fas fa-arrow-left"></i> <span>Tiếp tục mua hàng</span>
+                </a>
             </div>
         </div>
     </header>
@@ -75,6 +93,7 @@
         <div class="container"><p>&copy; 2026 Moon Light. All rights reserved.</p></div>
     </footer>
 
+    <script src="./js/api.js"></script>
     <script src="./js/shop.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => { renderCheckoutPage(); });

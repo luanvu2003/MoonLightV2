@@ -10,6 +10,17 @@
 </head>
 <body>
 
+    <!-- Luxury Page Preloader -->
+    <div class="moonlight-preloader" id="pagePreloader">
+        <div class="preloader-content">
+            <div class="preloader-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="preloader-tagline">LUXURY FASHION & MENSWEAR</div>
+            <div class="preloader-bar-wrap">
+                <div class="preloader-bar"></div>
+            </div>
+        </div>
+    </div>
+
     <header id="navbar" style="background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div class="container nav-container">
             <div class="logo">
@@ -23,7 +34,7 @@
             <div class="nav-icons" style="color:#000;">
                 <div class="icon-item" onclick="toggleCart()">
                     <i class="fas fa-shopping-bag"></i>
-                    <span class="badge">0</span>
+                    <span class="badge" id="cartBadge">0</span>
                 </div>
             </div>
         </div>
@@ -100,7 +111,7 @@
         <div class="cart-items" id="cartItems"></div>
         <div class="cart-footer">
             <div class="cart-total-box"><span class="total-label">TỔNG CỘNG:</span><span class="total-amount" id="cartTotal">0₫</span></div>
-            <button class="checkout-btn">THANH TOÁN</button>
+            <button class="checkout-btn" onclick="goToCheckout()">THANH TOÁN</button>
         </div>
     </div>
 
@@ -132,10 +143,10 @@
                 <div class="footer-col">
                     <h3>HỖ TRỢ KHÁCH HÀNG</h3>
                     <ul class="footer-links">
-                        <li><a href="#">Hướng dẫn chọn size</a></li>
-                        <li><a href="#">Chính sách đổi trả</a></li>
-                        <li><a href="#">Chính sách bảo mật</a></li>
-                        <li><a href="#">Tra cứu đơn hàng</a></li>
+                        <li><a href="index.html">Hướng dẫn chọn size</a></li>
+                        <li><a href="index.html">Chính sách đổi trả</a></li>
+                        <li><a href="index.html">Chính sách bảo mật</a></li>
+                        <li><a href="index.html">Tra cứu đơn hàng</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -154,6 +165,7 @@
         </div>
     </footer>
 
+    <script src="./js/api.js"></script>
     <script src="./js/shop.js"></script>
 </body>
 </html>

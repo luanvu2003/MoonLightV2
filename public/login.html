@@ -118,17 +118,37 @@
         </div>
     </div>
 
+    <script src="./js/api.js"></script>
     <script>
         function fillDemo(u, p) {
             document.getElementById('username').value = u;
             document.getElementById('password').value = p;
         }
 
-        function handleAdminLogin(e) {
+        async function handleAdminLogin(e) {
             e.preventDefault();
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
 
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG XÁC THỰC...';
+            submitBtn.disabled = true;
+
+            try {
+                // Ưu tiên xác thực qua Backend API Node.js/TypeScript
+                if (window.MoonlightAPI) {
+                    const res = await window.MoonlightAPI.login(u, p);
+                    if (res && res.success) {
+                        window.location.href = 'admin.html';
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("API login thất bại, kiểm tra tài khoản offline:", err.message);
+            }
+
+            // Fallback: Kiểm tra tài khoản cục bộ
             let accounts = JSON.parse(localStorage.getItem('moonlight_accounts')) || [
                 { id: 1, username: "admin", password: "123", name: "Quản Trị Viên", role: "Admin" },
                 { id: 2, username: "owner", password: "123", name: "Chủ Cửa Hàng", role: "Owner" },
@@ -138,18 +158,19 @@
             const found = accounts.find(acc => acc.username.toLowerCase() === u.toLowerCase() && acc.password === p);
             if (found) {
                 localStorage.setItem('moonlight_user', JSON.stringify(found));
-                // Ghi log đăng nhập
                 let logs = JSON.parse(localStorage.getItem('moonlight_logs')) || [];
                 logs.unshift({
                     time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
                     user: `${found.name} (${found.role})`,
                     action: "Đăng nhập",
-                    details: `Đăng nhập thành công vào phiên làm việc`
+                    details: `Đăng nhập thành công (Offline fallback)`
                 });
                 localStorage.setItem('moonlight_logs', JSON.stringify(logs));
                 window.location.href = 'admin.html';
             } else {
                 alert("Tài khoản hoặc mật khẩu không chính xác!");
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         }
     </script>
