@@ -919,6 +919,8 @@ const CATALOG_FALLBACK_PRODUCTS = [
 const catalogState = {
   allProducts: [],
   filteredProducts: [],
+  displayedLimit: 20,
+  limitStep: 20,
   gender: 'all',          // 'all' | 'Nam' | 'Nu' | 'Unisex'
   category: 'all',        // 'all' | 'vest' | 'somi' | 'polo' | 'aothun' | 'quanau' | 'quanjeans' | 'dam' | 'vay' | 'phukien'
   minPrice: null,
@@ -1031,7 +1033,10 @@ function updateAdvisorUI() {
 // ==========================================================================
 // 4. ENGINE LỌC & SẮP XẾP SẢN PHẨM (FILTER & SORT ENGINE)
 // ==========================================================================
-function applyFiltersAndRender() {
+function applyFiltersAndRender(resetLimit = true) {
+  if (resetLimit) {
+    catalogState.displayedLimit = 20;
+  }
   let list = [...catalogState.allProducts];
 
   // 1. Lọc Giới tính
@@ -1112,13 +1117,22 @@ function applyFiltersAndRender() {
 function renderProductsGrid(products) {
   const grid = document.getElementById('catalogProductsGrid');
   const countEl = document.getElementById('catalogResultsCount');
+  const loadMoreBox = document.getElementById('catalogLoadMoreContainer');
   if (!grid) return;
 
+  const totalCount = products ? products.length : 0;
+  const currentLimit = catalogState.displayedLimit || 20;
+
   if (countEl) {
-    countEl.innerHTML = `Tìm thấy <strong>${products.length}</strong> sản phẩm`;
+    countEl.innerHTML = `Tìm thấy <strong>${totalCount}</strong> sản phẩm`;
   }
 
-  if (products.length === 0) {
+  // Hiển thị hoặc ẩn nút XEM THÊM tùy vào số sản phẩm còn lại
+  if (loadMoreBox) {
+    loadMoreBox.style.display = totalCount > currentLimit ? 'flex' : 'none';
+  }
+
+  if (totalCount === 0) {
     grid.innerHTML = `
       <div class="catalog-empty-state">
         <div class="catalog-empty-icon"><i class="fas fa-search"></i></div>
@@ -1133,8 +1147,9 @@ function renderProductsGrid(products) {
   }
 
   const wishlist = getWishlistIds();
+  const sliced = products.slice(0, currentLimit);
 
-  grid.innerHTML = products.map((p, idx) => {
+  grid.innerHTML = sliced.map((p, idx) => {
     const prodId = p._id || p.id;
     const isLiked = wishlist.includes(String(prodId));
     const firstVariant = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
@@ -1221,6 +1236,13 @@ function renderProductsGrid(products) {
           </div>
       </div>`;
   }).join('');
+}
+
+// Hàm bấm Xem Thêm sản phẩm
+function loadMoreCatalogProducts() {
+  const step = catalogState.limitStep || 20;
+  catalogState.displayedLimit = (catalogState.displayedLimit || 20) + step;
+  renderProductsGrid(catalogState.filteredProducts || []);
 }
 
 // Đổi ảnh và giá card khi bấm chọn chấm màu
@@ -1675,79 +1697,12 @@ function toggleWishlist(arg1, arg2) {
 }
 
 // ==========================================================================
-// 10. QUICK VIEW MODAL
+// 10. QUICK VIEW & CHI TIẾT SẢN PHẨM (Đã gỡ bỏ popup theo yêu cầu)
 // ==========================================================================
 function openQuickView(productId) {
-  const prod = catalogState.allProducts.find(p => String(p._id || p.id) === String(productId));
-  if (!prod) return;
-
-  const modal = document.getElementById('quickViewModal');
-  const body = document.getElementById('quickViewBody');
-  if (!modal || !body) return;
-
-  const variants = prod.variants || [];
-  const activeVar = variants[0] || { color: 'Tiêu chuẩn', img: prod.image, price: prod.price, sizes: [{ size: 'Freesize', stock: 10 }] };
-
-  body.innerHTML = `
-    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-      <div style="flex: 1; min-width: 260px;">
-        <img src="${activeVar.img || prod.image}" id="qvModalImg" alt="${prod.name}" style="width: 100%; border-radius: 10px; object-fit: cover; max-height: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-      </div>
-      <div style="flex: 1.2; min-width: 280px; display: flex; flex-direction: column;">
-        <span style="color: var(--catalog-gold); font-size: 11.5px; font-weight: 700; text-transform: uppercase;">${prod.gender || 'UNISEX'} • ${formatCatName(prod.category)}</span>
-        <h3 style="color: #fff; margin: 6px 0 10px 0; font-size: 20px;">${prod.name}</h3>
-        
-        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;">
-          <span style="font-size: 22px; font-weight: 800; color: var(--catalog-gold);" id="qvModalPrice">${activeVar.price.toLocaleString('vi-VN')}đ</span>
-          ${prod.originalPrice ? `<span style="font-size: 14px; color: #64748b; text-decoration: line-through;">${prod.originalPrice.toLocaleString('vi-VN')}đ</span>` : ''}
-        </div>
-
-        <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0;">${prod.description || 'Chất lượng cao cấp tiêu chuẩn MoonLight.'}</p>
-
-        <!-- Chọn màu -->
-        ${variants.length > 0 ? `
-          <div style="margin-bottom: 14px;">
-            <label style="font-size: 12px; font-weight: 700; color: #fff; display: block; margin-bottom: 6px;">MÀU SẮC:</label>
-            <div style="display: flex; gap: 8px;" id="qvColorsWrap">
-              ${variants.map((v, i) => `
-                <button type="button" class="swatch-dot ${i === 0 ? 'active' : ''}" 
-                        style="background: ${v.colorCode || '#000'}; width: 22px; height: 22px;" 
-                        title="${v.color}"
-                        onclick="selectQuickViewVariant(${i}, '${prod._id || p.id}')">
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Chọn size -->
-        <div style="margin-bottom: 20px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff; display: block; margin-bottom: 6px;">KÍCH CỠ:</label>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="qvSizesWrap">
-            ${(activeVar.sizes || []).map((s, i) => `
-              <button type="button" class="size-chip-btn ${i === 0 ? 'active' : ''}" style="padding: 6px 14px;" data-size="${s.size}" onclick="selectQuickViewSize(this)">
-                ${s.size}
-              </button>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Nút thêm giỏ hàng -->
-        <div style="display: flex; gap: 12px; margin-top: auto;">
-          <button class="btn-primary" onclick="confirmQuickViewAddToCart('${prod._id || prod.id}')" style="flex: 1; padding: 12px; background: var(--catalog-gold); color: #000; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
-            <i class="fas fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
-          </button>
-          <a href="product.html?id=${prod._id || prod.id}" class="btn-outline" style="padding: 12px 18px; border: 1px solid var(--catalog-border); color: #fff; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; font-size: 13px; font-weight: 600;">
-            Chi Tiết
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-
-  window._currentQuickViewProduct = prod;
-  window._currentQuickViewVariantIdx = 0;
-  modal.style.display = 'flex';
+  if (productId) {
+    window.location.href = `product.html?id=${productId}`;
+  }
 }
 
 function closeQuickView() {
@@ -1755,76 +1710,9 @@ function closeQuickView() {
   if (modal) modal.style.display = 'none';
 }
 
-function selectQuickViewVariant(vIdx, pId) {
-  const prod = window._currentQuickViewProduct;
-  if (!prod || !prod.variants[vIdx]) return;
-  window._currentQuickViewVariantIdx = vIdx;
-
-  const v = prod.variants[vIdx];
-  const img = document.getElementById('qvModalImg');
-  const price = document.getElementById('qvModalPrice');
-  const sizesWrap = document.getElementById('qvSizesWrap');
-  const colorDots = document.querySelectorAll('#qvColorsWrap .swatch-dot');
-
-  if (img && v.img) img.src = v.img;
-  if (price && v.price) price.innerText = v.price.toLocaleString('vi-VN') + 'đ';
-
-  colorDots.forEach((d, i) => d.classList.toggle('active', i === vIdx));
-
-  if (sizesWrap && v.sizes) {
-    sizesWrap.innerHTML = v.sizes.map((s, i) => `
-      <button type="button" class="size-chip-btn ${i === 0 ? 'active' : ''}" style="padding: 6px 14px;" data-size="${s.size}" onclick="selectQuickViewSize(this)">
-        ${s.size}
-      </button>
-    `).join('');
-  }
-}
-
-function selectQuickViewSize(btn) {
-  document.querySelectorAll('#qvSizesWrap .size-chip-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function confirmQuickViewAddToCart(productId) {
-  const prod = window._currentQuickViewProduct;
-  if (!prod) return;
-
-  const vIdx = window._currentQuickViewVariantIdx || 0;
-  const v = prod.variants && prod.variants[vIdx] ? prod.variants[vIdx] : { price: prod.price, img: prod.image, color: 'Tiêu chuẩn' };
-
-  const activeSizeBtn = document.querySelector('#qvSizesWrap .size-chip-btn.active');
-  const size = activeSizeBtn ? activeSizeBtn.getAttribute('data-size') : 'Freesize';
-
-  const cart = getCart();
-  const existingIdx = cart.findIndex(it => String(it.id) === String(productId) && it.size === size && it.color === v.color);
-
-  if (existingIdx > -1) {
-    cart[existingIdx].quantity += 1;
-  } else {
-    cart.push({
-      id: prod._id || prod.id,
-      _id: prod._id || prod.id,
-      name: prod.name,
-      price: v.price || prod.price,
-      image: v.img || prod.image,
-      img: v.img || prod.image,
-      size: size,
-      color: v.color || 'Tiêu chuẩn',
-      quantity: 1
-    });
-  }
-
-  saveCart(cart);
-  if (window.cart) window.cart = cart;
-  if (typeof renderCartSidebar === 'function') renderCartSidebar();
-  if (typeof updateCartIcon === 'function') updateCartIcon();
-  closeQuickView();
-  if (typeof toggleCart === 'function') toggleCart();
-
-  if (typeof showToast === 'function') {
-    showToast("Đã Thêm Vào Giỏ", `Đã thêm ${prod.name} (Size ${size}) vào giỏ hàng!`, "success");
-  }
-}
+function selectQuickViewVariant() {}
+function selectQuickViewSize() {}
+function confirmQuickViewAddToCart() {}
 
 // Mobile Filter Drawer Toggle
 function toggleMobileFilters() {
