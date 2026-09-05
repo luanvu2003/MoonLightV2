@@ -351,6 +351,15 @@ function applyRolePermissions(user) {
         }
     }
 
+    const quickDeployBtn = document.getElementById('btnQuickDeploy');
+    if (quickDeployBtn) {
+        if (role === 'Admin') {
+            quickDeployBtn.style.display = 'inline-flex';
+        } else {
+            quickDeployBtn.style.display = 'none';
+        }
+    }
+
     // 4. Các thành phần dành riêng cho Admin
     if (role !== 'Admin') {
         document.querySelectorAll('.admin-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
@@ -525,6 +534,21 @@ function switchTab(tabName) {
     // 3. Kiểm tra quyền truy cập tab Dashboard (Nhân viên thu ngân chuyển về Đơn Hàng)
     if (tabName === 'dashboard' && user.role === 'Staff') {
         tabName = 'orders';
+    }
+
+    // 4. Kiểm tra quyền truy cập tab Sức khỏe máy chủ & Deploy (Chỉ Admin mới có quyền)
+    if (tabName === 'system' && user.role !== 'Admin') {
+        showToast("Truy cập bị từ chối", "Chức năng Giám sát Máy chủ & Deploy Git chỉ dành riêng cho Admin!", "error");
+        showResultModal({
+            type: 'error',
+            title: 'Từ Chối Quyền Truy Cập!',
+            message: `Tài khoản "${user.name}" (${user.role}) không được phép xem thông số máy chủ và triển khai hệ thống.`
+        });
+        if (currentTab === 'system') {
+            tabName = user.role === 'Owner' ? 'dashboard' : 'orders';
+        } else {
+            return;
+        }
     }
 
     currentTab = tabName;
@@ -5709,6 +5733,13 @@ function processAgentQuery(query) {
 async function loadServerPulseData() {
     const pulseContainer = document.getElementById('serverPulseContainer');
     if (!pulseContainer) return;
+
+    // Chỉ Quản trị viên (Admin) mới có quyền xem thông số VPS
+    const currentUser = JSON.parse(localStorage.getItem('moonlight_user')) || {};
+    if (currentUser.role !== 'Admin') {
+        pulseContainer.innerHTML = '';
+        return;
+    }
 
     try {
         let health = null;
