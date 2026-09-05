@@ -45,8 +45,6 @@ apt-get install -y mongodb-org
 cat << 'EOF' > /etc/mongod.conf
 storage:
   dbPath: /var/lib/mongodb
-  journal:
-    enabled: true
   wiredTiger:
     engineConfig:
       cacheSizeGB: 0.25
@@ -59,7 +57,12 @@ systemLog:
 net:
   port: 27017
   bindIp: 127.0.0.1
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
 EOF
+
+chown -R mongodb:mongodb /var/lib/mongodb /var/log/mongodb
 
 systemctl daemon-reload
 systemctl enable mongod
