@@ -1447,25 +1447,28 @@ function addToCart(newItem) {
 }
 
 function quickAdd(id) {
-  const p = products.find((x) => String(x.id) === String(id) || String(x._id) === String(id));
+  const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
+    ? catalogState.allProducts
+    : products;
+  const p = allProds.find((x) => String(x.id) === String(id) || String(x._id) === String(id));
   if (!p) return;
 
-  const v = p.variants?.[0];
-  if (!v) return;
-
-  const availableSize = v.sizes?.find((s) => s.stock > 0);
-  if (!availableSize) {
-    showToast({ title: 'Hết hàng', message: 'Sản phẩm này tạm thời hết hàng.', type: 'error' });
-    return;
+  const v = (p.variants && p.variants.length > 0) ? p.variants[0] : { price: p.price, img: p.image, color: 'Tiêu chuẩn' };
+  let chosenSize = 'M';
+  if (v.sizes && v.sizes.length > 0) {
+    const firstS = v.sizes[0];
+    chosenSize = typeof firstS === 'string' ? firstS : (firstS.size || firstS.name || 'M');
   }
 
   const item = {
     id: p.id || p._id,
+    _id: p.id || p._id,
     name: p.name,
-    price: v.price,
-    img: v.img,
-    color: v.color,
-    size: availableSize.name || availableSize.size,
+    price: v.price || p.price || 0,
+    img: v.img || p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
+    image: v.img || p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
+    color: v.color || 'Tiêu chuẩn',
+    size: chosenSize,
     quantity: 1
   };
   addToCart(item);
@@ -1476,14 +1479,25 @@ function saveCart() {
 }
 
 function updateCartIcon() {
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
   const badge = document.getElementById('cartBadge') || document.querySelector('.badge');
-  if (badge) badge.innerText = cart.reduce((sum, i) => sum + i.quantity, 0);
+  if (badge) {
+    const totalQty = cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+    badge.innerText = totalQty;
+    badge.style.display = totalQty > 0 ? 'flex' : 'none';
+  }
 }
 
 function renderCartSidebar() {
   const list = document.getElementById('cartItems');
   const totalEl = document.getElementById('cartTotal');
   if (!list) return;
+
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
 
   if (cart.length === 0) {
     list.innerHTML = `
@@ -1499,18 +1513,19 @@ function renderCartSidebar() {
   let total = 0;
   list.innerHTML = cart
     .map((item, idx) => {
-      total += item.price * item.quantity;
+      total += (item.price || 0) * (item.quantity || 1);
+      const imgSrc = item.img || item.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800';
       return `
       <div class="cart-item-row" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f1f5f9; align-items:center;">
-          <img src="${item.img}" style="width:50px; height:60px; object-fit:cover; border-radius:4px;" alt="${item.name}">
+          <img src="${imgSrc}" style="width:50px; height:60px; object-fit:cover; border-radius:4px;" alt="${item.name}">
           <div class="cart-item-info" style="flex:1;">
               <h4 style="font-size:13px; margin:0 0 4px 0; color:#0f172a;">${item.name}</h4>
-              <p style="font-size:11px; color:#64748b; margin:2px 0;">${item.color} / Size: ${item.size}</p>
+              <p style="font-size:11px; color:#64748b; margin:2px 0;">${item.color || 'Tiêu chuẩn'} / Size: ${item.size || 'M'}</p>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                  <strong style="font-size:13px; color:var(--gold);">${(item.price * item.quantity).toLocaleString('vi-VN')}₫</strong>
+                  <strong style="font-size:13px; color:var(--gold);">${((item.price || 0) * (item.quantity || 1)).toLocaleString('vi-VN')}₫</strong>
                   <div style="background:#f1f5f9; display:flex; align-items:center; border-radius:4px; padding:2px;">
                       <button onclick="changeCartQty(${idx}, -1)" style="border:none; background:none; padding:2px 8px; cursor:pointer; font-weight:700;">-</button>
-                      <span style="font-size:12px; padding:0 6px; font-weight:600;">${item.quantity}</span>
+                      <span style="font-size:12px; padding:0 6px; font-weight:600;">${item.quantity || 1}</span>
                       <button onclick="changeCartQty(${idx}, 1)" style="border:none; background:none; padding:2px 8px; cursor:pointer; font-weight:700;">+</button>
                   </div>
               </div>
@@ -1524,18 +1539,28 @@ function renderCartSidebar() {
 }
 
 function changeCartQty(index, change) {
-  cart[index].quantity += change;
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
+  if (!cart[index]) return;
+  cart[index].quantity = (cart[index].quantity || 1) + change;
   if (cart[index].quantity <= 0) cart.splice(index, 1);
   saveCart();
   renderCartSidebar();
   updateCartIcon();
+  if (typeof updateCartBadge === 'function') updateCartBadge();
 }
 
 function removeCartItem(index) {
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
+  if (!cart[index]) return;
   cart.splice(index, 1);
   saveCart();
   renderCartSidebar();
   updateCartIcon();
+  if (typeof updateCartBadge === 'function') updateCartBadge();
 }
 
 function toggleCart() {
@@ -1560,8 +1585,14 @@ function goToCheckout() {
 // --- 6. LOGIC YÊU THÍCH (WISHLIST SIDEBAR) ---
 
 function updateWishlistIcon() {
+  try {
+    wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
+  } catch (e) {}
   const badge = document.getElementById('wishlistBadge');
-  if (badge) badge.innerText = wishlist.length;
+  if (badge) {
+    badge.innerText = wishlist.length;
+    badge.style.display = wishlist.length > 0 ? 'flex' : 'none';
+  }
 }
 
 function toggleWishlistSidebar() {
@@ -1579,7 +1610,15 @@ function renderWishlistSidebar() {
   const container = document.getElementById('wishlistItems');
   if (!container) return;
 
-  const likedProducts = products.filter((p) => wishlist.includes(p.id) || wishlist.includes(p._id));
+  try {
+    wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
+  } catch (e) {}
+
+  const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
+    ? catalogState.allProducts
+    : products;
+
+  const likedProducts = allProds.filter((p) => wishlist.some((x) => String(x) === String(p.id) || String(x) === String(p._id)));
 
   if (likedProducts.length === 0) {
     container.innerHTML = `
@@ -1594,14 +1633,15 @@ function renderWishlistSidebar() {
 
   container.innerHTML = likedProducts
     .map((p) => {
-      const v = p.variants?.[0] || { img: p.image || '', price: p.price || 0 };
+      const v = (p.variants && p.variants.length > 0) ? p.variants[0] : { img: p.image || '', price: p.price || 0 };
       const prodId = p.id || p._id;
+      const imgSrc = v.img || p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800';
       return `
       <div class="cart-item-row" style="display:flex; gap:12px; padding:14px 0; border-bottom:1px solid #f1f5f9; align-items:center;">
-        <img src="${v.img}" style="width:55px; height:68px; object-fit:cover; border-radius:4px;" alt="${p.name}">
+        <img src="${imgSrc}" style="width:55px; height:68px; object-fit:cover; border-radius:4px;" alt="${p.name}">
         <div style="flex:1;">
           <h4 style="font-size:13px; margin:0 0 4px 0;"><a href="product.html?id=${prodId}" style="color:#0f172a; text-decoration:none;">${p.name}</a></h4>
-          <strong style="color:var(--gold); font-size:13px;">${Number(v.price).toLocaleString('vi-VN')}₫</strong>
+          <strong style="color:var(--gold); font-size:13px;">${Number(v.price || p.price || 0).toLocaleString('vi-VN')}₫</strong>
           <div style="margin-top:6px; display:flex; gap:12px; align-items:center;">
             <a href="product.html?id=${prodId}" style="font-size:11px; color:#5b50f6; font-weight:700; text-decoration:none;">Xem chi tiết &rarr;</a>
             <button onclick="quickAdd('${prodId}')" style="background:none; border:none; color:#10b981; font-size:11px; font-weight:700; cursor:pointer;">+ Giỏ hàng</button>

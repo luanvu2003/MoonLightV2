@@ -5,6 +5,21 @@
    ========================================================================== */
 
 :root {
+    --catalog-bg: #f8fafc;
+    --catalog-card: #ffffff;
+    --catalog-card-hover: #ffffff;
+    --catalog-border: #e2e8f0;
+    --catalog-border-gold: rgba(212, 175, 55, 0.45);
+    --catalog-gold: #d4af37;
+    --catalog-gold-light: #dfba73;
+    --catalog-emerald: #10b981;
+    --catalog-text-main: #0a0a0a;
+    --catalog-text-muted: #64748b;
+    --catalog-radius: 8px;
+    --catalog-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] {
     --catalog-bg: #090d16;
     --catalog-card: #0f172a;
     --catalog-card-hover: #162033;
@@ -12,24 +27,9 @@
     --catalog-border-gold: rgba(223, 186, 115, 0.35);
     --catalog-gold: #dfba73;
     --catalog-gold-light: #f3d498;
-    --catalog-emerald: #10b981;
     --catalog-text-main: #f8fafc;
     --catalog-text-muted: #94a3b8;
-    --catalog-radius: 12px;
     --catalog-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="light"] {
-    --catalog-bg: #f8fafc;
-    --catalog-card: #ffffff;
-    --catalog-card-hover: #f1f5f9;
-    --catalog-border: rgba(0, 0, 0, 0.08);
-    --catalog-border-gold: rgba(197, 160, 89, 0.4);
-    --catalog-gold: #c5a059;
-    --catalog-gold-light: #dfba73;
-    --catalog-text-main: #0f172a;
-    --catalog-text-muted: #64748b;
-    --catalog-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
 body.catalog-body {
@@ -46,8 +46,8 @@ body.catalog-body {
    ========================================================================== */
 .catalog-hero-banner {
     position: relative;
-    padding: 50px 0 40px 0;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, var(--catalog-bg) 100%);
+    padding: 38px 0 30px 0;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
     border-bottom: 1px solid var(--catalog-border);
     overflow: hidden;
 }
@@ -88,10 +88,10 @@ body.catalog-body {
 }
 
 .catalog-title {
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin: 0 0 10px 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px 0;
     color: var(--catalog-text-main);
     display: flex;
     align-items: center;
@@ -99,14 +99,14 @@ body.catalog-body {
 }
 
 .catalog-title-badge {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 4px 12px;
-    background: rgba(223, 186, 115, 0.15);
+    padding: 3px 10px;
+    background: #0a0a0a;
     color: var(--catalog-gold);
-    border: 1px solid var(--catalog-border-gold);
+    border: 1px solid #0a0a0a;
     border-radius: 20px;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .catalog-desc {
@@ -198,13 +198,14 @@ body.catalog-body {
    SMART SIZE ADVISOR (CHIỀU CAO & CÂN NẶNG)
    ========================================================================== */
 .size-advisor-card {
-    background: linear-gradient(145deg, rgba(223, 186, 115, 0.08), rgba(15, 23, 42, 0.8));
-    border: 1px solid var(--catalog-border-gold);
-    border-radius: 10px;
-    padding: 18px;
+    background: #ffffff;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 8px;
+    padding: 16px;
     margin-bottom: 24px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.08);
 }
 
 [data-theme="light"] .size-advisor-card {
@@ -239,8 +240,8 @@ body.catalog-body {
 
 .advisor-gender-switch {
     display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
     padding: 3px;
     margin-bottom: 14px;
     border: 1px solid var(--catalog-border);
@@ -291,7 +292,7 @@ body.catalog-body {
     width: 100%;
     height: 5px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.15);
+    background: #e2e8f0;
     outline: none;
     appearance: none;
     -webkit-appearance: none;
@@ -404,7 +405,7 @@ body.catalog-body {
     border-radius: 6px;
     background: transparent;
     border: none;
-    color: var(--catalog-text-muted);
+    color: #475569;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -417,9 +418,9 @@ body.catalog-body {
 }
 
 .filter-cat-btn.active {
-    background: rgba(223, 186, 115, 0.12);
-    color: var(--catalog-gold);
-    font-weight: 700;
+    background: #0a0a0a;
+    color: #ffffff;
+    font-weight: 600;
 }
 
 .filter-cat-count {
@@ -438,13 +439,13 @@ body.catalog-body {
 }
 
 .size-chip-btn {
-    padding: 9px 4px;
+    padding: 8px 4px;
     border: 1px solid var(--catalog-border);
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 6px;
+    background: #ffffff;
+    border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--catalog-text-main);
+    color: #334155;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s ease;
@@ -456,11 +457,11 @@ body.catalog-body {
 }
 
 .size-chip-btn.active {
-    background: var(--catalog-gold);
-    color: #000;
-    border-color: var(--catalog-gold);
-    font-weight: 800;
-    box-shadow: 0 0 10px rgba(223, 186, 115, 0.4);
+    background: #0a0a0a;
+    color: #ffffff;
+    border-color: #0a0a0a;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Price Range Presets & Inputs */
@@ -747,16 +748,16 @@ body.catalog-body {
 }
 
 .catalog-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--catalog-border-gold);
-    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.5);
+    transform: translateY(-8px);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 .catalog-card-media {
     position: relative;
     width: 100%;
     padding-top: 125%; /* 4:5 Portrait Aspect Ratio */
-    background: #000;
+    background: #f8fafc;
     overflow: hidden;
 }
 
@@ -812,10 +813,10 @@ body.catalog-body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: #ffffff;
+    border: 1px solid var(--catalog-border);
+    color: #333333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
