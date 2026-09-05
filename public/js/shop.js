@@ -1094,7 +1094,7 @@ function renderShop(limit) {
   renderProductGrid(sliced, 'product-grid');
 
   const btn = document.getElementById('loadMoreContainer');
-  if (btn) btn.style.display = limit >= list.length ? 'none' : 'block';
+  if (btn) btn.style.display = limit >= list.length ? 'none' : 'flex';
 }
 
 function renderBestSellers(limit) {
@@ -1103,7 +1103,7 @@ function renderBestSellers(limit) {
   renderProductGrid(list, 'best-seller-grid');
 
   const btn = document.getElementById('loadMoreBestSeller');
-  if (btn) btn.style.display = limit >= sorted.length ? 'none' : 'block';
+  if (btn) btn.style.display = limit >= sorted.length ? 'none' : 'flex';
 }
 
 function changeCardVariant(e, prodId, imgUrl, price) {
