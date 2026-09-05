@@ -17,6 +17,7 @@ import reviewRoutes from './routes/review.routes.js';
 import userRoutes from './routes/user.routes.js';
 import scheduleRoutes from './routes/schedule.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import systemRoutes from './routes/system.routes.js';
 
 // Middlewares
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
@@ -54,6 +55,7 @@ app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/system', systemRoutes);
 
 // 5. Tương thích ngược: Mount /api/products trỏ tới productRoutes
 app.use('/api/products', productRoutes);

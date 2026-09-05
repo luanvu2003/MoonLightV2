@@ -4758,3 +4758,172 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
         align-items: stretch;
     }
 }
+
+/* ==============================================================================
+   SERVER HEALTH MONITOR & ONE-CLICK GIT DEPLOY (MIDNIGHT LUXURY STYLES)
+   ============================================================================== */
+.btn-deploy-quick {
+    background: linear-gradient(135deg, #dfba73 0%, #c5a059 100%);
+    color: #0b0f19;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(223, 186, 115, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-deploy-quick:hover {
+    background: linear-gradient(135deg, #f0cf8e 0%, #dfba73 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(223, 186, 115, 0.5);
+}
+
+.btn-deploy-quick:active {
+    transform: translateY(0);
+}
+
+.server-pulse-banner {
+    background: var(--bg-card);
+    border: 1px solid rgba(223, 186, 115, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.server-pulse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.server-pulse-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.server-pulse-title .vps-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.server-pulse-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.server-pulse-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.health-metric-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.health-metric-box:hover {
+    border-color: rgba(223, 186, 115, 0.25);
+    transform: translateY(-1px);
+}
+
+.health-metric-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.health-metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.health-metric-sub {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.health-progress-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.health-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.health-progress-bar.green {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.health-progress-bar.yellow {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.health-progress-bar.red {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+@keyframes deploySpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 1100px) {
+    .server-pulse-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    .server-pulse-grid {
+        grid-template-columns: 1fr;
+    }
+    .server-pulse-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}

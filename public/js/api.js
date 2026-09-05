@@ -256,6 +256,17 @@ const MoonlightAPI = {
 
   async getTopProducts() {
     return this.request('/reports/top-products');
+  },
+
+  // 10. System Health & Deploy
+  async getSystemHealth() {
+    return this.request('/system/health');
+  },
+
+  async deploySystem() {
+    return this.request('/system/deploy', {
+      method: 'POST'
+    });
   }
 };
 

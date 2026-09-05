@@ -93,6 +93,11 @@
                     <span>Báo cáo & Thống kê</span>
                     <span class="menu-badge" style="background:rgba(91,80,246,0.2); color:#818cf8; font-size:9.5px;">Mật</span>
                 </a>
+                <a href="javascript:void(0)" onclick="switchTab('system')" data-roles="Admin,Owner">
+                    <i class="fas fa-server"></i>
+                    <span>Máy chủ & Deploy Git</span>
+                    <span class="menu-badge" style="background:#10b981; color:#000; font-weight:800; font-size:9.5px;">VPS</span>
+                </a>
                 <a href="javascript:void(0)" onclick="switchTab('settings')" data-roles="Admin,Owner,Staff">
                     <i class="fas fa-sliders"></i>
                     <span>Cài đặt hệ thống</span>
@@ -143,6 +148,10 @@
                     <button class="btn-export-report" onclick="exportAdminReport()">
                         <i class="fas fa-file-export"></i>
                         <span>Xuất báo cáo</span>
+                    </button>
+                    <button class="btn-deploy-quick" id="btnQuickDeploy" onclick="openDeployModal()" title="Cập nhật mã nguồn mới nhất từ GitHub và khởi động lại">
+                        <i class="fas fa-rocket"></i>
+                        <span>Deploy Git</span>
                     </button>
                     <a href="staff.html" target="_blank" class="btn-pos-quick">
                         <i class="fas fa-bolt"></i>
@@ -548,6 +557,48 @@
             </form>
             <div class="ai-footer-hint">
                 <span>💡 Gợi ý: Gõ <b>"hướng dẫn"</b>, <b>"nhật ký 1 tiếng trước"</b>, <b>"duyệt #DH1001"</b>, hoặc <b>"nhập thêm 10 cái"</b>.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 1-Click Deploy & Restart VPS -->
+    <div class="admin-modal" id="deployModal">
+        <div class="modal-content" style="max-width: 620px; border: 1px solid rgba(223, 186, 115, 0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.7); background: var(--bg-card);">
+            <div class="modal-header" style="background: linear-gradient(135deg, rgba(223,186,115,0.1), rgba(15,23,42,0.8));">
+                <h3 style="color: #fff; display: flex; align-items: center; gap: 8px;"><i class="fas fa-rocket" style="color:var(--gold);"></i> Đồng Bộ Git & Khởi Động Lại VPS</h3>
+                <button class="btn-close-modal" onclick="closeDeployModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="deployModalBody" style="padding: 24px;">
+                <div id="deployIntroView" style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(223,186,115,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 28px; color: var(--gold); border: 1px solid rgba(223,186,115,0.3);">
+                        <i class="fas fa-cloud-arrow-down"></i>
+                    </div>
+                    <h4 style="color: #fff; margin: 0 0 8px 0; font-size: 17px; font-weight: 700;">Cập Nhật Mã Nguồn Từ GitHub</h4>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.6;">
+                        Hệ thống sẽ tự động thực hiện trên VPS: <br>
+                        <b style="color:var(--gold);">1. git pull</b> kéo code mới nhất ➔ <b style="color:var(--gold);">2. npm run build</b> biên dịch ➔ <b style="color:var(--gold);">3. pm2 reload</b> tải lại ứng dụng không gián đoạn (Zero-Downtime).
+                    </p>
+                </div>
+
+                <div id="deployProgressBox" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="deploy-spinner" style="width: 24px; height: 24px; border: 3px solid rgba(223,186,115,0.2); border-top-color: var(--gold); border-radius: 50%; animation: deploySpin 1s linear infinite;"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 13px; color: #fff;" id="deployStepText">Đang kéo mã nguồn mới từ GitHub...</div>
+                            <div style="font-size: 11px; color: #64748b;">Vui lòng chờ khoảng 5 - 10 giây</div>
+                        </div>
+                    </div>
+                    <pre id="deployConsoleOutput" style="background: #090d16; color: #34d399; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 140px; overflow-y: auto; margin: 0; white-space: pre-wrap; border: 1px solid rgba(255,255,255,0.05);"></pre>
+                </div>
+
+                <div id="deployResultSummary" style="display: none; margin-bottom: 20px;"></div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;" id="deployActionButtons">
+                    <button type="button" class="btn-outline" onclick="closeDeployModal()" id="btnCancelDeploy">Hủy Bỏ</button>
+                    <button type="button" class="btn-primary" onclick="executeDeployProcess()" id="btnConfirmDeploy" style="background: linear-gradient(135deg, #dfba73, #c5a059); color: #000; font-weight: 700; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-play"></i> BẮT ĐẦU CẬP NHẬT
+                    </button>
+                </div>
             </div>
         </div>
     </div>
