@@ -19,6 +19,9 @@ import scheduleRoutes from './routes/schedule.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import systemRoutes from './routes/system.routes.js';
 
+import { Product } from './models/Product.js';
+import { LUXURY_PRODUCTS } from './config/defaultProducts.js';
+
 // Middlewares
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 
@@ -28,8 +31,26 @@ const publicDir = path.join(__dirname, '../public');
 
 const app = express();
 
-// 1. Kết nối Database
-connectDB();
+// 1. Kết nối Database & Tự động đồng bộ sản phẩm mẫu chuẩn Luxury
+connectDB().then(async () => {
+  try {
+    const count = await Product.countDocuments();
+    if (count < 18) {
+      console.log(`🌱 Phát hiện database có ${count} sản phẩm (< 18). Đang tự động nạp danh mục 18 sản phẩm Luxury...`);
+      for (const p of LUXURY_PRODUCTS) {
+        await Product.findOneAndUpdate(
+          { name: p.name },
+          { $setOnInsert: p },
+          { upsert: true, new: true }
+        );
+      }
+      const updatedCount = await Product.countDocuments();
+      console.log(`✅ Đã đồng bộ thành công ${updatedCount} sản phẩm vào MongoDB.`);
+    }
+  } catch (err: any) {
+    console.warn(`⚠️ Cảnh báo tự động seed sản phẩm: ${err.message}`);
+  }
+});
 
 // 2. Middlewares bảo mật & phân tích dữ liệu
 app.use(
