@@ -1146,6 +1146,53 @@ function renderProductsGrid(products) {
     const iconClass = isLiked ? 'fas' : 'far';
     const badgeText = percent > 0 ? `-${percent}%` : (p.badge ? p.badge : '');
 
+    // Thu thập danh sách màu sắc đang có
+    const swatches = (p.variants || []).filter((va) => va.colorCode || va.hex || va.color);
+    const swatchesHtml = swatches.length > 0 ? `
+      <div class="card-swatches">
+        ${swatches.slice(0, 5).map((va, sIdx) => {
+          const hex = va.colorCode || va.hex || '#0a0a0a';
+          const vImg = va.img || p.image || '';
+          const vPrice = va.price || p.price || 0;
+          return `
+            <span class="swatch-dot ${sIdx === 0 ? 'active' : ''}" 
+                  style="background: ${hex};" 
+                  title="${va.color || ''}" 
+                  onclick="changeCardVariant(event, '${prodId}', '${vImg}', ${vPrice})">
+            </span>`;
+        }).join('')}
+      </div>` : '';
+
+    // Thu thập danh sách size đang có
+    const allSizes = [];
+    if (p.variants && p.variants.length > 0) {
+      p.variants.forEach((va) => {
+        if (va.sizes && Array.isArray(va.sizes)) {
+          va.sizes.forEach((sz) => {
+            const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+            if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+          });
+        }
+      });
+    }
+    if (allSizes.length === 0 && p.sizes && Array.isArray(p.sizes)) {
+      p.sizes.forEach((sz) => {
+        const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+        if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+      });
+    }
+    if (allSizes.length === 0) {
+      allSizes.push('S', 'M', 'L', 'XL');
+    }
+
+    const sizesHtml = `
+      <div class="card-sizes">
+        ${allSizes.slice(0, 5).map((sz) => {
+          const isAdvised = (typeof catalogState !== 'undefined' && catalogState.selectedSizes && catalogState.selectedSizes.has(sz));
+          return `<span class="card-size-pill ${isAdvised ? 'highlight' : ''}">${sz}</span>`;
+        }).join('')}
+      </div>`;
+
     return `
       <div class="product-card" data-id="${prodId}">
           <div class="card-img">
@@ -1160,11 +1207,13 @@ function renderProductsGrid(products) {
               </div>
           </div>
           <div class="card-info">
-              <h3><a href="product.html?id=${prodId}" style="color:inherit; text-decoration:none;">${p.name}</a></h3>
+              <h3><a href="product.html?id=${prodId}">${p.name}</a></h3>
               <div class="product-meta">
                   <span class="stars"><i class="fas fa-star" style="color:#f59e0b;"></i> ${p.rating || 5}</span>
                   <span class="sold-count">Đã bán ${p.sold || 0}</span>
               </div>
+              ${swatchesHtml}
+              ${sizesHtml}
               <div class="price">
                   <span class="new-price">${displayPrice}</span>
                   ${oldPrice ? `<span class="old-price">${oldPrice}</span>` : ''}
@@ -1176,17 +1225,9 @@ function renderProductsGrid(products) {
 
 // Đổi ảnh và giá card khi bấm chọn chấm màu
 function switchCardVariant(e, pId, imgUrl, priceStr) {
-  e.stopPropagation();
-  const card = document.querySelector(`.catalog-card[data-id="${pId}"]`);
-  if (!card) return;
-
-  const imgEl = document.getElementById(`img-${pId}`);
-  const priceEl = document.getElementById(`price-${pId}`);
-  if (imgEl && imgUrl) imgEl.src = imgUrl;
-  if (priceEl && priceStr) priceEl.innerText = priceStr;
-
-  card.querySelectorAll('.swatch-dot').forEach(d => d.classList.remove('active'));
-  e.target.classList.add('active');
+  if (typeof changeCardVariant === 'function') {
+    changeCardVariant(e, pId, imgUrl, priceStr);
+  }
 }
 
 // ==========================================================================

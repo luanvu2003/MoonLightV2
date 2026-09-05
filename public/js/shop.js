@@ -1106,6 +1106,29 @@ function renderBestSellers(limit) {
   if (btn) btn.style.display = limit >= sorted.length ? 'none' : 'block';
 }
 
+function changeCardVariant(e, prodId, imgUrl, price) {
+  if (e) e.stopPropagation();
+  const cards = document.querySelectorAll(`.product-card[data-id="${prodId}"]`);
+  cards.forEach((card) => {
+    if (imgUrl) {
+      const imgEl = card.querySelector('.card-img img');
+      if (imgEl) imgEl.src = imgUrl;
+    }
+    if (e && e.target) {
+      const swatches = card.querySelectorAll('.swatch-dot');
+      swatches.forEach((s) => s.classList.remove('active'));
+      const targetTitle = e.target.getAttribute('title');
+      const match = card.querySelector(`.swatch-dot[title="${targetTitle}"]`);
+      if (match) match.classList.add('active');
+      else e.target.classList.add('active');
+    }
+    if (price && Number(price) > 0) {
+      const priceEl = card.querySelector('.price .new-price') || card.querySelector('.price');
+      if (priceEl) priceEl.innerText = Number(price).toLocaleString('vi-VN') + '₫';
+    }
+  });
+}
+
 function renderProductGrid(data, elementId) {
   const grid = document.getElementById(elementId);
   if (!grid) return;
@@ -1122,27 +1145,80 @@ function renderProductGrid(data, elementId) {
       const isLiked = wishlist.includes(p.id) || wishlist.includes(p._id);
       const iconClass = isLiked ? 'fas' : 'far';
       const prodId = p.id || p._id;
+      const priceNum = v.price || p.price || 0;
+      const displayPrice = priceNum ? Number(priceNum).toLocaleString('vi-VN') + '₫' : 'Liên hệ';
+      const oldPrice = (p.originalPrice && p.originalPrice > priceNum) ? Number(p.originalPrice).toLocaleString('vi-VN') + '₫' : '';
+      const badgeText = percent > 0 ? `-${percent}%` : (p.badge ? p.badge : '');
+
+      // Thu thập danh sách màu sắc đang có
+      const swatches = (p.variants || []).filter((va) => va.colorCode || va.hex || va.color);
+      const swatchesHtml = swatches.length > 0 ? `
+        <div class="card-swatches">
+          ${swatches.slice(0, 5).map((va, sIdx) => {
+            const hex = va.colorCode || va.hex || '#0a0a0a';
+            const vImg = va.img || p.image || '';
+            const vPrice = va.price || p.price || 0;
+            return `
+              <span class="swatch-dot ${sIdx === 0 ? 'active' : ''}" 
+                    style="background: ${hex};" 
+                    title="${va.color || ''}" 
+                    onclick="changeCardVariant(event, '${prodId}', '${vImg}', ${vPrice})">
+              </span>`;
+          }).join('')}
+        </div>` : '';
+
+      // Thu thập danh sách size đang có
+      const allSizes = [];
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((va) => {
+          if (va.sizes && Array.isArray(va.sizes)) {
+            va.sizes.forEach((sz) => {
+              const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+              if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+            });
+          }
+        });
+      }
+      if (allSizes.length === 0 && p.sizes && Array.isArray(p.sizes)) {
+        p.sizes.forEach((sz) => {
+          const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+          if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+        });
+      }
+      if (allSizes.length === 0) {
+        allSizes.push('S', 'M', 'L', 'XL');
+      }
+
+      const sizesHtml = `
+        <div class="card-sizes">
+          ${allSizes.slice(0, 5).map((sz) => `<span class="card-size-pill">${sz}</span>`).join('')}
+        </div>`;
 
       return `
-      <div class="product-card">
+      <div class="product-card" data-id="${prodId}">
           <div class="card-img">
-              ${percent > 0 ? `<span class="badge-sale">-${percent}%</span>` : ''}
+              ${badgeText ? `<span class="badge-sale">${badgeText}</span>` : ''}
               <button class="wishlist-btn ${isLiked ? 'active' : ''}" onclick="toggleWishlist(this, '${prodId}')" title="Thêm vào yêu thích">
                 <i class="${iconClass} fa-heart"></i>
               </button>
               <img src="${v.img}" alt="${p.name}" loading="lazy">
               <div class="card-overlay-btns">
-                  <a href="product.html?id=${prodId}" class="view-btn"><i class="far fa-eye"></i> Xem chi tiết</a>
-                  <button class="add-btn" onclick="quickAdd('${prodId}')"><i class="fas fa-shopping-cart"></i> Thêm nhanh</button>
+                  <a href="product.html?id=${prodId}" class="view-btn"><i class="far fa-eye"></i> XEM CHI TIẾT</a>
+                  <button class="add-btn" onclick="quickAdd('${prodId}')"><i class="fas fa-shopping-cart"></i> THÊM NHANH</button>
               </div>
           </div>
           <div class="card-info">
-              <h3><a href="product.html?id=${prodId}" style="color:inherit; text-decoration:none;">${p.name}</a></h3>
+              <h3><a href="product.html?id=${prodId}">${p.name}</a></h3>
               <div class="product-meta">
                   <span class="stars"><i class="fas fa-star" style="color:#f59e0b;"></i> ${p.rating || 5}</span>
                   <span class="sold-count">Đã bán ${p.sold || 0}</span>
               </div>
-              <div class="price">${Number(v.price).toLocaleString('vi-VN')}₫</div>
+              ${swatchesHtml}
+              ${sizesHtml}
+              <div class="price">
+                  <span class="new-price">${displayPrice}</span>
+                  ${oldPrice ? `<span class="old-price">${oldPrice}</span>` : ''}
+              </div>
           </div>
       </div>`;
     })
