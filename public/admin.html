@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/admin.css?v=2.4">
+    <link rel="stylesheet" href="./css/admin.css?v=2.5">
     <script>
         (function() {
             var savedTheme = localStorage.getItem('moonlight_theme') || 'dark';
@@ -631,6 +631,17 @@
                         </div>
                         <pre id="deployConsoleOutput" style="background: transparent; color: #34d399; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 11.5px; line-height: 1.5; padding: 0; max-height: 150px; overflow-y: auto; margin: 0; white-space: pre-wrap;"></pre>
                     </div>
+
+                    <!-- Mini Live Telemetry trong khi Deploy -->
+                    <div style="display: flex; justify-content: space-around; align-items: center; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 7px 14px; margin-top: 10px; font-size: 11.5px; color: #94a3b8;">
+                        <span><i class="fas fa-microchip" style="color:#60a5fa;"></i> CPU VPS: <strong id="modalLiveCpu" style="color:#fff;">--%</strong></span>
+                        <span style="color:rgba(255,255,255,0.1);">|</span>
+                        <span><i class="fas fa-memory" style="color:#a78bfa;"></i> RAM VPS: <strong id="modalLiveRam" style="color:#fff;">--MB</strong></span>
+                        <span style="color:rgba(255,255,255,0.1);">|</span>
+                        <span><i class="fas fa-database" style="color:#34d399;"></i> Ping DB: <strong id="modalLiveDb" style="color:#34d399;">--ms</strong></span>
+                        <span style="color:rgba(255,255,255,0.1);">|</span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;"><span class="live-dot-pulse" style="width:6px; height:6px;"></span> <span id="modalLiveTick" style="color:#10b981; font-weight:700;">1s Live</span></span>
+                    </div>
                 </div>
 
                 <div id="deployResultSummary" style="display: none; margin-bottom: 20px;"></div>
@@ -650,7 +661,7 @@
 
     <!-- External Chart.js & MoonLight API Helper -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="./js/api.js?v=2.4"></script>
-    <script src="./js/admin.js?v=2.4"></script>
+    <script src="./js/api.js?v=2.5"></script>
+    <script src="./js/admin.js?v=2.5"></script>
 </body>
 </html>
