@@ -912,20 +912,52 @@ const SHOP_FALLBACK_PRODUCTS = [
   }
 ];
 
-// --- 1. KHỞI TẠO DỮ LIỆU ---
-let products = JSON.parse(localStorage.getItem('moonlight_products')) || [];
-if (products.length < SHOP_FALLBACK_PRODUCTS.length) {
-  const existingIds = new Set(products.map(p => String(p._id || p.id)));
-  SHOP_FALLBACK_PRODUCTS.forEach(sp => {
+// --- 1. KHỞI TẠO DỮ LIỆU AN TOÀN ---
+let products = [];
+try {
+  const rawProducts = localStorage.getItem('moonlight_products');
+  if (rawProducts) {
+    const parsed = JSON.parse(rawProducts);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      products = parsed;
+    }
+  }
+} catch (e) {}
+
+if (!Array.isArray(products) || products.length === 0) {
+  products = [...SHOP_FALLBACK_PRODUCTS];
+  try {
+    localStorage.setItem('moonlight_products', JSON.stringify(products));
+  } catch (e) {}
+} else if (products.length < SHOP_FALLBACK_PRODUCTS.length) {
+  const existingIds = new Set(products.map((p) => String(p._id || p.id)));
+  SHOP_FALLBACK_PRODUCTS.forEach((sp) => {
     if (!existingIds.has(String(sp._id || sp.id))) {
       products.push(sp);
     }
   });
-  localStorage.setItem('moonlight_products', JSON.stringify(products));
+  try {
+    localStorage.setItem('moonlight_products', JSON.stringify(products));
+  } catch (e) {}
 }
 
-let cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
-let wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
+let cart = [];
+try {
+  const rawCart = localStorage.getItem('moonlight_cart');
+  if (rawCart) {
+    const parsed = JSON.parse(rawCart);
+    if (Array.isArray(parsed)) cart = parsed;
+  }
+} catch (e) {}
+
+let wishlist = [];
+try {
+  const rawWl = localStorage.getItem('moonlight_wishlist');
+  if (rawWl) {
+    const parsed = JSON.parse(rawWl);
+    if (Array.isArray(parsed)) wishlist = parsed;
+  }
+} catch (e) {}
 
 // Biến dùng cho trang chi tiết
 let currentProduct = null;
@@ -940,9 +972,11 @@ function dismissPreloader() {
   const preloader = document.getElementById('pagePreloader');
   if (preloader) {
     preloader.classList.add('loaded');
+    preloader.style.opacity = '0';
+    preloader.style.pointerEvents = 'none';
     setTimeout(() => {
       preloader.style.display = 'none';
-    }, 550);
+    }, 400);
   }
 }
 
@@ -950,8 +984,10 @@ window.showPageLoading = function() {
   const preloader = document.getElementById('pagePreloader');
   if (preloader) {
     preloader.style.display = 'flex';
+    preloader.style.pointerEvents = 'auto';
     requestAnimationFrame(() => {
       preloader.classList.remove('loaded');
+      preloader.style.opacity = '1';
     });
   }
 };
@@ -960,39 +996,64 @@ window.hidePageLoading = function() {
   dismissPreloader();
 };
 
-window.addEventListener('load', () => {
-  setTimeout(dismissPreloader, 200);
-});
-setTimeout(dismissPreloader, 1200);
+// Đảm bảo preloader biến mất ngay khi trang bắt đầu sẵn sàng (không phụ thuộc vào mạng)
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  dismissPreloader();
+} else {
+  window.addEventListener('load', () => setTimeout(dismissPreloader, 100));
+}
+setTimeout(dismissPreloader, 600);
 
 // --- 2. ĐIỀU HƯỚNG & KHỞI TẠO (ROUTER) ---
-document.addEventListener('DOMContentLoaded', async () => {
-  updateCartIcon();
-  updateWishlistIcon();
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Tắt loading preloader NGAY LẬP TỨC (0ms)
+  dismissPreloader();
 
-  // Nạp dữ liệu sản phẩm từ API nếu có kết nối
-  await initProductsData();
+  try {
+    updateCartIcon();
+    updateWishlistIcon();
+  } catch (e) {}
 
+  // 2. RENDER GIAO DIỆN NGAY LẬP TỨC (0ms) từ dữ liệu có sẵn
   // A. Nếu đang ở Trang chủ (index.html)
   if (document.getElementById('product-grid')) {
-    renderShop(displayedProducts);
-    renderBestSellers(4);
-    setupSearch();
-    setupScrollEffects();
-    setupMobileMenu();
+    try {
+      renderShop(displayedProducts);
+      renderBestSellers(4);
+      setupSearch();
+      setupScrollEffects();
+      setupMobileMenu();
+    } catch (err) {
+      console.warn('[Shop] Lỗi render trang chủ:', err);
+    }
   }
 
   // B. Nếu đang ở Trang chi tiết (product.html)
   if (document.getElementById('productDetailContainer')) {
-    await loadProductDetail();
+    try {
+      loadProductDetail();
+    } catch (err) {
+      console.warn('[Shop] Lỗi load chi tiết:', err);
+    }
   }
 
   // C. Nếu đang ở Trang thanh toán (checkout.html)
   if (document.getElementById('checkoutItems')) {
-    renderCheckoutPage();
+    try {
+      renderCheckoutPage();
+    } catch (err) {
+      console.warn('[Shop] Lỗi render checkout:', err);
+    }
   }
 
-  setTimeout(dismissPreloader, 350);
+  // Tắt loading lần nữa sau khi đã render xong DOM
+  dismissPreloader();
+
+  // 3. ĐỒNG BỘ DỮ LIỆU TỪ BACKEND REST API CHẠY NGẦM (Background Sync)
+  // Không bao giờ block giao diện hay làm đứng màn hình loading!
+  initProductsData().catch((err) => {
+    console.warn('[Shop] Dữ liệu API nền:', err.message);
+  });
 });
 
 // Nạp dữ liệu sản phẩm từ Backend REST API

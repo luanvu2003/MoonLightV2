@@ -1726,6 +1726,9 @@ function toggleMobileFilters() {
 // 11. KHỞI TẠO TRANG CATALOG (INIT)
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', async () => {
+  // 0. Tắt preloader ngay khi DOM sẵn sàng
+  if (typeof dismissPreloader === 'function') dismissPreloader();
+
   // 1. Tải giỏ hàng & wishlist badges
   updateCartBadge();
   const wlBadge = document.getElementById('wishlistBadge');
@@ -1836,6 +1839,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. RENDER NGAY LẬP TỨC (0ms) để người dùng thấy ngay danh sách sản phẩm
   applyFiltersAndRender();
+  if (typeof dismissPreloader === 'function') dismissPreloader();
 
   // 7. ĐỒNG BỘ DỮ LIỆU TỪ BACKEND REST API NGẦM (Background Sync)
   try {

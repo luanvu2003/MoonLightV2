@@ -24,6 +24,26 @@
             </div>
         </div>
     </div>
+    <script>
+        (function() {
+            function killPreloader() {
+                var p = document.getElementById('pagePreloader');
+                if (p) {
+                    p.classList.add('loaded');
+                    p.style.opacity = '0';
+                    p.style.pointerEvents = 'none';
+                    setTimeout(function() { if (p) p.style.display = 'none'; }, 300);
+                }
+            }
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                killPreloader();
+            } else {
+                document.addEventListener('DOMContentLoaded', killPreloader);
+                window.addEventListener('load', killPreloader);
+            }
+            setTimeout(killPreloader, 600);
+        })();
+    </script>
 
     <!-- Search Overlay -->
     <div class="search-overlay" id="searchOverlay">
@@ -503,15 +523,17 @@
     </div>
 
     <!-- Scripts -->
-    <script src="./js/api.js?v=2.7"></script>
-    <script src="./js/shop.js?v=2.7"></script>
-    <script src="./js/catalog.js?v=2.7"></script>
+    <script src="./js/api.js?v=2.9"></script>
+    <script src="./js/shop.js?v=2.9"></script>
+    <script src="./js/catalog.js?v=2.9"></script>
     <script>
-        // Tắt preloader sau khi tải
         window.addEventListener('load', () => {
+            if (typeof dismissPreloader === 'function') dismissPreloader();
             const preloader = document.getElementById('pagePreloader');
             if (preloader) {
+                preloader.classList.add('loaded');
                 preloader.style.opacity = '0';
+                preloader.style.pointerEvents = 'none';
                 setTimeout(() => preloader.style.display = 'none', 300);
             }
         });
