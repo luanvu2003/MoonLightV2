@@ -113,19 +113,41 @@ const DEFAULT_PRODUCTS = [
 export class ProductController {
   static async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { page, limit, search, category, gender, type, sort, order } = req.query;
+      const { page, limit, search, category, gender, type, sort, order, minPrice, maxPrice, size, style } = req.query;
 
       const filter: any = {};
       if (search) {
         filter.name = { $regex: String(search).trim(), $options: 'i' };
       }
-      if (category) {
+      if (category && category !== 'all') {
         filter.category = String(category);
-      } else if (type) {
+      } else if (type && type !== 'all') {
         filter.$or = [{ category: String(type) }, { type: String(type) }];
       }
-      if (gender) {
+      if (gender && gender !== 'all') {
         filter.gender = String(gender);
+      }
+      if (minPrice || maxPrice) {
+        filter.price = {};
+        if (minPrice) filter.price.$gte = Number(minPrice);
+        if (maxPrice) filter.price.$lte = Number(maxPrice);
+      }
+      if (size) {
+        const sizeList = Array.isArray(size) ? size : String(size).split(',').map(s => s.trim());
+        filter['variants.sizes'] = {
+          $elemMatch: {
+            size: { $in: sizeList },
+            stock: { $gt: 0 }
+          }
+        };
+      }
+      if (style) {
+        const styleRegex = { $regex: String(style).trim(), $options: 'i' };
+        filter.$or = [
+          { description: styleRegex },
+          { name: styleRegex },
+          { type: styleRegex }
+        ];
       }
 
       const sortField = sort ? String(sort) : 'createdAt';
@@ -168,10 +190,25 @@ export class ProductController {
 
       // Fallback nếu DB trống hoặc lỗi kết nối
       let fallbackList = DEFAULT_PRODUCTS;
-      if (category) {
+      if (category && category !== 'all') {
         fallbackList = fallbackList.filter((p) => p.category === category);
-      } else if (type) {
+      } else if (type && type !== 'all') {
         fallbackList = fallbackList.filter((p) => p.type === type || p.category === type);
+      }
+      if (gender && gender !== 'all') {
+        fallbackList = fallbackList.filter((p) => p.gender === gender || p.gender === 'Unisex');
+      }
+      if (minPrice) {
+        fallbackList = fallbackList.filter((p) => p.price >= Number(minPrice));
+      }
+      if (maxPrice) {
+        fallbackList = fallbackList.filter((p) => p.price <= Number(maxPrice));
+      }
+      if (size) {
+        const sizeList = Array.isArray(size) ? size : String(size).split(',').map(s => s.trim());
+        fallbackList = fallbackList.filter((p) =>
+          p.variants?.some((v) => v.sizes?.some((s) => sizeList.includes(s.size) && s.stock > 0))
+        );
       }
       if (search) {
         const s = String(search).toLowerCase();

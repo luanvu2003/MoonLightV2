@@ -45,35 +45,35 @@
 
             <nav class="menu">
                 <a href="index.html" class="active">Trang chủ</a>
-                <a href="#shop">Cửa hàng</a>
+                <a href="catalog.html">Cửa hàng</a>
 
                 <div class="nav-item dropdown">
-                    <a href="javascript:void(0)" class="dropdown-toggle">Bộ sưu tập <i class="fas fa-chevron-down"></i></a>
+                    <a href="catalog.html" class="dropdown-toggle">Bộ sưu tập <i class="fas fa-chevron-down"></i></a>
                     <ul class="dropdown-menu">
                         <li class="has-submenu">
-                            <a href="javascript:void(0)" onclick="filterShopCategory('nam')">Thời trang Nam <i class="fas fa-chevron-right"></i></a>
+                            <a href="catalog.html?gender=Nam">Thời trang Nam <i class="fas fa-chevron-right"></i></a>
                             <ul class="submenu">
                                 <li class="group-title">ÁO NAM</li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('vest')">Áo Vest / Blazer</a></li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('somi')">Áo Sơ Mi Luxury</a></li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('polo')">Áo Polo Premium</a></li>
+                                <li><a href="catalog.html?category=vest&gender=Nam">Áo Vest / Blazer</a></li>
+                                <li><a href="catalog.html?category=somi&gender=Nam">Áo Sơ Mi Luxury</a></li>
+                                <li><a href="catalog.html?category=polo&gender=Nam">Áo Polo Premium</a></li>
                                 <li class="group-title">QUẦN NAM</li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('quan')">Quần Âu Slimfit</a></li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('quan')">Quần Jeans</a></li>
+                                <li><a href="catalog.html?category=quanau&gender=Nam">Quần Âu Slimfit</a></li>
+                                <li><a href="catalog.html?category=quanjeans&gender=Nam">Quần Jeans</a></li>
                             </ul>
                         </li>
                         <li class="has-submenu">
-                            <a href="javascript:void(0)" onclick="filterShopCategory('nu')">Thời trang Nữ <i class="fas fa-chevron-right"></i></a>
+                            <a href="catalog.html?gender=Nu">Thời trang Nữ <i class="fas fa-chevron-right"></i></a>
                             <ul class="submenu">
                                 <li class="group-title">ÁO NỮ</li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('ao')">Áo Croptop</a></li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('somi')">Sơ mi lụa</a></li>
+                                <li><a href="catalog.html?category=aothun&gender=Nu">Áo Croptop & Thun</a></li>
+                                <li><a href="catalog.html?category=somi&gender=Nu">Sơ mi lụa</a></li>
                                 <li class="group-title">VÁY & ĐẦM</li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('vay')">Chân váy</a></li>
-                                <li><a href="javascript:void(0)" onclick="filterShopCategory('dam')">Đầm dạ hội</a></li>
+                                <li><a href="catalog.html?category=vay&gender=Nu">Chân váy</a></li>
+                                <li><a href="catalog.html?category=dam&gender=Nu">Đầm dạ hội</a></li>
                             </ul>
                         </li>
-                        <li><a href="javascript:void(0)" onclick="filterShopCategory('phukien')">Phụ kiện</a></li>
+                        <li><a href="catalog.html?category=phukien">Phụ kiện Da</a></li>
                     </ul>
                 </div>
 
@@ -124,8 +124,11 @@
 
             <div class="product-grid" id="product-grid"></div>
 
-            <div class="load-more-container" id="loadMoreContainer">
-                <button class="btn-outline" onclick="loadMoreProducts()">XEM THÊM SẢN PHẨM</button>
+            <div class="load-more-container" id="loadMoreContainer" style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+                <button class="btn-outline" onclick="loadMoreProducts()">XEM THÊM TRANG CHỦ</button>
+                <a href="catalog.html" class="btn-primary" style="text-decoration: none; padding: 12px 28px; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-sliders"></i> XEM TOÀN BỘ DANH MỤC & ĐO SIZE
+                </a>
             </div>
         </div>
     </section>

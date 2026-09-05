@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Mục & Bộ Sưu Tập Thời Trang - Moon Light Luxury</title>
+    <meta name="description" content="Danh mục thời trang cao cấp Moon Light. Khám phá các mẫu Áo Vest, Sơ Mi lụa, Polo, Quần Âu may đo với bộ lọc kích thước thông minh theo chiều cao & cân nặng.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/catalog.css?v=2.5">
+</head>
+<body class="catalog-body">
+
+    <!-- Luxury Preloader -->
+    <div class="moonlight-preloader" id="pagePreloader">
+        <div class="preloader-content">
+            <div class="preloader-logo">MOON<span class="highlight">LIGHT</span>.</div>
+            <div class="preloader-tagline">LUXURY CATALOG & MENSWEAR</div>
+            <div class="preloader-bar-wrap">
+                <div class="preloader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-content">
+            <input type="text" id="globalSearchInput" placeholder="Tìm kiếm sản phẩm (ví dụ: Vest, Sơ mi, Quần âu)...">
+            <button class="close-search" onclick="toggleSearch()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header id="navbar" style="background: rgba(9, 13, 22, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 1000;">
+        <div class="container nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration:none; color:#fff;">MOON<span class="highlight">LIGHT</span>.</a></h1>
+            </div>
+
+            <nav class="menu">
+                <a href="index.html">Trang chủ</a>
+                <a href="catalog.html" class="active">Bộ Sưu Tập</a>
+                <a href="catalog.html?gender=Nam">Thời Trang Nam</a>
+                <a href="catalog.html?gender=Nu">Thời Trang Nữ</a>
+                <a href="index.html#footer">Liên hệ</a>
+            </nav>
+
+            <div class="nav-icons">
+                <div class="icon-item" onclick="toggleSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></div>
+                <div class="icon-item" onclick="window.location.href='index.html#wishlist'" title="Danh sách yêu thích">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlistBadge" style="display:none;">0</span>
+                </div>
+                <div class="icon-item" onclick="window.location.href='checkout.html'" title="Giỏ hàng">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge" id="cartBadge" style="display:none;">0</span>
+                </div>
+            </div>
+            <div class="mobile-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="catalog-hero-banner">
+        <div class="container">
+            <div class="catalog-breadcrumb">
+                <a href="index.html"><i class="fas fa-house"></i> Trang chủ</a>
+                <span>/</span>
+                <span>Bộ Sưu Tập</span>
+                <span>/</span>
+                <span style="color: var(--catalog-gold);">Tất Cả Thiết Kế</span>
+            </div>
+            <h1 class="catalog-title">
+                <span>BỘ SƯU TẬP THỜI TRANG</span>
+                <span class="catalog-title-badge">SUMMER 2026</span>
+            </h1>
+            <p class="catalog-desc">
+                Định hình phong cách thượng lưu với các thiết kế may đo thủ công, sơ mi lụa tơ tằm Mulberry, áo vest Hoàng Gia và quần âu chuẩn form dáng quý ông & quý cô.
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content (2 Columns) -->
+    <main class="catalog-container">
+        <!-- SIDEBAR BỘ LỌC -->
+        <aside class="catalog-sidebar" id="catalogSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <i class="fas fa-sliders" style="color: var(--catalog-gold);"></i>
+                    <span>BỘ LỌC TÌM KIẾM</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="btn-reset-filters" onclick="resetAllFilters()" title="Xóa toàn bộ bộ lọc đã chọn">
+                        <i class="fas fa-rotate-right"></i> Đặt lại
+                    </button>
+                    <button class="sidebar-close-btn" onclick="toggleMobileFilters()" style="display:none; background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">&times;</button>
+                </div>
+            </div>
+
+            <!-- SMART SIZE ADVISOR (CHIỀU CAO & CÂN NẶNG) -->
+            <div class="size-advisor-card">
+                <div class="advisor-header">
+                    <div class="advisor-title">
+                        <i class="fas fa-ruler-combined"></i>
+                        <span>Đo Size Theo Vóc Dáng</span>
+                    </div>
+                    <span class="advisor-badge-hot">AI FIT</span>
+                </div>
+
+                <div class="advisor-gender-switch">
+                    <button type="button" class="advisor-gender-btn active" data-gender="Nam">Dáng Nam</button>
+                    <button type="button" class="advisor-gender-btn" data-gender="Nu">Dáng Nữ</button>
+                </div>
+
+                <div class="advisor-row">
+                    <div class="advisor-row-label">
+                        <span>Chiều cao:</span>
+                        <strong id="advisorHeightVal">172 cm</strong>
+                    </div>
+                    <input type="range" class="advisor-slider" id="advisorHeightSlider" min="145" max="195" value="172">
+                </div>
+
+                <div class="advisor-row">
+                    <div class="advisor-row-label">
+                        <span>Cân nặng:</span>
+                        <strong id="advisorWeightVal">68 kg</strong>
+                    </div>
+                    <input type="range" class="advisor-slider" id="advisorWeightSlider" min="40" max="115" value="68">
+                </div>
+
+                <div class="advisor-result-box">
+                    <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Size Đề Xuất Phù Hợp</div>
+                    <div class="advisor-result-size" id="advisorResultSize">SIZE L</div>
+                    <div class="advisor-result-hint" id="advisorResultHint">Độ phù hợp 98% cho nam, 172cm / 68kg (Chuẩn form vừa vặn).</div>
+                    <button type="button" class="btn-apply-advisor" onclick="applyAdvisorSizeToFilter()">
+                        <i class="fas fa-check-circle"></i> LỌC THEO SIZE NÀY
+                    </button>
+                </div>
+            </div>
+
+            <!-- BỘ LỌC GIỚI TÍNH -->
+            <div class="filter-section">
+                <div class="filter-section-title">
+                    <span>GIỚI TÍNH</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <button type="button" class="gender-chip-btn size-chip-btn active" data-gender="all" onclick="setGenderFilter('all')">Tất cả</button>
+                    <button type="button" class="gender-chip-btn size-chip-btn" data-gender="Nam" onclick="setGenderFilter('Nam')">Nam</button>
+                    <button type="button" class="gender-chip-btn size-chip-btn" data-gender="Nu" onclick="setGenderFilter('Nu')">Nữ</button>
+                </div>
+            </div>
+
+            <!-- BỘ LỌC DANH MỤC -->
+            <div class="filter-section">
+                <div class="filter-section-title">
+                    <span>DANH MỤC SẢN PHẨM</span>
+                </div>
+                <ul class="filter-cat-list">
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn active" data-cat="all" onclick="setCategoryFilter('all')">
+                            <span><i class="fas fa-border-all" style="margin-right: 6px; color: var(--catalog-gold);"></i> Tất Cả Sản Phẩm</span>
+                            <span class="filter-cat-count">12</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="vest" onclick="setCategoryFilter('vest')">
+                            <span>Áo Vest & Blazer</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="somi" onclick="setCategoryFilter('somi')">
+                            <span>Áo Sơ Mi Luxury</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="polo" onclick="setCategoryFilter('polo')">
+                            <span>Áo Polo Premium</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="aothun" onclick="setCategoryFilter('aothun')">
+                            <span>Áo Thun & Hoodie</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="quanau" onclick="setCategoryFilter('quanau')">
+                            <span>Quần Âu May Đo</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="quanjeans" onclick="setCategoryFilter('quanjeans')">
+                            <span>Quần Jeans Selvedge</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="dam" onclick="setCategoryFilter('dam')">
+                            <span>Váy & Đầm Dạ Hội</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="vay" onclick="setCategoryFilter('vay')">
+                            <span>Chân Váy Xếp Ly</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                    <li class="filter-cat-item">
+                        <button type="button" class="filter-cat-btn" data-cat="phukien" onclick="setCategoryFilter('phukien')">
+                            <span>Phụ Kiện Da</span>
+                            <span class="filter-cat-count">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- BỘ LỌC KÍCH CỠ (SIZE) -->
+            <div class="filter-section">
+                <div class="filter-section-title">
+                    <span>KÍCH CỠ (SIZE)</span>
+                </div>
+                <div class="filter-sizes-grid">
+                    <button type="button" class="size-chip-btn" data-size="S" onclick="toggleSizeFilter('S')">S</button>
+                    <button type="button" class="size-chip-btn" data-size="M" onclick="toggleSizeFilter('M')">M</button>
+                    <button type="button" class="size-chip-btn" data-size="L" onclick="toggleSizeFilter('L')">L</button>
+                    <button type="button" class="size-chip-btn" data-size="XL" onclick="toggleSizeFilter('XL')">XL</button>
+                    <button type="button" class="size-chip-btn" data-size="XXL" onclick="toggleSizeFilter('XXL')">XXL</button>
+                    <button type="button" class="size-chip-btn" data-size="29" onclick="toggleSizeFilter('29')">29</button>
+                    <button type="button" class="size-chip-btn" data-size="30" onclick="toggleSizeFilter('30')">30</button>
+                    <button type="button" class="size-chip-btn" data-size="31" onclick="toggleSizeFilter('31')">31</button>
+                    <button type="button" class="size-chip-btn" data-size="32" onclick="toggleSizeFilter('32')">32</button>
+                    <button type="button" class="size-chip-btn" data-size="33" onclick="toggleSizeFilter('33')">33</button>
+                    <button type="button" class="size-chip-btn" data-size="Freesize" onclick="toggleSizeFilter('Freesize')" style="grid-column: span 2;">Freesize</button>
+                </div>
+            </div>
+
+            <!-- BỘ LỌC KHOẢNG GIÁ -->
+            <div class="filter-section">
+                <div class="filter-section-title">
+                    <span>KHOẢNG GIÁ (VNĐ)</span>
+                </div>
+                <div class="price-presets">
+                    <button type="button" class="price-preset-btn" data-min="0" data-max="500000" onclick="setPricePreset(0, 500000)">Dưới 500.000đ</button>
+                    <button type="button" class="price-preset-btn" data-min="500000" data-max="1000000" onclick="setPricePreset(500000, 1000000)">500.000đ - 1.000.000đ</button>
+                    <button type="button" class="price-preset-btn" data-min="1000000" data-max="2000000" onclick="setPricePreset(1000000, 2000000)">1.000.000đ - 2.000.000đ</button>
+                    <button type="button" class="price-preset-btn" data-min="2000000" data-max="10000000" onclick="setPricePreset(2000000, 10000000)">Trên 2.000.000đ</button>
+                </div>
+                <div class="price-inputs-row">
+                    <div class="price-input-box">
+                        <input type="number" id="priceMinInput" placeholder="Từ..." min="0">
+                    </div>
+                    <span style="color: #64748b;">-</span>
+                    <div class="price-input-box">
+                        <input type="number" id="priceMaxInput" placeholder="Đến..." min="0">
+                    </div>
+                    <button type="button" class="btn-apply-price" onclick="applyCustomPriceInput()">Lọc</button>
+                </div>
+            </div>
+
+            <!-- BỘ LỌC KIỂU DÁNG / FIT -->
+            <div class="filter-section">
+                <div class="filter-section-title">
+                    <span>KIỂU DÁNG & FORM</span>
+                </div>
+                <div class="style-pills-wrap">
+                    <button type="button" class="style-pill-btn" data-style="Slimfit" onclick="toggleStyleFilter('Slimfit')">Slimfit</button>
+                    <button type="button" class="style-pill-btn" data-style="Regular fit" onclick="toggleStyleFilter('Regular fit')">Regular Fit</button>
+                    <button type="button" class="style-pill-btn" data-style="Oversize" onclick="toggleStyleFilter('Oversize')">Oversize</button>
+                    <button type="button" class="style-pill-btn" data-style="Classic" onclick="toggleStyleFilter('Classic')">Cổ Điển</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN PRODUCT DISPLAY -->
+        <section class="catalog-main">
+            <!-- TOOLBAR -->
+            <div class="catalog-toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-mobile-filter-toggle" onclick="toggleMobileFilters()">
+                        <i class="fas fa-sliders"></i> Bộ Lọc & Đo Size
+                    </button>
+                    <div class="catalog-count-text" id="catalogResultsCount">
+                        Đang tải danh sách sản phẩm...
+                    </div>
+                </div>
+
+                <div class="toolbar-right">
+                    <!-- Ô tìm kiếm trực tiếp -->
+                    <div style="position: relative;">
+                        <input type="text" id="catalogSearchInput" placeholder="Tìm kiếm nhanh..." style="padding: 8px 12px 8px 30px; background: rgba(0,0,0,0.3); border: 1px solid var(--catalog-border); border-radius: 8px; color: #fff; font-size: 12.5px; width: 150px;">
+                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #64748b;"></i>
+                    </div>
+
+                    <!-- Dropdown sắp xếp -->
+                    <div class="sort-select-wrap">
+                        <span>Sắp xếp:</span>
+                        <select class="sort-select" id="catalogSortSelect">
+                            <option value="featured">Đặc Sắc Nhất</option>
+                            <option value="price-asc">Giá: Thấp Đến Cao</option>
+                            <option value="price-desc">Giá: Cao Đến Thấp</option>
+                            <option value="newest">Mới Nhất</option>
+                            <option value="bestseller">Bán Chạy Nhất</option>
+                            <option value="rating">Đánh Giá Cao</option>
+                        </select>
+                    </div>
+
+                    <!-- Bộ chuyển đổi view mode -->
+                    <div class="view-mode-switch">
+                        <button type="button" class="view-btn active" data-view="grid-3" onclick="setViewMode('grid-3')" title="Hiển thị 3 cột">
+                            <i class="fas fa-grid-2"></i>
+                        </button>
+                        <button type="button" class="view-btn" data-view="grid-4" onclick="setViewMode('grid-4')" title="Hiển thị 4 cột">
+                            <i class="fas fa-table-cells"></i>
+                        </button>
+                        <button type="button" class="view-btn" data-view="grid-list" onclick="setViewMode('grid-list')" title="Hiển thị danh sách">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIVE FILTER TAGS -->
+            <div class="active-filters-bar" id="activeFiltersBar" style="display: none;"></div>
+
+            <!-- PRODUCT GRID -->
+            <div class="catalog-products-grid" id="catalogProductsGrid">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #94a3b8;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--catalog-gold); margin-bottom: 12px;"></i>
+                    <div>Đang đồng bộ dữ liệu thời trang MoonLight...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MOBILE FILTER OVERLAY -->
+    <div class="mobile-filter-drawer-overlay" id="mobileFilterOverlay" onclick="toggleMobileFilters()"></div>
+
+    <!-- QUICK VIEW MODAL -->
+    <div class="admin-modal" id="quickViewModal" style="z-index: 99999;">
+        <div class="modal-content" style="max-width: 780px; background: var(--catalog-card); border: 1px solid var(--catalog-border-gold); padding: 0; overflow: hidden;">
+            <div class="modal-header" style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--catalog-border); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="color: #fff; margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-eye" style="color: var(--catalog-gold);"></i>
+                    <span>Xem Nhanh Sản Phẩm</span>
+                </h4>
+                <button onclick="closeQuickView()" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body" id="quickViewBody" style="padding: 24px;"></div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastContainer"></div>
+
+    <!-- FOOTER -->
+    <footer id="footer" style="background: #060910; border-top: 1px solid rgba(255,255,255,0.06); padding: 60px 0 30px 0; color: #94a3b8; font-size: 13px;">
+        <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px; margin-bottom: 40px;">
+                <div>
+                    <h3 style="color: #fff; font-size: 20px; margin-bottom: 14px;">MOON<span style="color: var(--catalog-gold);">LIGHT</span>.</h3>
+                    <p style="line-height: 1.6;">Thương hiệu thời trang cao cấp định hình phong cách quý ông & quý cô hiện đại. Tinh tế trong từng đường may may đo.</p>
+                </div>
+                <div>
+                    <h4 style="color: #fff; margin-bottom: 14px; font-size: 14px;">DANH MỤC NỔI BẬT</h4>
+                    <ul style="list-style: none; padding: 0; line-height: 2;">
+                        <li><a href="catalog.html?category=vest" style="color: #94a3b8; text-decoration: none;">Áo Vest & Blazer Hoàng Gia</a></li>
+                        <li><a href="catalog.html?category=somi" style="color: #94a3b8; text-decoration: none;">Áo Sơ Mi Lụa Mulberry</a></li>
+                        <li><a href="catalog.html?category=polo" style="color: #94a3b8; text-decoration: none;">Áo Polo Dệt Kim Diamond</a></li>
+                        <li><a href="catalog.html?category=quanau" style="color: #94a3b8; text-decoration: none;">Quần Âu May Đo Sartorial</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #fff; margin-bottom: 14px; font-size: 14px;">HỖ TRỢ KHÁCH HÀNG</h4>
+                    <ul style="list-style: none; padding: 0; line-height: 2;">
+                        <li>Hotline: <strong style="color: var(--catalog-gold);">1900 8888</strong> (8:00 - 22:00)</li>
+                        <li>Showroom: 88 Đồng Khởi, Quận 1, TP. Hồ Chí Minh</li>
+                        <li>Chính sách đổi trả trong vòng 30 ngày</li>
+                        <li>Giao hàng hỏa tốc 2H tại TP.HCM & Hà Nội</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px; font-size: 12px;">
+                © 2026 MoonLight Luxury V2. All rights reserved. Designed for Excellence.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="./js/api.js?v=2.5"></script>
+    <script src="./js/catalog.js?v=2.5"></script>
+    <script>
+        // Tắt preloader sau khi tải
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('pagePreloader');
+            if (preloader) {
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 300);
+            }
+        });
+
+        // Search overlay toggle
+        function toggleSearch() {
+            const overlay = document.getElementById('searchOverlay');
+            if (overlay) overlay.classList.toggle('active');
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.querySelector('.menu');
+            if (menu) menu.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
