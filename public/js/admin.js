@@ -5994,7 +5994,7 @@ async function renderAdminSystem() {
                             <li>Tự động biên dịch mã nguồn TypeScript sang JavaScript (npm run build).</li>
                             <li>Tải lại ứng dụng với PM2 trong vòng 1 giây theo cơ chế Zero-Downtime.</li>
                         </ul>
-                        <button type="button" class="btn-deploy-quick" onclick="openDeployModal()" style="width:100%; justify-content:center; padding:12px; font-size:13px;">
+                        <button type="button" class="btn-deploy-quick" onclick="openDeployModal(true)" style="width:100%; justify-content:center; padding:12px; font-size:13px;">
                             <i class="fas fa-cloud-arrow-down"></i> BẮT ĐẦU CẬP NHẬT MÃ NGUỒN TỪ GITHUB
                         </button>
                     </div>
@@ -6038,22 +6038,40 @@ async function renderAdminSystem() {
 /**
  * Xử lý mở modal Deploy
  */
-function openDeployModal() {
+function openDeployModal(autoStart = false) {
     const modal = document.getElementById('deployModal');
-    if (!modal) return;
+    if (!modal) {
+        if (typeof showToast === 'function') {
+            showToast("Deploy Git", "Không tìm thấy giao diện bảng điều khiển", "error");
+        }
+        return;
+    }
     const intro = document.getElementById('deployIntroView');
     const prog = document.getElementById('deployProgressBox');
     const res = document.getElementById('deployResultSummary');
     const btns = document.getElementById('deployActionButtons');
     const confirmBtn = document.getElementById('btnConfirmDeploy');
 
-    if (intro) intro.style.display = 'block';
-    if (prog) prog.style.display = 'none';
-    if (res) res.style.display = 'none';
-    if (btns) btns.style.display = 'flex';
-    if (confirmBtn) confirmBtn.disabled = false;
-
+    // Hiển thị modal chắc chắn với cả class .open, .active và display: flex
+    modal.classList.add('open');
     modal.classList.add('active');
+    modal.style.display = 'flex';
+
+    if (autoStart) {
+        if (typeof showToast === 'function') {
+            showToast("Khởi Động Deploy", "Đang bắt đầu tiến trình cập nhật mã nguồn...", "info");
+        }
+        executeDeployProcess();
+    } else {
+        if (intro) intro.style.display = 'block';
+        if (prog) prog.style.display = 'none';
+        if (res) res.style.display = 'none';
+        if (btns) btns.style.display = 'flex';
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-play"></i> BẮT ĐẦU CẬP NHẬT NGAY';
+        }
+    }
 }
 
 /**
@@ -6061,7 +6079,11 @@ function openDeployModal() {
  */
 function closeDeployModal() {
     const modal = document.getElementById('deployModal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 let deployTimerInterval = null;

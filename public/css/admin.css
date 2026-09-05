@@ -1658,9 +1658,14 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     padding: 20px;
 }
 
-.admin-modal.open {
+.admin-modal.open,
+.admin-modal.active {
     display: flex !important;
     animation: fadeIn 0.2s ease;
+}
+
+#deployModal {
+    z-index: 99999 !important;
 }
 
 .modal-content {
