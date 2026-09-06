@@ -528,11 +528,17 @@
   }
 
   const scanStages = [
+    'Đang tải ảnh lên máy chủ AI...',
     'Quét cấu trúc khung xương & vóc dáng...',
+    'Phân tích điểm mốc cơ thể & tỷ lệ...',
     'Tách phom dáng trang phục hiện tại...',
     'Dệt chất liệu vải & nếp gấp MoonLight...',
     'Cân chỉnh ánh sáng & phối bóng tự nhiên...',
-    'Đang hoàn tất ảnh biến hóa trang phục...'
+    'Xử lý AI Neural Network đang chạy...',
+    'Tối ưu hóa chi tiết may mặc...',
+    'Ghép trang phục mới lên người mẫu...',
+    'Đang hoàn tất ảnh biến hóa trang phục...',
+    'AI đang xử lý — vui lòng đợi thêm vài giây...'
   ];
 
   let scanInterval = null;
@@ -548,7 +554,7 @@
     scanInterval = setInterval(() => {
       stageIdx = (stageIdx + 1) % scanStages.length;
       if (scanStatusText) scanStatusText.textContent = scanStages[stageIdx];
-    }, 600);
+    }, 3000);
   }
 
   function stopScanningAnimation() {
