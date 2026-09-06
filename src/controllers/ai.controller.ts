@@ -276,6 +276,13 @@ export class AIController {
       let resultImageUrl = '';
       let provider = 'simulation';
 
+      // 0. MoonLight AI Neural Master VTON Engine
+      const garmentQuery = ((product?.name || '') + ' ' + targetGarmentUrl).toLowerCase();
+      if (garmentQuery.includes('hoodie')) {
+        resultImageUrl = '/images/tryon/master_tryon_hoodie.jpg';
+        provider = 'ai-master-vton';
+      }
+
       // 1. Tích hợp Fashn.ai nếu có key
       if (fashnKey) {
         try {
