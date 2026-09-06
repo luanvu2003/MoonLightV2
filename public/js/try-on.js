@@ -840,29 +840,6 @@
         const prodName = ((product && product.name) || '').toLowerCase();
         const garmentType = classifyGarment(product);
 
-        // Nhận diện ảnh ngoại cảnh đặc trưng của khách hàng
-        const isOutdoorCustomerPhoto = (() => {
-          try {
-            const ratio = pW / pH;
-            if (ratio < 0.58 || ratio > 0.78) return false;
-            const cvsTest = document.createElement('canvas');
-            cvsTest.width = 10;
-            cvsTest.height = 10;
-            const ctxTest = cvsTest.getContext('2d');
-            ctxTest.drawImage(personImg, 0, 0, 10, 10);
-            const pDirt = ctxTest.getImageData(5, 9, 1, 1).data;
-            return (pDirt[0] > 140 && pDirt[1] > 80 && pDirt[2] > 40 && pDirt[0] > pDirt[1] && pDirt[1] > pDirt[2]);
-          } catch(e) {
-            return false;
-          }
-        })();
-
-        if (isOutdoorCustomerPhoto && prodName.includes('hoodie')) {
-          console.log('⭐ Nhận diện ảnh chân dung khách hàng - Áp dụng MoonLight AI Neural Master Try-On!');
-          resolve('/images/tryon/master_tryon_hoodie.jpg');
-          return;
-        }
-
         // 1. Quét tư thế cơ thể & mốc xương qua MediaPipe Pose AI
         let poseData = null;
         try {
