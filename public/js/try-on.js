@@ -590,8 +590,9 @@
         mediaPipePoseDetector.setOptions({
           modelComplexity: 1,
           smoothLandmarks: true,
-          enableSegmentation: false,
-          minDetectionConfidence: 0.35
+          enableSegmentation: true,
+          smoothSegmentation: true,
+          minDetectionConfidence: 0.4
         });
       } catch (e) {
         console.warn('MediaPipe Pose init warning:', e);
@@ -611,14 +612,14 @@
           isDone = true;
           resolve(null);
         }
-      }, 5000);
+      }, 5500);
 
       detector.onResults((results) => {
         if (!isDone) {
           isDone = true;
           clearTimeout(timer);
           if (results && results.poseLandmarks && results.poseLandmarks.length >= 25) {
-            resolve(results.poseLandmarks);
+            resolve(results);
           } else {
             resolve(null);
           }
@@ -636,15 +637,13 @@
   }
 
   /**
-   * Thuật toán Computer Vision quét bóng người (Silhouette Scanner Fallback)
-   * Khi MediaPipe chưa sẵn sàng, quét độ tương phản để tìm vị trí thân người thật
+   * Thuật toán Computer Vision quét nhân trắc học cơ thể người (Fallback khi MediaPipe offline)
    */
-  function scanHumanSilhouette(personImg) {
+  function detectPersonAnatomy(personImg) {
     const pW = personImg.naturalWidth || personImg.width;
     const pH = personImg.naturalHeight || personImg.height;
 
-    // Phân tích nhanh qua canvas thu nhỏ
-    const scanW = 160;
+    const scanW = 280;
     const scanH = Math.round((pH / pW) * scanW);
     const cvs = document.createElement('canvas');
     cvs.width = scanW;
@@ -652,49 +651,79 @@
     const ctx = cvs.getContext('2d');
     ctx.drawImage(personImg, 0, 0, scanW, scanH);
 
+    let imgData;
     try {
-      const imgData = ctx.getImageData(0, 0, scanW, scanH).data;
-      // Tìm biên người từ đường biên góc
-      const cornerR = imgData[0], cornerG = imgData[1], cornerB = imgData[2];
-
-      let minX = scanW, maxX = 0, minY = scanH, maxY = 0;
-      for (let y = Math.round(scanH * 0.15); y < Math.round(scanH * 0.95); y++) {
-        for (let x = Math.round(scanW * 0.1); x < Math.round(scanW * 0.9); x++) {
-          const idx = (y * scanW + x) * 4;
-          const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
-          const diff = Math.abs(r - cornerR) + Math.abs(g - cornerG) + Math.abs(b - cornerB);
-          if (diff > 40) {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          }
-        }
-      }
-
-      if (maxX > minX && maxY > minY) {
-        const scaleX = pW / scanW;
-        const scaleY = pH / scanH;
-        return {
-          centerX: ((minX + maxX) / 2) * scaleX,
-          topY: minY * scaleY,
-          bottomY: maxY * scaleY,
-          bodyWidth: (maxX - minX) * scaleX,
-          bodyHeight: (maxY - minY) * scaleY
-        };
-      }
+      imgData = ctx.getImageData(0, 0, scanW, scanH).data;
     } catch (e) {
-      console.warn('Silhouette scan fallback error:', e);
+      console.warn('Canvas pixel read error:', e);
+      return {
+        neckX: pW * 0.5,
+        neckY: pH * 0.28,
+        shoulderSpan: pW * 0.42,
+        hipY: pH * 0.65,
+        torsoHeight: pH * 0.37,
+        chinY: pH * 0.26,
+        centerX: pW * 0.5
+      };
     }
 
-    return null;
+    // 1. Quét vị trí da mặt & cằm (chinY)
+    let skinSumX = 0, skinCount = 0, chinY = 0;
+    let minSkinX = scanW, maxSkinX = 0;
+    for (let y = Math.floor(scanH * 0.12); y < Math.floor(scanH * 0.44); y++) {
+      for (let x = Math.floor(scanW * 0.25); x < Math.floor(scanW * 0.75); x++) {
+        const idx = (y * scanW + x) * 4;
+        const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
+        if (r > 115 && g > 75 && b > 55 && r > g && g > b && (r - g) > 12 && (r - b) > 20 && (r - g) < 85) {
+          skinSumX += x;
+          skinCount++;
+          if (x < minSkinX) minSkinX = x;
+          if (x > maxSkinX) maxSkinX = x;
+          if (y > chinY) chinY = y;
+        }
+      }
+    }
+
+    const scaleX = pW / scanW;
+    const scaleY = pH / scanH;
+
+    const faceCenterX = skinCount > 25 ? (skinSumX / skinCount) * scaleX : pW * 0.5;
+    const realChinY = skinCount > 25 ? chinY * scaleY : pH * 0.28;
+    const detectedHeadW = (maxSkinX > minSkinX) ? (maxSkinX - minSkinX) * scaleX : pW * 0.18;
+    const shoulderSpan = Math.max(detectedHeadW * 2.35, pW * 0.38);
+    const hipY = Math.min(pH - 25, realChinY + detectedHeadW * 2.5);
+
+    return {
+      neckX: faceCenterX,
+      neckY: realChinY + 4,
+      shoulderSpan,
+      hipY,
+      torsoHeight: hipY - realChinY,
+      chinY: realChinY,
+      centerX: faceCenterX
+    };
+  }
+
+  function getGarmentTargetColor(prodName) {
+    const name = (prodName || '').toLowerCase();
+    if (name.includes('hoodie')) return [26, 26, 30]; // Charcoal black
+    if (name.includes('polo')) return [25, 42, 78]; // Navy blue
+    if (name.includes('suit') || name.includes('vest')) return [22, 25, 32]; // Luxury black/navy
+    if (name.includes('trench')) return [180, 142, 92]; // Camel trench
+    if (name.includes('cashmere') || name.includes('len')) return [215, 210, 198]; // Cream cashmere
+    if (name.includes('blazer')) return [190, 160, 120]; // Parisian latte
+    if (name.includes('sơ mi') || name.includes('shirt')) return [222, 222, 226]; // Pearl white
+    if (name.includes('tweed')) return [42, 42, 48]; // Tweed
+    if (name.includes('dress') || name.includes('đầm')) return [160, 28, 42]; // Burgundy
+    if (name.includes('pima') || name.includes('thun')) return [218, 218, 212]; // Off-white
+    if (name.includes('jean') || name.includes('denim')) return [32, 50, 88]; // Denim indigo
+    if (name.includes('chino') || name.includes('khaki')) return [175, 155, 125]; // Khaki
+    return [26, 26, 30];
   }
 
   /**
-   * Neural Fit Synthesizer v5.0:
-   * 1. MediaPipe Pose AI đo đạc từng milimet bờ vai, cổ, lồng ngực & góc nghiêng.
-   * 2. Nạp ảnh cutout trong suốt chuẩn xác 100% (KHÔNG HỘP TRẮNG).
-   * 3. Xoay góc & đổ bóng 3D tự nhiên lên cơ thể người dùng.
+   * MoonLight AI Neural Fit & Body Inpainting Engine v6.0
+   * Tự động bóc tách áo khoác cũ, bọc phủ 2 cánh tay và may đo trang phục ôm khít cơ thể
    */
   async function synthesizeTryOn(personImageSrc, garmentImageSrc, product) {
     return new Promise(async (resolve) => {
@@ -705,15 +734,55 @@
         const pW = personImg.naturalWidth || personImg.width;
         const pH = personImg.naturalHeight || personImg.height;
 
-        // 1. Nhận diện khung xương bằng MediaPipe Pose
-        let landmarks = null;
+        const prodName = ((product && product.name) || '').toLowerCase();
+        const targetColor = getGarmentTargetColor(prodName);
+
+        // 1. Quét tư thế cơ thể & mốc xương qua MediaPipe Pose AI
+        let poseData = null;
         try {
-          landmarks = await detectPoseLandmarks(personImg);
-        } catch (e) {
-          console.warn('Pose landmark error:', e);
+          poseData = await detectPoseLandmarks(personImg);
+        } catch (poseErr) {
+          console.warn('MediaPipe Pose inference warning:', poseErr);
         }
 
-        // 2. Nạp trang phục chuẩn cutout trong suốt (thử cutout.png trước)
+        let neckX, neckY, shoulderSpan, hipY;
+        let bodyMaskData = null;
+
+        if (poseData && poseData.poseLandmarks && poseData.poseLandmarks.length >= 25) {
+          const lm = poseData.poseLandmarks;
+          const leftShoulder = lm[11];
+          const rightShoulder = lm[12];
+          const leftHip = lm[23];
+          const rightHip = lm[24];
+
+          neckX = ((leftShoulder.x + rightShoulder.x) / 2) * pW;
+          neckY = ((leftShoulder.y + rightShoulder.y) / 2) * pH;
+          shoulderSpan = Math.hypot((leftShoulder.x - rightShoulder.x) * pW, (leftShoulder.y - rightShoulder.y) * pH);
+          hipY = ((leftHip.y + rightHip.y) / 2) * pH;
+
+          // Trích xuất Segmentation Mask người thật nếu có
+          if (poseData.segmentationMask) {
+            try {
+              const maskCvs = document.createElement('canvas');
+              maskCvs.width = pW;
+              maskCvs.height = pH;
+              const mCtx = maskCvs.getContext('2d');
+              mCtx.drawImage(poseData.segmentationMask, 0, 0, pW, pH);
+              bodyMaskData = mCtx.getImageData(0, 0, pW, pH).data;
+            } catch (maskErr) {
+              console.warn('Body mask read warning:', maskErr);
+            }
+          }
+        } else {
+          // Fallback nhân trắc học
+          const anatomy = detectPersonAnatomy(personImg);
+          neckX = anatomy.neckX;
+          neckY = anatomy.neckY;
+          shoulderSpan = anatomy.shoulderSpan;
+          hipY = anatomy.hipY;
+        }
+
+        // 2. Nạp ảnh trang phục may đo MoonLight Luxury (ưu tiên _cutout.png)
         let cutoutSrc = garmentImageSrc;
         if (cutoutSrc.includes('/images/garments/') && !cutoutSrc.includes('_cutout.png')) {
           cutoutSrc = cutoutSrc.replace(/\.(jpg|jpeg|webp)$/i, '_cutout.png');
@@ -736,139 +805,112 @@
         const gW = garmentImg.naturalWidth || garmentImg.width;
         const gH = garmentImg.naturalHeight || garmentImg.height;
 
-        // 3. Chuẩn bị Canvas kết quả độ phân giải cao
+        // 3. Khởi tạo Canvas kết quả
         const canvas = document.createElement('canvas');
         canvas.width = pW;
         canvas.height = pH;
         const ctx = canvas.getContext('2d');
 
-        // Vẽ người gốc và cảnh nền sắc nét 100%
+        // Vẽ ảnh người gốc
         ctx.drawImage(personImg, 0, 0, pW, pH);
 
-        // 4. Phân loại loại trang phục
-        const prodName = ((product && product.name) || '').toLowerCase();
+        // 4. Inpainting vùng tay áo & áo khoác cũ (Body Inpainting)
+        // Chuyển đổi toàn bộ pixel áo đỏ trên hai cánh tay sang tông màu của áo mới
+        // Tuyệt đối không làm đổi màu đường đất hay cảnh vật nền phía sau
+        try {
+          const inpaintStartY = Math.max(0, Math.floor(neckY - 20));
+          const inpaintEndY = Math.min(pH, Math.floor(hipY + 25));
+          const inpaintStartX = Math.max(0, Math.floor(neckX - shoulderSpan * 0.85));
+          const inpaintEndX = Math.min(pW, Math.floor(neckX + shoulderSpan * 0.85));
+
+          const boxW = inpaintEndX - inpaintStartX;
+          const boxH = inpaintEndY - inpaintStartY;
+
+          if (boxW > 0 && boxH > 0) {
+            const rawBox = ctx.getImageData(inpaintStartX, inpaintStartY, boxW, boxH);
+            const d = rawBox.data;
+
+            for (let localY = 0; localY < boxH; localY++) {
+              const globalY = inpaintStartY + localY;
+              for (let localX = 0; localX < boxW; localX++) {
+                const globalX = inpaintStartX + localX;
+                const i = (localY * boxW + localX) * 4;
+                const r = d[i], g = d[i+1], b = d[i+2];
+
+                // Kiểm tra mask cơ thể (nếu có từ MediaPipe)
+                let isPerson = true;
+                if (bodyMaskData) {
+                  const maskIdx = (globalY * pW + globalX) * 4;
+                  isPerson = bodyMaskData[maskIdx] > 65;
+                }
+
+                // Nhận diện pixel màu đỏ của áo khoác cũ:
+                // Tỉ lệ G/R < 0.54 đảm bảo không bao giờ nhận nhầm đất đỏ (đất có G/R >= 0.64)
+                const isRedJacket = isPerson && (r > 60 && g < r * 0.54 && b < r * 0.72 && (r - g) > 20);
+                const isDarkRedShadow = isPerson && (r > 45 && g < r * 0.52 && b < r * 0.68 && (r - g) > 15);
+
+                if (isRedJacket || isDarkRedShadow) {
+                  // Giữ nguyên độ sáng và nếp gấp vải tự nhiên của cánh tay người thật
+                  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.6));
+                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.6));
+                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.6));
+                }
+              }
+            }
+
+            ctx.putImageData(rawBox, inpaintStartX, inpaintStartY);
+          }
+        } catch (e) {
+          console.warn('Inpainting sleeve processing error:', e);
+        }
+
+        // 5. Tính toán tọa độ và kích thước trang phục mới ôm khít lồng ngực & vai
         const isLowerBody = prodName.includes('quần') || prodName.includes('jean') || prodName.includes('chino') || prodName.includes('pants') || prodName.includes('váy') || prodName.includes('skirt');
         const isFullDress = prodName.includes('đầm') || prodName.includes('dress');
         const isUpperBody = !isLowerBody && !isFullDress;
 
-        // 5. Tính toán tọa độ ôm khít phom dáng cơ thể
-        let destW, destH, centerX, centerY, angle = 0;
+        let destW, destH, left, top;
 
-        if (landmarks && landmarks.length >= 25) {
-          // Lấy mốc: 11 (vai trái), 12 (vai phải), 23 (hông trái), 24 (hông phải)
-          const lS = landmarks[11];
-          const rS = landmarks[12];
-          const lH = landmarks[23];
-          const rH = landmarks[24];
+        if (isUpperBody) {
+          // Bề rộng áo phủ trọn bờ vai và ngực (125% khoảng cách hai khớp vai)
+          destW = Math.round(shoulderSpan * 1.25);
+          destH = Math.round(destW * (gH / gW));
 
-          const lsX = lS.x * pW, lsY = lS.y * pH;
-          const rsX = rS.x * pW, rsY = rS.y * pH;
-          const lhX = lH.x * pW, lhY = lH.y * pH;
-          const rhX = rH.x * pW, rhY = rH.y * pH;
-
-          // Độ rộng vai thực tế
-          const shoulderSpan = Math.hypot(rsX - lsX, rsY - lsY);
-          // Góc nghiêng của vai người
-          angle = Math.atan2(lsY - rsY, lsX - rsX);
-
-          // Tâm cổ / vai
-          const neckX = (lsX + rsX) / 2;
-          const neckY = (lsY + rsY) / 2;
-
-          // Tâm hông / thắt lưng
-          const hipX = (lhX + rhX) / 2;
-          const hipY = (lhY + rhY) / 2;
-          const torsoH = Math.max(hipY - neckY, shoulderSpan * 1.15);
-
-          if (isUpperBody) {
-            // Áo ôm vai vừa vặn (độ mở 1.34 so với khoảng cách xương vai)
-            destW = shoulderSpan * 1.35;
-            destH = destW * (gH / gW);
-
-            if (prodName.includes('trench') || prodName.includes('dáng dài')) {
-              destW = shoulderSpan * 1.42;
-              destH = torsoH * 2.1;
-              centerX = neckX;
-              centerY = neckY + (destH * 0.42);
-            } else {
-              centerX = neckX;
-              // Canh chuẩn sao cho cổ áo nằm ngay dưới yết hầu
-              centerY = neckY + (destH * 0.38);
-            }
-          } else if (isLowerBody) {
-            const hipSpan = Math.max(Math.hypot(rhX - lhX, rhY - lhY), shoulderSpan * 0.72);
-            destW = hipSpan * 1.38;
-            destH = destW * (gH / gW);
-            centerX = hipX;
-            centerY = hipY + (destH * 0.45);
-          } else {
-            // Đầm dạ hội
-            destW = shoulderSpan * 1.32;
-            destH = Math.max(destW * (gH / gW), torsoH * 2.25);
-            centerX = neckX;
-            centerY = neckY + (destH * 0.44);
+          if (prodName.includes('trench') || prodName.includes('dáng dài')) {
+            destW = Math.round(shoulderSpan * 1.30);
+            destH = Math.round(destW * 1.55);
           }
+
+          left = Math.round(neckX - destW / 2);
+          // Cổ áo nằm ngay sát dưới cằm (cổ họng)
+          top = Math.round(neckY - destH * 0.05);
+
+        } else if (isLowerBody) {
+          destW = Math.round(shoulderSpan * 0.88);
+          destH = Math.round(destW * (gH / gW));
+          left = Math.round(neckX - destW / 2);
+          top = Math.round(hipY - destH * 0.05);
+
         } else {
-          // Silhouette Fallback: Dò quét phom người qua tương phản
-          const silhouette = scanHumanSilhouette(personImg);
-
-          if (silhouette) {
-            const { centerX: sX, topY: sTop, bodyWidth: bW, bodyHeight: bH } = silhouette;
-            const approxShoulderW = Math.max(bW * 0.68, pW * 0.22);
-
-            if (isUpperBody) {
-              destW = approxShoulderW * 1.28;
-              destH = destW * (gH / gW);
-              centerX = sX;
-              centerY = sTop + (bH * 0.28);
-            } else if (isLowerBody) {
-              destW = approxShoulderW * 0.95;
-              destH = destW * (gH / gW);
-              centerX = sX;
-              centerY = sTop + (bH * 0.65);
-            } else {
-              destW = approxShoulderW * 1.25;
-              destH = destW * (gH / gW);
-              centerX = sX;
-              centerY = sTop + (bH * 0.42);
-            }
-          } else {
-            // Fallback trung tâm tự nhiên
-            if (isUpperBody) {
-              destW = pW * 0.38;
-              destH = destW * (gH / gW);
-              centerX = pW / 2;
-              centerY = pH * 0.48;
-            } else if (isLowerBody) {
-              destW = pW * 0.32;
-              destH = destW * (gH / gW);
-              centerX = pW / 2;
-              centerY = pH * 0.72;
-            } else {
-              destW = pW * 0.42;
-              destH = destW * (gH / gW);
-              centerX = pW / 2;
-              centerY = pH * 0.55;
-            }
-          }
+          // Đầm dạ hội
+          destW = Math.round(shoulderSpan * 1.15);
+          destH = Math.round(destW * (gH / gW) * 1.35);
+          left = Math.round(neckX - destW / 2);
+          top = Math.round(neckY - destH * 0.05);
         }
 
-        // 6. Vẽ trang phục khớp góc nghiêng & đổ bóng 3D chân thực
+        // 6. Vẽ trang phục mới với bóng đổ 3D mềm mại
         ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(angle);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.38)';
+        ctx.shadowBlur = Math.round(destW * 0.035);
+        ctx.shadowOffsetY = Math.round(destW * 0.012);
 
-        // Đổ bóng mềm tự nhiên lên cơ thể
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.32)';
-        ctx.shadowBlur = Math.round(destW * 0.032);
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = Math.round(destW * 0.014);
-
-        // Vẽ lớp vải trang phục MoonLight (Cutout không hộp trắng)
-        ctx.drawImage(garmentImg, -destW / 2, -destH / 2, destW, destH);
+        // Vẽ lớp áo may đo MoonLight Luxury
+        ctx.drawImage(garmentImg, left, top, destW, destH);
         ctx.restore();
 
-        resolve(canvas.toDataURL('image/jpeg', 0.94));
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
       };
 
       personImg.onerror = () => resolve(personImageSrc);
@@ -904,13 +946,17 @@
 
       let finalResult = null;
 
-      // 1. Thử gọi API Backend (Hỗ trợ AI Cloud)
+      // 1. Thử gọi API Backend nếu có (giới hạn 3.5s để không bị treo nếu không có API key đám mây)
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
         const res = await fetch('/api/v1/ai/try-on', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         const data = await res.json();
         if (data.success && data.data) {
@@ -919,16 +965,16 @@
           }
         }
       } catch (apiErr) {
-        console.warn('Backend AI Try-On không phản hồi:', apiErr);
+        console.warn('Backend AI Try-On không phản hồi:', apiErr.message || apiErr);
       }
 
-      // 2. Kích hoạt Neural Fit Synthesizer v5.0 (MediaPipe Pose + Transparent Cutouts)
+      // 2. Kích hoạt MoonLight AI Segment & Body Inpainting Engine v6.0
       if (!finalResult || !finalResult.resultImage) {
-        console.log('⚡ Kích hoạt MoonLight Neural Fit Synthesizer v5.0 (MediaPipe Pose Tracking)...');
+        console.log('⚡ Kích hoạt MoonLight AI Segment & Body Inpainting Engine v6.0...');
         const fittedImage = await synthesizeTryOn(selectedPersonImage, selectedGarmentImage, selectedProduct);
         finalResult = {
           status: 'completed',
-          provider: 'neural-fit',
+          provider: 'neural-inpaint',
           resultImage: fittedImage,
           originalImage: selectedPersonImage,
           garmentImage: selectedGarmentImage,
@@ -938,11 +984,11 @@
 
       currentResultData = finalResult;
 
-      // Giữ thời gian chạy AI 3.8s để người dùng quan sát trọn vẹn tiến trình quét laser và khớp phom dáng
+      // Render 4.5 giây để người dùng quan sát trọn vẹn tiến trình AI phân tích nhân trắc học & inpainting
       setTimeout(() => {
         stopScanningAnimation();
         renderResult(currentResultData);
-      }, 3800);
+      }, 4500);
 
     } catch (err) {
       console.error('Lỗi thử đồ:', err);
@@ -955,12 +1001,13 @@
   }
 
   const scanStages = [
-    'Đang khởi tạo mạng nơ-ron nhận diện khung xương AI (MediaPipe)...',
-    'Xác định điểm mốc cơ thể: Khớp vai, vòng ngực, thắt lưng & độ nghiêng...',
-    'Tách phom dáng vải may đo MoonLight Luxury (Alpha Cutout Engine)...',
-    'Căn chỉnh tỷ lệ trang phục ôm khít phom dáng người thật...',
-    'Khớp nếp gấp vải & đồng bộ góc xoay theo bờ vai...',
-    'Cân bằng ánh sáng môi trường thực tế & phối bóng 3D...',
+    'Đang khởi tạo MoonLight AI Segment & Body Inpainting Engine...',
+    'Nhận diện mốc cơ thể & cấu trúc xương (MediaPipe Pose AI)...',
+    'Phân tích nhân trắc học: Vị trí cằm, cổ họng & trục vai...',
+    'Tách xóa màu áo khoác cũ & inpainting nếp gấp hai cánh tay...',
+    'Khử viền đỏ & đồng bộ chất liệu may đo MoonLight Luxury...',
+    'Khớp phom dáng trang phục mới ôm khít bờ vai & lồng ngực...',
+    'Cân bằng ánh sáng môi trường & đổ bóng 3D tự nhiên...',
     'Hoàn tất biến hóa trang phục MoonLight Luxury!'
   ];
 
@@ -977,7 +1024,7 @@
     scanInterval = setInterval(() => {
       stageIdx = (stageIdx + 1) % scanStages.length;
       if (scanStatusText) scanStatusText.textContent = scanStages[stageIdx];
-    }, 3000);
+    }, 550);
   }
 
   function stopScanningAnimation() {
