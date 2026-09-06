@@ -263,7 +263,7 @@ export class OrderController {
 
   static async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const idStr = String(req.params.id || '').trim();
       const { status, cancelReason } = req.body;
 
       if (!Object.values(OrderStatus).includes(status)) {
@@ -271,24 +271,27 @@ export class OrderController {
         return;
       }
 
-      const oldOrder = await Order.findById(id);
+      const isObjectId = mongoose.Types.ObjectId.isValid(idStr);
+      const query: any = isObjectId ? { $or: [{ _id: idStr }, { orderCode: idStr }] } : { orderCode: idStr };
+
+      const oldOrder = await Order.findOne(query);
       if (!oldOrder) {
         sendError(res, 'Không tìm thấy đơn hàng để cập nhật', 404, 'ORDER_NOT_FOUND');
         return;
       }
 
-      const updateData: any = { status };
-      if (cancelReason) updateData.cancelReason = cancelReason;
-      if (req.user) updateData.processedBy = req.user.id;
-
-      const updatedOrder = await Order.findByIdAndUpdate(id, updateData, { new: true });
-      if (!updatedOrder) {
-        sendError(res, 'Không tìm thấy đơn hàng để cập nhật', 404, 'ORDER_NOT_FOUND');
-        return;
+      const wasCancelled = oldOrder.status === OrderStatus.Cancelled;
+      oldOrder.status = status;
+      if (status === OrderStatus.Completed) {
+        oldOrder.isPaid = true;
       }
+      if (cancelReason) oldOrder.cancelReason = cancelReason;
+      if (req.user) oldOrder.processedBy = req.user.id;
+
+      const updatedOrder = await oldOrder.save();
 
       // Nếu hủy đơn -> Tự động hoàn lại tồn kho cho các sản phẩm
-      if (status === OrderStatus.Cancelled && oldOrder.status !== OrderStatus.Cancelled) {
+      if (status === OrderStatus.Cancelled && !wasCancelled && oldOrder.items) {
         await restoreOrderStock(oldOrder.items);
       }
 
@@ -309,8 +312,11 @@ export class OrderController {
 
   static async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
-      const deletedOrder = await Order.findByIdAndDelete(id);
+      const idStr = String(req.params.id || '').trim();
+      const isObjectId = mongoose.Types.ObjectId.isValid(idStr);
+      const query: any = isObjectId ? { $or: [{ _id: idStr }, { orderCode: idStr }] } : { orderCode: idStr };
+
+      const deletedOrder = await Order.findOneAndDelete(query);
       if (!deletedOrder) {
         sendError(res, 'Không tìm thấy đơn hàng để xóa', 404, 'ORDER_NOT_FOUND');
         return;

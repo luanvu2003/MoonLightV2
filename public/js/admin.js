@@ -2869,12 +2869,16 @@ async function syncAdminOrdersFromBackend() {
                     };
                 });
 
-                // Merge đơn hàng từ server với local
+                // Merge đơn hàng từ server: Server MongoDB là nguồn chuẩn xác thực nhất
                 const merged = [...mappedBackendOrders];
                 orders.forEach(lo => {
-                    const exists = merged.some(m => m.id === lo.id || (m.orderCode && m.orderCode === lo.id));
-                    if (!exists) {
-                        merged.push(lo);
+                    // Nếu là đơn demo mẫu cũ thì giữ lại, nếu là đơn thật (ML hoặc có _id) mà server không còn thì không thêm lại
+                    const isRealOrder = String(lo.id || lo.orderCode || '').startsWith('ML') || lo._id;
+                    if (!isRealOrder) {
+                        const exists = merged.some(m => m.id === lo.id || (m.orderCode && m.orderCode === lo.id));
+                        if (!exists) {
+                            merged.push(lo);
+                        }
                     }
                 });
 
@@ -3337,6 +3341,10 @@ function approveOrder(id) {
     localStorage.setItem('moonlight_orders', JSON.stringify(orders));
     localStorage.setItem('moonlight_products', JSON.stringify(products));
 
+    if (window.MoonlightAPI) {
+        window.MoonlightAPI.updateOrderStatus(order.orderCode || order._id || id, 'completed').catch(err => console.warn('Approve API error:', err.message));
+    }
+
     logActivity("Duyệt đơn", `Duyệt đơn hàng #${id} & trừ kho thành công`);
     showToast("Đã duyệt đơn", `Đơn hàng #${id} đã hoàn tất và trừ số lượng kho!`, "success");
     showResultModal({ type: 'success', title: 'Duyệt Đơn Hàng Thành Công!', message: `Đơn hàng #${id} đã hoàn tất và hệ thống đã tự động trừ tồn kho theo từng kích cỡ/màu sắc chính xác!` });
@@ -3356,9 +3364,16 @@ function cancelOrder(id) {
         icon: "fa-times-circle",
         isDanger: true,
         confirmText: "HỦY ĐƠN",
-        onConfirm: () => {
+        onConfirm: async () => {
             orders[idx].status = 'cancelled';
             localStorage.setItem('moonlight_orders', JSON.stringify(orders));
+            if (window.MoonlightAPI) {
+                try {
+                    await window.MoonlightAPI.updateOrderStatus(orders[idx].orderCode || orders[idx]._id || id, 'cancelled');
+                } catch (err) {
+                    console.warn('Cancel API error:', err.message);
+                }
+            }
             logActivity("Hủy đơn", `Đã hủy đơn hàng #${id}`);
             showToast("Đã hủy đơn", `Đơn hàng #${id} đã chuyển sang trạng thái Hủy`, "info");
             showResultModal({ type: 'success', title: 'Đã Hủy Đơn Hàng', message: `Đơn hàng #${id} đã được chuyển sang trạng thái đã hủy.` });
@@ -3382,9 +3397,17 @@ function deleteOrder(id) {
         icon: "fa-trash-alt",
         isDanger: true,
         confirmText: "XÓA VĨNH VIỄN",
-        onConfirm: () => {
+        onConfirm: async () => {
+            const targetOrder = orders.find(o => o.id === id);
             orders = orders.filter(o => o.id !== id);
             localStorage.setItem('moonlight_orders', JSON.stringify(orders));
+            if (window.MoonlightAPI && targetOrder) {
+                try {
+                    await window.MoonlightAPI.deleteOrder(targetOrder.orderCode || targetOrder._id || id);
+                } catch (err) {
+                    console.warn('Delete API error:', err.message);
+                }
+            }
             logActivity("Xóa đơn", `Xóa đơn hàng #${id} khỏi hệ thống`);
             showToast("Đã xóa", `Đơn hàng #${id} đã được loại bỏ`, "info");
             showResultModal({ type: 'success', title: 'Đã Xóa Đơn Hàng', message: `Đơn hàng #${id} đã được xóa sạch khỏi cơ sở dữ liệu.` });
@@ -3404,9 +3427,16 @@ function confirmPayment(id) {
         icon: "fa-university",
         isDanger: false,
         confirmText: "TIỀN ĐÃ VỀ",
-        onConfirm: () => {
+        onConfirm: async () => {
             orders[idx].isPaid = true;
             localStorage.setItem('moonlight_orders', JSON.stringify(orders));
+            if (window.MoonlightAPI) {
+                try {
+                    await window.MoonlightAPI.confirmBankTransfer(orders[idx].orderCode || orders[idx]._id || id);
+                } catch (err) {
+                    console.warn('Confirm payment API error:', err.message);
+                }
+            }
             logActivity("Xác nhận tiền", `Xác nhận nhận tiền Banking cho đơn #${id}`);
             showToast("Đã nhận tiền", `Đã cập nhật trạng thái đã thanh toán cho đơn #${id}. Bạn có thể duyệt đơn.`, "success");
             showResultModal({ type: 'success', title: 'Xác Nhận Tiền Thành Công!', message: `Đơn hàng #${id} đã được đánh dấu là Đã Nhận Tiền. Bạn có thể tiến hành bấm Duyệt Đơn ngay bây giờ.` });
