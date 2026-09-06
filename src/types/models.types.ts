@@ -15,6 +15,7 @@ export interface IUser {
 
 export interface IVariantSize {
   size: string;
+  name?: string;
   stock: number;
 }
 

@@ -276,7 +276,11 @@ function updateCartUI() {
 
         // Tìm dữ liệu gốc của sản phẩm để lấy danh sách size/màu đầy đủ
         const allProducts = [...products, ...bestSellers];
-        const originalProduct = allProducts.find(p => p.id === item.id);
+        const originalProduct = allProducts.find(p => String(p.id || p._id) === String(item.id));
+        const pVariants = (originalProduct && originalProduct.variants) ? originalProduct.variants : [];
+        const pSizes = (originalProduct && originalProduct.sizes && Array.isArray(originalProduct.sizes)) 
+            ? originalProduct.sizes 
+            : (pVariants[0]?.sizes ? pVariants[0].sizes.map(s => typeof s === 'string' ? s : (s.size || s.name || 'M')) : ['M']);
 
         list.innerHTML += `
             <div class="cart-item-row">
@@ -287,9 +291,9 @@ function updateCartUI() {
                     <div class="cart-mini-options">
                         <p>Màu: </p>
                         <div class="mini-color-list">
-                            ${originalProduct.variants.map(v => `
+                            ${pVariants.map(v => `
                                 <span class="mini-color-dot ${v.color === item.color ? 'active' : ''}" 
-                                      style="background: ${v.hex}" 
+                                      style="background: ${v.hex || '#111'}" 
                                       title="${v.color}"
                                       onclick="updateCartItemProperty(${index}, 'color', '${v.color}')">
                                 </span>
@@ -300,7 +304,7 @@ function updateCartUI() {
                     <div class="cart-mini-options">
                         <p>Size: </p>
                         <div class="mini-size-list">
-                            ${originalProduct.sizes.map(s => `
+                            ${pSizes.map(s => `
                                 <span class="mini-size-tag ${s === item.size ? 'active' : ''}" 
                                       onclick="updateCartItemProperty(${index}, 'size', '${s}')">
                                     ${s}
@@ -391,17 +395,23 @@ function toggleCart() {
 // Quick Add từ Trang Chủ
 function quickAdd(id) {
     const allProducts = [...products, ...bestSellers];
-    const p = allProducts.find(x => x.id === id);
+    const p = allProducts.find(x => String(x.id || x._id) === String(id));
     if (p) {
-        // Lấy biến thể đầu tiên làm mặc định
-        const v = p.variants[0];
+        const v = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
+        let sChoice = 'M';
+        if (v && v.sizes && v.sizes.length > 0) {
+            const s0 = v.sizes[0];
+            sChoice = typeof s0 === 'string' ? s0 : (s0.size || s0.name || 'M');
+        } else if (p.sizes && p.sizes.length > 0) {
+            sChoice = typeof p.sizes[0] === 'string' ? p.sizes[0] : (p.sizes[0].size || p.sizes[0].name || 'M');
+        }
         pushToCart({
-            id: p.id,
+            id: p.id || p._id,
             name: p.name,
-            price: v.price,
-            img: v.img,
-            color: v.color,
-            size: p.sizes[0],
+            price: v ? (v.price || p.price) : p.price,
+            img: v ? (v.img || p.image) : p.image,
+            color: v ? (v.color || 'Tiêu chuẩn') : 'Tiêu chuẩn',
+            size: sChoice,
             quantity: 1
         });
     }
@@ -582,13 +592,49 @@ function handleCheckout(e) {
 }
 
 // Toast
-function showToast({ title = '', message = '', type = 'info', duration = 3000 }) {
+function showToast(arg1, arg2, arg3) {
+    let title = '';
+    let message = '';
+    let type = 'info';
+    let duration = 3000;
+
+    if (typeof arg1 === 'object' && arg1 !== null) {
+        title = arg1.title || '';
+        message = arg1.message || arg1.msg || '';
+        type = arg1.type || 'info';
+        if (arg1.duration) duration = arg1.duration;
+    } else if (typeof arg1 === 'string') {
+        if (arg3 !== undefined) {
+            title = arg1;
+            message = arg2 || '';
+            type = arg3 || 'info';
+        } else if (arg2 !== undefined) {
+            if (['success', 'info', 'warning', 'error', 'danger'].includes(arg1.toLowerCase())) {
+                type = arg1.toLowerCase() === 'danger' ? 'error' : arg1.toLowerCase();
+                title = type === 'success' ? 'Thành công' : type === 'error' ? 'Thất bại' : type === 'warning' ? 'Cảnh báo' : 'Thông báo';
+                message = arg2;
+            } else {
+                title = arg1;
+                message = arg2;
+                type = 'info';
+            }
+        } else {
+            title = 'Thông báo';
+            message = arg1;
+            type = 'info';
+        }
+    }
+
+    if (!['success', 'info', 'warning', 'error'].includes(type)) {
+        type = 'info';
+    }
+
     const main = document.getElementById('toast-box');
     if (!main) { const box = document.createElement('div'); box.id = 'toast-box'; document.body.appendChild(box); }
     const toastBox = document.getElementById('toast-box');
     const toast = document.createElement('div');
     const icons = { success: 'fas fa-check-circle', info: 'fas fa-info-circle', warning: 'fas fa-exclamation-circle', error: 'fas fa-exclamation-triangle' };
-    const icon = icons[type];
+    const icon = icons[type] || icons.info;
     const delay = (duration / 1000).toFixed(2);
     toast.classList.add('toast', `toast--${type}`);
     toast.style.animation = `slideInLeft 0.5s ease, fadeOut linear 1s ${delay}s forwards`;

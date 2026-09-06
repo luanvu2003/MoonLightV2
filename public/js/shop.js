@@ -1528,13 +1528,14 @@ function renderSizeButtons() {
 
   sizeContainer.innerHTML = selectedColor.sizes
     .map((s) => {
-      const sName = s.name || s.size;
-      const isOutOfStock = s.stock <= 0;
+      const sName = typeof s === 'string' ? s : (s.size || s.name || 'Free');
+      const sStock = (typeof s === 'object' && s !== null) ? (s.stock ?? 0) : 10;
+      const isOutOfStock = sStock <= 0;
       const isSelected = selectedSizeName === sName;
 
       return `
         <div class="size-btn ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'disabled' : ''}" 
-             onclick="selectSize('${sName}', ${s.stock || 0}, this)">
+             onclick="selectSize('${sName}', ${sStock}, this)">
              ${sName}
         </div>`;
     })
@@ -1895,7 +1896,7 @@ function renderCheckoutPage() {
           <img src="${item.img}" style="width:60px; height:72px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; flex-shrink:0;">
           <div style="flex:1;">
               <h4 style="font-size:13.5px; margin:0 0 4px 0; color:#0f172a; font-weight:600;">${item.name}</h4>
-              <p style="font-size:12px; color:#64748b; margin:0;">${item.color} | Size: <strong>${item.size}</strong></p>
+              <p style="font-size:12px; color:#64748b; margin:0;">${item.color || 'Tiêu chuẩn'} | Size: <strong>${item.size || 'Freesize'}</strong></p>
               <p style="font-size:12px; margin:4px 0 0 0; color:#475569;">Số lượng: <strong>${item.quantity}</strong></p>
           </div>
           <div style="font-weight:700; font-size:14px; color:#0f172a;">${(item.price * item.quantity).toLocaleString('vi-VN')}₫</div>
@@ -2076,8 +2077,42 @@ function handleNewsletter(e) {
   });
 }
 
-// Toast Notification
-function showToast({ title, message, type }) {
+// Toast Notification (Hỗ trợ cả 3 tham số và 1 object)
+function showToast(arg1, arg2, arg3) {
+  let title = 'Thông báo';
+  let message = '';
+  let type = 'info';
+
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    title = arg1.title || 'Thông báo';
+    message = arg1.message || arg1.msg || '';
+    type = arg1.type || 'info';
+  } else if (typeof arg1 === 'string') {
+    if (arg3 !== undefined) {
+      title = arg1;
+      message = arg2 || '';
+      type = arg3 || 'info';
+    } else if (arg2 !== undefined) {
+      if (['success', 'info', 'warning', 'error', 'danger'].includes(arg1.toLowerCase())) {
+        type = arg1.toLowerCase() === 'danger' ? 'error' : arg1.toLowerCase();
+        title = type === 'success' ? 'Thành công' : type === 'error' ? 'Thất bại' : type === 'warning' ? 'Cảnh báo' : 'Thông báo';
+        message = arg2;
+      } else {
+        title = arg1;
+        message = arg2;
+        type = 'info';
+      }
+    } else {
+      title = 'Thông báo';
+      message = arg1;
+      type = 'info';
+    }
+  }
+
+  if (!['success', 'info', 'warning', 'error'].includes(type)) {
+    type = 'info';
+  }
+
   let box = document.getElementById('toast-box');
   if (!box) {
     box = document.createElement('div');
@@ -2095,7 +2130,7 @@ function showToast({ title, message, type }) {
 
   toast.classList.add('toast', `toast--${type}`);
   toast.innerHTML = `
-        <div class="toast__icon"><i class="${icons[type]}"></i></div>
+        <div class="toast__icon"><i class="${icons[type] || icons.info}"></i></div>
         <div class="toast__body">
             <h3 class="toast__title">${title}</h3>
             <p class="toast__msg">${message}</p>

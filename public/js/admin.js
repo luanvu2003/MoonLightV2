@@ -1956,9 +1956,11 @@ function renderAdminProducts() {
                                             <strong style="color:#eee; font-size:12px;">${v.color}</strong> | 
                                             <b style="color:var(--gold); font-size:12px;">${Number(v.price).toLocaleString()}₫</b> |
                                             <span>
-                                                ${(v.sizes || []).map(s => `
-                                                    <span class="size-badge ${s.stock < 5 ? 'out-stock' : ''}">${s.name}: <b>${s.stock}</b></span>
-                                                `).join('')}
+                                                ${(v.sizes || []).map(s => {
+                                                    const sName = typeof s === 'string' ? s : (s.size || s.name || 'Free');
+                                                    const sStock = (typeof s === 'object' && s !== null) ? (s.stock ?? 0) : 0;
+                                                    return `<span class="size-badge ${sStock < 5 ? 'out-stock' : ''}">${sName}: <b>${sStock}</b></span>`;
+                                                }).join('')}
                                             </span>
                                         </div>
                                     `).join('')}
@@ -2139,12 +2141,16 @@ function addVariantCard(color = '', hex = '#111111', imagesOrImg = '', price = '
     if (typeof sizes === 'string') {
         sizeList = parseSizeInput(sizes);
     } else if (Array.isArray(sizes) && sizes.length > 0) {
-        sizeList = sizes.map(s => typeof s === 'string' ? { name: s, stock: 10 } : { name: s.name, stock: s.stock || 0 });
+        sizeList = sizes.map(s => {
+            const sName = typeof s === 'string' ? s : (s.size || s.name || 'Free');
+            const sStock = (typeof s === 'object' && s !== null) ? (parseInt(s.stock) || 0) : 10;
+            return { name: sName, size: sName, stock: sStock };
+        });
     } else {
         sizeList = [
-            { name: 'S', stock: 10 },
-            { name: 'M', stock: 15 },
-            { name: 'L', stock: 10 }
+            { name: 'S', size: 'S', stock: 10 },
+            { name: 'M', size: 'M', stock: 15 },
+            { name: 'L', size: 'L', stock: 10 }
         ];
     }
 
@@ -2232,14 +2238,17 @@ function addVariantCard(color = '', hex = '#111111', imagesOrImg = '', price = '
             </div>
 
             <div class="size-chips-grid">
-                ${sizeList.map(s => `
+                ${sizeList.map(s => {
+                    const sName = typeof s === 'string' ? s : (s.size || s.name || 'Free');
+                    const sStock = (typeof s === 'object' && s !== null) ? (s.stock ?? 0) : 0;
+                    return `
                     <div class="size-inventory-chip">
-                        <span class="chip-size-label">${s.name}</span>
-                        <input type="number" class="chip-stock-input" value="${s.stock}" min="0" title="Tồn kho size ${s.name}" oninput="updateVariantCardStock(this.closest('.variant-card'))">
+                        <span class="chip-size-label">${sName}</span>
+                        <input type="number" class="chip-stock-input" value="${sStock}" min="0" title="Tồn kho size ${sName}" oninput="updateVariantCardStock(this.closest('.variant-card'))">
                         <span class="chip-unit">cái</span>
-                        <button type="button" class="chip-remove-btn" title="Xóa size ${s.name}" onclick="this.closest('.size-inventory-chip').remove(); updateVariantCardStock(this.closest('.variant-card'))">&times;</button>
-                    </div>
-                `).join('')}
+                        <button type="button" class="chip-remove-btn" title="Xóa size ${sName}" onclick="this.closest('.size-inventory-chip').remove(); updateVariantCardStock(this.closest('.variant-card'))">&times;</button>
+                    </div>`;
+                }).join('')}
             </div>
 
             <div style="display:flex; justify-content:flex-end;">
@@ -2545,13 +2554,14 @@ function parseSizeInput(str) {
     if (!str) return [];
     return str.split(',').map(item => {
         const [name, stock] = item.trim().split(':');
-        return { name: name?.trim().toUpperCase() || '?', stock: stock ? parseInt(stock) : 0 };
+        const sName = name?.trim().toUpperCase() || '?';
+        return { name: sName, size: sName, stock: stock ? parseInt(stock) : 0 };
     }).filter(s => s.name !== '?');
 }
 
 function formatSizeInput(sizes) {
     if (!Array.isArray(sizes)) return '';
-    return sizes.map(s => typeof s === 'string' ? `${s}:0` : `${s.name}:${s.stock}`).join(', ');
+    return sizes.map(s => typeof s === 'string' ? `${s}:0` : `${s.size || s.name || 'Free'}:${s.stock ?? 0}`).join(', ');
 }
 
 function handleSaveProduct(e) {
@@ -2593,10 +2603,10 @@ function handleSaveProduct(e) {
             sizes = sizeChips.map(chip => {
                 const sName = chip.querySelector('.chip-size-label').innerText.trim().toUpperCase();
                 const sStock = parseInt(chip.querySelector('.chip-stock-input').value) || 0;
-                return { name: sName, stock: sStock };
+                return { name: sName, size: sName, stock: sStock };
             });
         } else {
-            sizes = [{ name: 'FREE', stock: 10 }];
+            sizes = [{ name: 'FREE', size: 'FREE', stock: 10 }];
         }
 
         const variantStock = sizes.reduce((sum, s) => sum + (s.stock || 0), 0);
@@ -3184,7 +3194,7 @@ function approveOrder(id) {
         if (pIdx !== -1) {
             const vIdx = products[pIdx].variants.findIndex(v => v.color === item.color);
             if (vIdx !== -1 && products[pIdx].variants[vIdx].sizes) {
-                const sIdx = products[pIdx].variants[vIdx].sizes.findIndex(s => s.name === item.size);
+                const sIdx = products[pIdx].variants[vIdx].sizes.findIndex(s => (s.size || s.name) === item.size);
                 if (sIdx !== -1) {
                     products[pIdx].variants[vIdx].sizes[sIdx].stock = Math.max(0, products[pIdx].variants[vIdx].sizes[sIdx].stock - item.quantity);
                 }
@@ -4907,9 +4917,43 @@ function deleteStaff(id) {
 }
 
 // --- 10. TIỆN ÍCH HỆ THỐNG: TOAST NOTIFICATION & AUDIT LOGS ---
-function showToast(title, message, type = 'info') {
+function showToast(arg1, arg2, arg3) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+
+    let title = 'Thông báo';
+    let message = '';
+    let type = 'info';
+
+    if (typeof arg1 === 'object' && arg1 !== null) {
+        title = arg1.title || 'Thông báo';
+        message = arg1.message || arg1.msg || '';
+        type = arg1.type || 'info';
+    } else if (typeof arg1 === 'string') {
+        if (arg3 !== undefined) {
+            title = arg1;
+            message = arg2 || '';
+            type = arg3 || 'info';
+        } else if (arg2 !== undefined) {
+            if (['success', 'info', 'warning', 'error', 'danger'].includes(arg1.toLowerCase())) {
+                type = arg1.toLowerCase() === 'danger' ? 'error' : arg1.toLowerCase();
+                title = type === 'success' ? 'Thành công' : type === 'error' ? 'Thất bại' : type === 'warning' ? 'Cảnh báo' : 'Thông báo';
+                message = arg2;
+            } else {
+                title = arg1;
+                message = arg2;
+                type = 'info';
+            }
+        } else {
+            title = 'Thông báo';
+            message = arg1;
+            type = 'info';
+        }
+    }
+
+    if (!['success', 'info', 'warning', 'error'].includes(type)) {
+        type = 'info';
+    }
 
     const toast = document.createElement('div');
     toast.className = `toast-item ${type}`;

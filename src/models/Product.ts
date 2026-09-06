@@ -5,10 +5,37 @@ import { GenderCategory } from '../types/enums.js';
 const VariantSizeSchema = new Schema<IVariantSize>(
   {
     size: { type: String, required: true },
+    name: { type: String },
     stock: { type: Number, required: true, default: 0 }
   },
-  { _id: false }
+  {
+    _id: false,
+    toJSON: {
+      transform: function (_doc: any, ret: any) {
+        ret.name = ret.name || ret.size;
+        ret.size = ret.size || ret.name;
+        return ret;
+      }
+    },
+    toObject: {
+      transform: function (_doc: any, ret: any) {
+        ret.name = ret.name || ret.size;
+        ret.size = ret.size || ret.name;
+        return ret;
+      }
+    }
+  }
 );
+
+VariantSizeSchema.pre('validate', function () {
+  const self = this as any;
+  if (!self.size && self.name) {
+    self.size = self.name;
+  }
+  if (!self.name && self.size) {
+    self.name = self.size;
+  }
+});
 
 const VariantSchema = new Schema<IVariant>(
   {

@@ -1062,7 +1062,10 @@ function applyFiltersAndRender(resetLimit = true) {
     list = list.filter(p => {
       if (!p.variants || p.variants.length === 0) return true;
       return p.variants.some(v => 
-        v.sizes && v.sizes.some(s => catalogState.selectedSizes.has(s.size) && (s.stock === undefined || s.stock > 0))
+        v.sizes && v.sizes.some(s => {
+          const sName = typeof s === 'string' ? s : (s.size || s.name);
+          return catalogState.selectedSizes.has(sName) && (s.stock === undefined || s.stock > 0);
+        })
       );
     });
   }
@@ -1657,7 +1660,11 @@ function quickAddToCart(productId) {
   if (!prod) return;
 
   const firstVariant = prod.variants && prod.variants.length > 0 ? prod.variants[0] : null;
-  const firstSize = firstVariant && firstVariant.sizes && firstVariant.sizes.length > 0 ? firstVariant.sizes[0].size : 'Freesize';
+  let firstSize = 'Freesize';
+  if (firstVariant && firstVariant.sizes && firstVariant.sizes.length > 0) {
+    const s0 = firstVariant.sizes[0];
+    firstSize = typeof s0 === 'string' ? s0 : (s0.size || s0.name || 'Freesize');
+  }
 
   const cart = getCart();
   const existingIdx = cart.findIndex(it => String(it.id) === String(productId) && it.size === firstSize);

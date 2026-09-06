@@ -8,6 +8,45 @@ import { LUXURY_PRODUCTS } from '../config/defaultProducts.js';
 // Danh sách sản phẩm dự phòng chuẩn Luxury (18 sản phẩm)
 const DEFAULT_PRODUCTS = LUXURY_PRODUCTS;
 
+function normalizeProductVariants(variants: any[]) {
+  if (!Array.isArray(variants)) return variants;
+  return variants.map((v) => {
+    if (v && Array.isArray(v.sizes)) {
+      v.sizes = v.sizes.map((s: any) => {
+        const val = typeof s === 'string' ? s : (s.size || s.name || 'FREE');
+        const stock = (typeof s === 'object' && s !== null) ? (Number(s.stock) || 0) : 0;
+        return {
+          size: val,
+          name: val,
+          stock: stock
+        };
+      });
+    }
+    return v;
+  });
+}
+
+function sanitizeProductData(p: any) {
+  if (!p) return p;
+  const obj = p.toObject ? p.toObject() : p;
+  if (Array.isArray(obj.variants)) {
+    obj.variants.forEach((v: any) => {
+      if (Array.isArray(v.sizes)) {
+        v.sizes = v.sizes.map((s: any) => {
+          const val = typeof s === 'string' ? s : (s.size || s.name || 'FREE');
+          const stock = (typeof s === 'object' && s !== null) ? (Number(s.stock) || 0) : 0;
+          return {
+            size: val,
+            name: val,
+            stock: stock
+          };
+        });
+      }
+    });
+  }
+  return obj;
+}
+
 export class ProductController {
   static async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -77,7 +116,7 @@ export class ProductController {
 
               sendPaginated(
                 res,
-                products,
+                products.map(sanitizeProductData),
                 {
                   page: pageNum,
                   limit: limitNum,
@@ -90,7 +129,7 @@ export class ProductController {
             }
 
             const products = await Product.find(filter).sort(sortObj);
-            sendSuccess(res, products, 'Lấy danh sách sản phẩm thành công');
+            sendSuccess(res, products.map(sanitizeProductData), 'Lấy danh sách sản phẩm thành công');
             return;
           }
         }
@@ -148,7 +187,7 @@ export class ProductController {
       try {
         const product = await Product.findById(id);
         if (product) {
-          sendSuccess(res, product, 'Lấy chi tiết sản phẩm thành công');
+          sendSuccess(res, sanitizeProductData(product), 'Lấy chi tiết sản phẩm thành công');
           return;
         }
       } catch {
@@ -157,7 +196,7 @@ export class ProductController {
 
       const fallback = DEFAULT_PRODUCTS.find((p) => String(p._id) === String(id) || String(p.id) === String(id));
       if (fallback) {
-        sendSuccess(res, fallback, 'Lấy chi tiết sản phẩm thành công');
+        sendSuccess(res, sanitizeProductData(fallback), 'Lấy chi tiết sản phẩm thành công');
         return;
       }
 
@@ -175,10 +214,14 @@ export class ProductController {
         return;
       }
 
+      if (productData.variants) {
+        productData.variants = normalizeProductVariants(productData.variants);
+      }
+
       const newProduct = new Product(productData);
       const savedProduct = await newProduct.save();
 
-      sendSuccess(res, savedProduct, 'Thêm sản phẩm mới thành công', 201);
+      sendSuccess(res, sanitizeProductData(savedProduct), 'Thêm sản phẩm mới thành công', 201);
     } catch (error) {
       next(error);
     }
@@ -188,6 +231,10 @@ export class ProductController {
     try {
       const id = String(req.params.id);
       let updatedProduct: any = null;
+
+      if (req.body && req.body.variants) {
+        req.body.variants = normalizeProductVariants(req.body.variants);
+      }
 
       if (mongoose.Types.ObjectId.isValid(id)) {
         updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
@@ -209,7 +256,7 @@ export class ProductController {
         updatedProduct = await newProduct.save();
       }
 
-      sendSuccess(res, updatedProduct, 'Cập nhật sản phẩm thành công');
+      sendSuccess(res, sanitizeProductData(updatedProduct), 'Cập nhật sản phẩm thành công');
     } catch (error) {
       next(error);
     }
