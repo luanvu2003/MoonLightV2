@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
 import { Product } from '../models/Product.js';
 import { LUXURY_PRODUCTS } from '../config/defaultProducts.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { ENV } from '../config/env.js';
 
 // Danh sách người mẫu mẫu có sẵn với vóc dáng chuẩn, trang phục trung tính
 export const SAMPLE_MODELS = [
@@ -88,9 +91,18 @@ async function callIdmVtonHF(personImage: string, garmentImage: string, garmentD
       if (garmentImage.startsWith('data:')) {
         const b64 = garmentImage.replace(/^data:image\/\w+;base64,/, '');
         blob = new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
+      } else if (garmentImage.startsWith('/')) {
+        try {
+          const localPath = path.join(process.cwd(), 'public', garmentImage);
+          const fileBuf = await fs.promises.readFile(localPath);
+          blob = new Blob([fileBuf], { type: 'image/jpeg' });
+        } catch {
+          const fetchUrl = `http://127.0.0.1:${ENV.PORT}${garmentImage}`;
+          const fRes = await fetch(fetchUrl, { signal: controller.signal });
+          blob = await fRes.blob();
+        }
       } else {
-        const fetchUrl = garmentImage.startsWith('http') ? garmentImage : `http://127.0.0.1:${process.env.PORT || 10000}${garmentImage}`;
-        const fRes = await fetch(fetchUrl, { signal: controller.signal });
+        const fRes = await fetch(garmentImage, { signal: controller.signal });
         blob = await fRes.blob();
       }
 

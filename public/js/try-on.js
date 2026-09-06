@@ -363,6 +363,28 @@
     ];
   }
 
+  function getCleanGarmentImage(p) {
+    if (!p) return '/images/garments/suit.jpg';
+    const name = (p.name || '').toLowerCase();
+    const cat = (p.category || '').toLowerCase();
+    if (name.includes('vest') || name.includes('suit') || name.includes('blazer') || name.includes('coat') || cat.includes('vest')) {
+      return '/images/garments/suit.jpg';
+    }
+    if (name.includes('sơ mi') || name.includes('somi') || name.includes('shirt') || name.includes('polo') || name.includes('thun') || name.includes('hoodie') || cat.includes('somi') || cat.includes('aothun') || cat.includes('polo')) {
+      return '/images/garments/shirt.jpg';
+    }
+    if (name.includes('quần') || name.includes('pant') || name.includes('trouser') || name.includes('jean') || cat.includes('quan')) {
+      return '/images/garments/pants.jpg';
+    }
+    if (name.includes('đầm') || name.includes('váy') || name.includes('dress') || cat.includes('dam') || cat.includes('vay')) {
+      return '/images/garments/dress.jpg';
+    }
+    if (p.image && p.image.startsWith('/images/garments/')) {
+      return p.image;
+    }
+    return '/images/garments/suit.jpg';
+  }
+
   function filterProducts() {
     if (!wardrobeGrid) return;
 
@@ -401,7 +423,7 @@
     wardrobeGrid.innerHTML = filtered.map(p => {
       const isSel = selectedProduct && (String(selectedProduct._id) === String(p._id) || String(selectedProduct.id) === String(p.id));
       const priceFmt = Number(p.price || 0).toLocaleString('vi-VN') + '₫';
-      const img = p.image || (p.variants && p.variants[0]?.img) || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500';
+      const img = getCleanGarmentImage(p);
 
       return `
         <div class="garment-card ${isSel ? 'selected' : ''}" data-id="${p._id || p.id}" onclick="window.selectGarment('${p._id || p.id}')">
@@ -427,7 +449,7 @@
     if (!prod) return;
 
     selectedProduct = prod;
-    selectedGarmentImage = prod.image || (prod.variants && prod.variants[0]?.img) || '';
+    selectedGarmentImage = getCleanGarmentImage(prod);
 
     const cards = document.querySelectorAll('.garment-card');
     cards.forEach(c => {

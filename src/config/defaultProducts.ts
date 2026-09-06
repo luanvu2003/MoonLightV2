@@ -22,7 +22,7 @@ export const LUXURY_PRODUCTS = [
         "color": "Đen Hoàng Gia",
         "colorCode": "#000000",
         "hex": "#000000",
-        "img": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/suit.jpg",
         "price": 2450000,
         "sizes": [
           {
@@ -46,7 +46,7 @@ export const LUXURY_PRODUCTS = [
         "color": "Xanh Navy Đêm",
         "colorCode": "#1a2a3a",
         "hex": "#1a2a3a",
-        "img": "https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/suit.jpg",
         "price": 2450000,
         "sizes": [
           {
@@ -202,7 +202,7 @@ export const LUXURY_PRODUCTS = [
         "color": "Xám Tro",
         "colorCode": "#708090",
         "hex": "#708090",
-        "img": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pants.jpg",
         "price": 950000,
         "sizes": [
           {
@@ -226,7 +226,7 @@ export const LUXURY_PRODUCTS = [
         "color": "Đen Tuyển Chọn",
         "colorCode": "#1a1a1a",
         "hex": "#1a1a1a",
-        "img": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pants.jpg",
         "price": 950000,
         "sizes": [
           {
@@ -382,7 +382,7 @@ export const LUXURY_PRODUCTS = [
     "style": "Dạ hội",
     "price": 2150000,
     "originalPrice": 2500000,
-    "image": "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/dress.jpg",
     "rating": 4.9,
     "sold": 38,
     "salePercent": 0,
@@ -392,7 +392,7 @@ export const LUXURY_PRODUCTS = [
         "color": "Đỏ Burgundy Quý Tộc",
         "colorCode": "#6b1426",
         "hex": "#6b1426",
-        "img": "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/dress.jpg",
         "price": 2150000,
         "sizes": [
           {
