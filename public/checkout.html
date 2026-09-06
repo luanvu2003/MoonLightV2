@@ -157,18 +157,18 @@
     <!-- LUXURY ORDER SUCCESS MODAL -->
     <div class="order-success-modal-overlay" id="orderSuccessModal">
         <div class="order-success-modal-box">
-            <div class="success-icon-halo">
-                <i class="fas fa-check"></i>
+            <div class="success-icon-halo" id="modalStatusHalo">
+                <i class="fas fa-check" id="modalStatusIcon"></i>
             </div>
-            <h2 class="success-title">ĐẶT HÀNG THÀNH CÔNG!</h2>
-            <p class="success-subtitle">Cảm ơn bạn đã tin tưởng và mua sắm tại <strong>Moon Light</strong>.</p>
+            <h2 class="success-title" id="modalStatusTitle">ĐẶT HÀNG THÀNH CÔNG!</h2>
+            <p class="success-subtitle" id="modalStatusSubtitle">Cảm ơn bạn đã tin tưởng và mua sắm tại <strong>Moon Light</strong>.</p>
             
             <div class="success-order-badge">
                 <span class="badge-label">MÃ ĐƠN HÀNG:</span>
                 <span class="badge-code" id="successOrderCode">ML-0000</span>
             </div>
 
-            <div class="success-details-card">
+            <div class="success-details-card" id="modalCodDetails">
                 <p><i class="fas fa-phone-volume" style="color:var(--gold, #dfba73); margin-right:6px;"></i> Chuyên viên Moon Light sẽ sớm liên hệ qua số điện thoại để xác nhận.</p>
                 <p style="margin-top:6px; font-size:12.5px; color:#64748b;"><i class="fas fa-shield-alt" style="color:#10b981; margin-right:6px;"></i> Quý khách được kiểm tra hàng trước khi thanh toán.</p>
             </div>
@@ -180,7 +180,7 @@
                     <p class="mbh-sub">Mở ứng dụng ngân hàng quét mã bên dưới để thanh toán nhanh chóng</p>
                 </div>
 
-                <div class="modal-banking-qr-wrapper">
+                <div class="modal-banking-qr-wrapper" id="modalQrWrapper">
                     <div class="modal-vietqr-box">
                         <img id="modalVietQrImg" src="" alt="VietQR Đơn Hàng" class="modal-vietqr-img">
                         <div class="modal-vietqr-pulse"><span class="pulse-dot"></span> Sẵn sàng nhận chuyển khoản 24/7</div>
@@ -219,11 +219,20 @@
                     </div>
                 </div>
 
-                <button type="button" id="btnConfirmTransfer" class="btn-confirm-transfer" onclick="handleConfirmTransfer()">
-                    <i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG
-                </button>
-                <div id="transferConfirmedNotice" class="transfer-confirmed-box" style="display: none;">
-                    <i class="fas fa-check-double"></i> <span>Đã ghi nhận thông báo chuyển khoản! Moon Light đang đối soát và sẽ chuẩn bị đơn hàng ngay.</span>
+                <div id="modalWaitingNotice" class="modal-waiting-transfer-box">
+                    <div class="waiting-spin-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                    <div class="waiting-text-group">
+                        <strong>ĐANG CHỜ NHẬN DIỆN TIỀN VÀO TỰ ĐỘNG...</strong>
+                        <p>Vui lòng chuyển đúng số tiền & nội dung. Khi tiền vào TPBank, hệ thống sẽ tự động xác nhận đơn ngay!</p>
+                    </div>
+                </div>
+
+                <div id="modalPaidSuccessBox" class="modal-paid-success-banner" style="display: none;">
+                    <i class="fas fa-circle-check"></i>
+                    <div class="paid-text-group">
+                        <strong>ĐÃ NHẬN TIỀN CHUYỂN KHOẢN THÀNH CÔNG!</strong>
+                        <p>Hệ thống TPBank đã khớp lệnh thanh toán. Đơn hàng đang được đóng gói giao ngay!</p>
+                    </div>
                 </div>
             </div>
 

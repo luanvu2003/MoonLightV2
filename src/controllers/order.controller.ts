@@ -377,14 +377,32 @@ export class OrderController {
       console.log('💳 [Banking Webhook Received]:', JSON.stringify(data));
 
       // Hỗ trợ cả SePay, Casso, PayOS và định dạng Webhook ngân hàng chuẩn
-      const content = String(data.content || data.description || data.addInfo || (data.data && data.data[0]?.description) || '');
+      const content = String(data.content || data.description || data.addInfo || data.transactionContent || (data.data && data.data[0]?.description) || '');
+      const codeField = String(data.code || data.orderCode || '');
       const amount = Number(data.transferAmount || data.amount || (data.data && data.data[0]?.amount) || 0);
       const refCode = String(data.referenceCode || data.id || (data.data && data.data[0]?.tid) || '');
 
-      // Tìm mã đơn hàng MoonLight: ML-YYYYMMDD-XXXX hoặc ML20260906XXXX
-      const match = content.match(/ML[-_]?[0-9]{8}[-_]?[0-9]{4}/i);
-      let orderCode = match ? match[0] : '';
-      if (!orderCode && data.orderCode) orderCode = String(data.orderCode);
+      // Gom toàn bộ nội dung để tìm kiếm mã đơn hàng linh hoạt
+      const fullText = `${content} ${codeField} ${data.description || ''} ${data.addInfo || ''}`.trim();
+
+      // 1. Tìm định dạng chuẩn ML-YYYYMMDD-XXXX (hỗ trợ cả dấu cách, gạch nối, gạch dưới do app ngân hàng thay thế)
+      // Ví dụ: ML-20260906-6136, ML 20260906 6136, ML202609066136, ML_20260906_6136
+      const fullMatch = fullText.match(/ML[-_\s]*(\d{8})[-_\s]*(\d{4})/i);
+      let orderCode = '';
+      if (fullMatch) {
+        orderCode = `ML-${fullMatch[1]}-${fullMatch[2]}`;
+      } else if (data.orderCode) {
+        orderCode = String(data.orderCode);
+      } else if (data.code && String(data.code).startsWith('ML')) {
+        orderCode = String(data.code);
+      } else {
+        const shortMatch = fullText.match(/ML[-_\s]*(\d{4,12})/i);
+        if (shortMatch) {
+          orderCode = shortMatch[0].toUpperCase().replace(/\s+/g, '-');
+        } else if (data.code) {
+          orderCode = String(data.code);
+        }
+      }
 
       if (!orderCode) {
         sendSuccess(res, null, 'Webhook nhận thành công (Không có mã đơn hàng trong nội dung)');
@@ -392,13 +410,22 @@ export class OrderController {
       }
 
       const normalizedCode = orderCode.toUpperCase();
-      const order: any = await Order.findOne({
-        $or: [
-          { orderCode: normalizedCode },
-          { orderCode: normalizedCode.replace(/-/g, '') },
-          { orderCode: new RegExp(orderCode.replace(/-/g, '[-_]?'), 'i') }
-        ]
-      });
+      const last4 = normalizedCode.match(/\d{4}$/)?.[0] || '';
+      const dateDigits = normalizedCode.match(/\d{8}/)?.[0] || '';
+
+      const queryOr: any[] = [
+        { orderCode: normalizedCode },
+        { orderCode: normalizedCode.replace(/[-_\s]/g, '') },
+        { orderCode: new RegExp(normalizedCode.replace(/[-_]/g, '[-_\\s]?'), 'i') }
+      ];
+
+      if (last4 && dateDigits) {
+        queryOr.push({ orderCode: new RegExp(`ML[-_\\s]?${dateDigits}[-_\\s]?${last4}`, 'i') });
+      } else if (last4) {
+        queryOr.push({ orderCode: new RegExp(last4 + '$', 'i') });
+      }
+
+      const order: any = await Order.findOne({ $or: queryOr });
 
       if (!order) {
         sendSuccess(res, null, `Không tìm thấy đơn hàng ${orderCode} trong hệ thống`);

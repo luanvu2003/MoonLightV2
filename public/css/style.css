@@ -963,6 +963,17 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
     animation: successPulse 2.4s ease-in-out infinite;
 }
 
+.success-icon-halo.waiting-banking {
+    background: linear-gradient(135deg, #dfba73 0%, #b45309 100%);
+    box-shadow: 0 0 0 10px rgba(223, 186, 115, 0.2), 0 10px 20px rgba(223, 186, 115, 0.35);
+    animation: waitingPulse 2s ease-in-out infinite;
+}
+
+@keyframes waitingPulse {
+    0%, 100% { box-shadow: 0 0 0 10px rgba(223, 186, 115, 0.2), 0 10px 20px rgba(223, 186, 115, 0.35); }
+    50% { box-shadow: 0 0 0 18px rgba(223, 186, 115, 0.28), 0 14px 28px rgba(223, 186, 115, 0.45); }
+}
+
 @keyframes successPulse {
     0%, 100% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.15), 0 10px 20px rgba(16, 185, 129, 0.3); }
     50% { box-shadow: 0 0 0 18px rgba(16, 185, 129, 0.22), 0 12px 28px rgba(16, 185, 129, 0.4); }
@@ -1214,6 +1225,72 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
     gap: 10px;
     text-align: left;
     line-height: 1.45;
+}
+
+.modal-waiting-transfer-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 10px;
+    text-align: left;
+    margin-top: 14px;
+}
+
+.waiting-spin-icon {
+    font-size: 22px;
+    color: #d97706;
+}
+
+.waiting-text-group strong {
+    display: block;
+    font-size: 12.5px;
+    color: #92400e;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.waiting-text-group p {
+    font-size: 12px;
+    color: #b45309;
+    margin: 3px 0 0 0;
+    line-height: 1.4;
+}
+
+.modal-paid-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-left: 4px solid #10b981;
+    padding: 14px 18px;
+    border-radius: 10px;
+    text-align: left;
+    margin-top: 14px;
+    animation: fadeInModal 0.4s ease;
+}
+
+.modal-paid-success-banner i {
+    font-size: 26px;
+    color: #10b981;
+}
+
+.paid-text-group strong {
+    display: block;
+    font-size: 13.5px;
+    color: #065f46;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.paid-text-group p {
+    font-size: 12.5px;
+    color: #047857;
+    margin: 3px 0 0 0;
 }
 
 .transfer-confirmed-box i {

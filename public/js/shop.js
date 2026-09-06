@@ -2633,22 +2633,21 @@ async function handleCheckout(e) {
   saveCart();
   updateCartIcon();
 
-  // Hiển thị thông báo và modal thành công
-  showToast({
-    title: 'Đặt hàng thành công! 🎉',
-    message: `Mã đơn của bạn: ${orderCode}`,
-    type: 'success',
-    duration: 8000
-  });
-
   const successModal = document.getElementById('orderSuccessModal');
   const codeEl = document.getElementById('successOrderCode');
+  const modalStatusHalo = document.getElementById('modalStatusHalo');
+  const modalStatusIcon = document.getElementById('modalStatusIcon');
+  const modalStatusTitle = document.getElementById('modalStatusTitle');
+  const modalStatusSubtitle = document.getElementById('modalStatusSubtitle');
+  const modalCodDetails = document.getElementById('modalCodDetails');
+
   const modalBankingSec = document.getElementById('modalBankingSection');
+  const modalQrWrapper = document.getElementById('modalQrWrapper');
   const modalVietQrImg = document.getElementById('modalVietQrImg');
   const modalTransferAmount = document.getElementById('modalTransferAmount');
   const modalTransferMemo = document.getElementById('modalTransferMemo');
-  const btnConfirmTransfer = document.getElementById('btnConfirmTransfer');
-  const transferConfirmedNotice = document.getElementById('transferConfirmedNotice');
+  const modalWaitingNotice = document.getElementById('modalWaitingNotice');
+  const modalPaidSuccessBox = document.getElementById('modalPaidSuccessBox');
 
   window._currentCheckoutOrderCode = orderCode;
   window._currentCheckoutTotal = total;
@@ -2657,25 +2656,57 @@ async function handleCheckout(e) {
     if (codeEl) codeEl.textContent = orderCode;
 
     if (paymentMethod === 'banking' && modalBankingSec) {
+      // 1. TRẠNG THÁI CHỜ CHUYỂN KHOẢN: Không hiện đặt hàng thành công trước khi tiền vào
+      if (modalStatusHalo) modalStatusHalo.className = 'success-icon-halo waiting-banking';
+      if (modalStatusIcon) modalStatusIcon.className = 'fas fa-qrcode';
+      if (modalStatusTitle) modalStatusTitle.textContent = 'CHỜ THANH TOÁN CHUYỂN KHOẢN';
+      if (modalStatusSubtitle) {
+        modalStatusSubtitle.innerHTML = `Đơn hàng <strong>${orderCode}</strong> đã được tạo. Vui lòng quét mã VietQR TPBank bên dưới để thanh toán.`;
+      }
+      if (modalCodDetails) modalCodDetails.style.display = 'none';
+
       modalBankingSec.style.display = 'block';
+      if (modalQrWrapper) modalQrWrapper.style.display = 'flex';
       if (modalTransferAmount) modalTransferAmount.textContent = `${total.toLocaleString('vi-VN')}₫`;
       if (modalTransferMemo) modalTransferMemo.textContent = orderCode;
       if (modalVietQrImg) {
         modalVietQrImg.src = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
       }
-      if (btnConfirmTransfer) {
-        btnConfirmTransfer.style.display = 'inline-flex';
-        btnConfirmTransfer.disabled = false;
-        btnConfirmTransfer.innerHTML = '<i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG';
-      }
-      if (transferConfirmedNotice) {
-        transferConfirmedNotice.style.display = 'none';
-      }
+      if (modalWaitingNotice) modalWaitingNotice.style.display = 'flex';
+      if (modalPaidSuccessBox) modalPaidSuccessBox.style.display = 'none';
 
-      // Kích hoạt tự động lắng nghe tiền vào (Auto-Reconciliation Polling)
-      startAutoPaymentCheck(orderCode);
-    } else if (modalBankingSec) {
-      modalBankingSec.style.display = 'none';
+      showToast({
+        title: 'Đang chờ thanh toán TPBank',
+        message: `Quý khách vui lòng quét mã QR chuyển khoản đúng ${total.toLocaleString('vi-VN')}₫`,
+        type: 'info',
+        duration: 6000
+      });
+
+      // Lắng nghe tự động tín hiệu tiền về từ SePay Webhook
+      startAutoPaymentCheck(orderCode, total);
+    } else {
+      // 2. TRẠNG THÁI ĐẶT HÀNG COD (Thanh toán khi nhận hàng)
+      if (modalStatusHalo) modalStatusHalo.className = 'success-icon-halo';
+      if (modalStatusIcon) modalStatusIcon.className = 'fas fa-check';
+      if (modalStatusTitle) modalStatusTitle.textContent = 'ĐẶT HÀNG THÀNH CÔNG!';
+      if (modalStatusSubtitle) {
+        modalStatusSubtitle.innerHTML = 'Cảm ơn bạn đã tin tưởng và mua sắm tại <strong>Moon Light</strong>.';
+      }
+      if (modalCodDetails) {
+        modalCodDetails.style.display = 'block';
+        modalCodDetails.innerHTML = `
+          <p><i class="fas fa-phone-volume" style="color:var(--gold, #dfba73); margin-right:6px;"></i> Chuyên viên Moon Light sẽ sớm liên hệ qua số điện thoại để xác nhận.</p>
+          <p style="margin-top:6px; font-size:12.5px; color:#64748b;"><i class="fas fa-shield-alt" style="color:#10b981; margin-right:6px;"></i> Quý khách được kiểm tra hàng trước khi thanh toán.</p>
+        `;
+      }
+      if (modalBankingSec) modalBankingSec.style.display = 'none';
+
+      showToast({
+        title: 'Đặt hàng thành công! 🎉',
+        message: `Mã đơn của bạn: ${orderCode}`,
+        type: 'success',
+        duration: 8000
+      });
     }
 
     successModal.classList.add('active');
@@ -2688,7 +2719,7 @@ async function handleCheckout(e) {
 
 // --- TỰ ĐỘNG BẮT TÍN HIỆU TIỀN VÀO (AUTO PAYMENT LISTENER) ---
 let _pollPaymentTimer = null;
-function startAutoPaymentCheck(orderCode) {
+function startAutoPaymentCheck(orderCode, total) {
   if (_pollPaymentTimer) clearInterval(_pollPaymentTimer);
   if (!orderCode) return;
 
@@ -2700,25 +2731,44 @@ function startAutoPaymentCheck(orderCode) {
         clearInterval(_pollPaymentTimer);
         _pollPaymentTimer = null;
 
-        const qrBox = document.querySelector('.modal-banking-qr-wrapper');
-        const btn = document.getElementById('btnConfirmTransfer');
-        const notice = document.getElementById('transferConfirmedNotice');
-        if (qrBox) qrBox.style.display = 'none';
-        if (btn) btn.style.display = 'none';
-        if (notice) {
-          notice.style.display = 'flex';
-          notice.innerHTML = `<i class="fas fa-circle-check" style="color:#10b981; font-size:22px; margin-right:8px;"></i> <div><strong style="color:#059669; font-size:14px;">THANH TOÁN THÀNH CÔNG!</strong><p style="margin:2px 0 0 0; font-size:12px; color:#065f46;">Hệ thống đã tự động nhận diện tiền chuyển khoản từ tài khoản TPBank. Đơn hàng đang được đóng gói giao ngay!</p></div>`;
+        const modalStatusHalo = document.getElementById('modalStatusHalo');
+        const modalStatusIcon = document.getElementById('modalStatusIcon');
+        const modalStatusTitle = document.getElementById('modalStatusTitle');
+        const modalStatusSubtitle = document.getElementById('modalStatusSubtitle');
+        const modalCodDetails = document.getElementById('modalCodDetails');
+
+        const qrBox = document.getElementById('modalQrWrapper');
+        const waitingNotice = document.getElementById('modalWaitingNotice');
+        const paidBox = document.getElementById('modalPaidSuccessBox');
+
+        // Cập nhật giao diện: CHÍNH THỨC ĐẶT HÀNG & THANH TOÁN THÀNH CÔNG!
+        if (modalStatusHalo) modalStatusHalo.className = 'success-icon-halo';
+        if (modalStatusIcon) modalStatusIcon.className = 'fas fa-check';
+        if (modalStatusTitle) modalStatusTitle.textContent = 'ĐẶT HÀNG & THANH TOÁN THÀNH CÔNG! 🎉';
+        if (modalStatusSubtitle) {
+          modalStatusSubtitle.innerHTML = `Moon Light đã nhận được tiền chuyển khoản từ tài khoản TPBank. Đơn hàng đang được chuẩn bị đóng gói giao ngay!`;
         }
+        if (modalCodDetails) {
+          modalCodDetails.style.display = 'block';
+          modalCodDetails.innerHTML = `
+            <p><i class="fas fa-box-open" style="color:var(--gold, #dfba73); margin-right:6px;"></i> Đơn hàng đã được thanh toán thành công và chuyển sang bộ phận đóng gói.</p>
+            <p style="margin-top:6px; font-size:12.5px; color:#10b981;"><i class="fas fa-check-double" style="margin-right:6px;"></i> Quý khách không cần trả thêm bất kỳ khoản tiền nào khi nhận hàng.</p>
+          `;
+        }
+
+        if (qrBox) qrBox.style.display = 'none';
+        if (waitingNotice) waitingNotice.style.display = 'none';
+        if (paidBox) paidBox.style.display = 'flex';
 
         showToast({
           title: 'Thanh toán thành công! 🎉',
           message: `Đơn hàng ${orderCode} đã khớp lệnh thanh toán TPBank. Cảm ơn bạn!`,
           type: 'success',
-          duration: 8000
+          duration: 9000
         });
       }
     } catch (err) {}
-  }, 2500);
+  }, 2000);
 }
 
 // --- 8. TIỆN ÍCH & TƯƠNG TÁC GIAO DIỆN ---
