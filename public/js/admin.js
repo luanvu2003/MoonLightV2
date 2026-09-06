@@ -6518,3 +6518,23 @@ async function executeDeployProcess() {
         showToast("Lỗi Deploy", err.message, "error");
     }
 }
+
+// Ghi đè toàn bộ window.alert thành toast notify sang trọng
+if (typeof window !== 'undefined') {
+    window.alert = function (message) {
+        const msgStr = String(message || '');
+        let type = 'info';
+        let title = 'Thông báo';
+        if (msgStr.toLowerCase().includes('thành công')) {
+            type = 'success';
+            title = 'Thành công';
+        } else if (msgStr.toLowerCase().includes('lỗi') || msgStr.toLowerCase().includes('thất bại') || msgStr.toLowerCase().includes('không thể')) {
+            type = 'error';
+            title = 'Thông báo lỗi';
+        } else if (msgStr.toLowerCase().includes('vui lòng') || msgStr.toLowerCase().includes('cảnh báo')) {
+            type = 'warning';
+            title = 'Cảnh báo';
+        }
+        showToast(title, msgStr, type);
+    };
+}

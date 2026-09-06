@@ -195,6 +195,33 @@ export class OrderController {
         }
       }
 
+      // Chuẩn hóa toàn bộ danh sách mặt hàng để khớp schema OrderItem
+      orderData.items = orderData.items.map((item: any) => {
+        const pId = item.productId || item.id || item._id || 'prod_' + Date.now();
+        const pName = item.productName || item.name || 'Sản phẩm';
+        const pPrice = Number(item.price) || 0;
+        const pQty = Number(item.quantity) || 1;
+        const pSubtotal = (item.subtotal !== undefined && !isNaN(Number(item.subtotal)))
+          ? Number(item.subtotal)
+          : pPrice * pQty;
+        const pVariant = item.variant || [item.color, item.size].filter(Boolean).join(' - ') || 'Tiêu chuẩn';
+        const pImg = item.img || item.image || '';
+
+        return {
+          productId: pId,
+          id: pId,
+          productName: pName,
+          name: pName,
+          variant: pVariant,
+          color: item.color || '',
+          size: item.size || '',
+          img: pImg,
+          price: pPrice,
+          quantity: pQty,
+          subtotal: pSubtotal
+        };
+      });
+
       // Tự sinh mã đơn hàng nếu chưa có
       if (!orderData.orderCode) {
         const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -207,7 +234,7 @@ export class OrderController {
         orderData.subtotal = orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
       }
       if (orderData.discount === undefined) orderData.discount = 0;
-      if (orderData.shippingFee === undefined) orderData.shippingFee = 30000;
+      if (orderData.shippingFee === undefined) orderData.shippingFee = 0; // Mặc định miễn phí vận chuyển theo checkout
       if (orderData.total === undefined) {
         orderData.total = Math.max(0, orderData.subtotal - orderData.discount + orderData.shippingFee);
       }

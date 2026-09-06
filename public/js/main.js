@@ -2117,7 +2117,7 @@ function processPosCheckout() {
         localStorage.setItem('moonlight_logs', JSON.stringify(logs));
 
         // E. Reset & Thông báo
-        alert("Thanh toán thành công!");
+        showToast({ title: 'Thanh toán thành công!', message: 'Đã hoàn tất thanh toán đơn hàng POS.', type: 'success' });
         posCart = [];
         renderPosCart();
         renderPosProducts(); // Refresh lại lưới sản phẩm để cập nhật số kho mới
@@ -2126,4 +2126,28 @@ function processPosCheckout() {
         document.getElementById('posCusName').value = "";
         document.getElementById('posCusPhone').value = "";
     }
+}
+
+// Ghi đè toàn bộ window.alert mặc định bằng showToast
+if (typeof window !== 'undefined') {
+    window.alert = function (message) {
+        if (typeof showToast === 'function') {
+            const msgStr = String(message || '');
+            let type = 'info';
+            let title = 'Thông báo';
+            if (msgStr.toLowerCase().includes('thành công')) {
+                type = 'success';
+                title = 'Thành công';
+            } else if (msgStr.toLowerCase().includes('lỗi') || msgStr.toLowerCase().includes('không thể') || msgStr.toLowerCase().includes('hết hàng')) {
+                type = 'error';
+                title = 'Thông báo lỗi';
+            } else if (msgStr.toLowerCase().includes('vui lòng') || msgStr.toLowerCase().includes('chỉ còn')) {
+                type = 'warning';
+                title = 'Cảnh báo';
+            }
+            showToast({ title, message: msgStr, type });
+        } else {
+            console.log('[Notice]', message);
+        }
+    };
 }

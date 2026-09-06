@@ -665,10 +665,131 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
 .toast__close { font-size: 20px; color: rgba(0, 0, 0, 0.3); cursor: pointer; padding: 0 20px; }
 .toast--success { border-color: #47d864; } .toast--success .toast__icon { color: #47d864; }
 .toast--error { border-color: #ff623d; } .toast--error .toast__icon { color: #ff623d; }
+.toast--warning { border-color: #f59e0b; } .toast--warning .toast__icon { color: #f59e0b; }
 .toast--info { border-color: #2f86eb; } .toast--info .toast__icon { color: #2f86eb; }
-.toast::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; animation: progress 3s linear forwards; }
-.toast--success::after { background: #47d864; } .toast--error::after { background: #ff623d; }
+.toast::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; animation: progress 3.5s linear forwards; }
+.toast--success::after { background: #47d864; }
+.toast--error::after { background: #ff623d; }
+.toast--warning::after { background: #f59e0b; }
+.toast--info::after { background: #2f86eb; }
 @keyframes progress { from { width: 100%; } to { width: 0%; } }
+
+/* LUXURY ORDER SUCCESS MODAL */
+.order-success-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000000;
+    padding: 20px;
+    animation: fadeInModal 0.3s ease forwards;
+}
+
+.order-success-modal-overlay.active {
+    display: flex;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.order-success-modal-box {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 480px;
+    width: 100%;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(223, 186, 115, 0.35);
+    animation: scaleInModal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleInModal {
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.success-icon-halo {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0.15), 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+.success-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.success-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 22px;
+    line-height: 1.5;
+}
+
+.success-order-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(223, 186, 115, 0.12);
+    border: 1px dashed var(--gold, #dfba73);
+    padding: 10px 20px;
+    border-radius: 30px;
+    margin-bottom: 20px;
+}
+
+.badge-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #856404;
+    letter-spacing: 0.5px;
+}
+
+.badge-code {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 1px;
+}
+
+.success-details-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #334155;
+    text-align: left;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.success-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
 
 @media (max-width: 768px) {
     .footer-container { grid-template-columns: 1fr; text-align: center; }

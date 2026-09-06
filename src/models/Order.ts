@@ -2,18 +2,37 @@ import mongoose, { Schema } from 'mongoose';
 import { IOrder, IOrderItem, IOrderCustomer } from '../types/models.types.js';
 import { OrderStatus, PaymentMethod } from '../types/enums.js';
 
-const OrderItemSchema = new Schema<IOrderItem>(
+const OrderItemSchema = new Schema(
   {
     productId: { type: Schema.Types.Mixed, required: true },
     productName: { type: String, required: true },
     variant: { type: String, default: '' },
     img: { type: String, default: '' },
-    price: { type: Number, required: true },
-    quantity: { type: Number, required: true, min: 1 },
-    subtotal: { type: Number, required: true }
+    price: { type: Number, required: true, default: 0 },
+    quantity: { type: Number, required: true, min: 1, default: 1 },
+    subtotal: { type: Number, required: true, default: 0 }
   },
-  { _id: false }
+  { _id: false, strict: false }
 );
+
+OrderItemSchema.pre('validate', function () {
+  const self = this as any;
+  if (!self.productId) {
+    self.productId = self.id || self._id || 'unknown';
+  }
+  if (!self.productName) {
+    self.productName = self.name || 'Sản phẩm';
+  }
+  if (!self.variant && (self.color || self.size)) {
+    self.variant = [self.color, self.size].filter(Boolean).join(' - ');
+  }
+  if (!self.img && self.image) {
+    self.img = self.image;
+  }
+  if (self.subtotal === undefined || isNaN(self.subtotal) || self.subtotal === null) {
+    self.subtotal = (Number(self.price) || 0) * (Number(self.quantity) || 1);
+  }
+});
 
 const OrderCustomerSchema = new Schema<IOrderCustomer>(
   {

@@ -385,7 +385,7 @@ function switchPosTab(idx) {
 
 function addNewPosTab() {
   if (posTabs.length >= 5) {
-    alert('Bạn chỉ có thể mở tối đa 5 đơn hàng cùng lúc!');
+    showToast({ title: 'Giới hạn số tab', message: 'Bạn chỉ có thể mở tối đa 5 đơn hàng cùng lúc!', type: 'warning' });
     return;
   }
   const nextNum = posTabs.length + 1;
@@ -545,7 +545,7 @@ function confirmPosAddToCart() {
   if (!v) return;
 
   if (!selectedSizeName) {
-    alert('Vui lòng chọn size kích cỡ!');
+    showToast({ title: 'Chưa chọn size', message: 'Vui lòng chọn size kích cỡ trước khi thêm vào giỏ!', type: 'warning' });
     return;
   }
 
@@ -555,7 +555,11 @@ function confirmPosAddToCart() {
   const existing = curTab.cart.find((i) => i.key === itemKey);
   if (existing) {
     if (existing.quantity >= selectedSizeStock) {
-      alert(`Số lượng trong kho của Size ${selectedSizeName} chỉ còn ${selectedSizeStock} cái!`);
+      showToast({
+        title: 'Tồn kho có hạn',
+        message: `Số lượng trong kho của Size ${selectedSizeName} chỉ còn ${selectedSizeStock} cái!`,
+        type: 'warning'
+      });
       return;
     }
     existing.quantity++;
@@ -650,7 +654,7 @@ function changeItemQty(idx, delta) {
   if (!item) return;
 
   if (delta > 0 && item.quantity >= item.maxStock) {
-    alert(`Kho chỉ còn ${item.maxStock} sản phẩm cho phân loại này!`);
+    showToast({ title: 'Tồn kho có hạn', message: `Kho chỉ còn ${item.maxStock} sản phẩm cho phân loại này!`, type: 'warning' });
     return;
   }
 
@@ -765,7 +769,7 @@ function checkCustomerTier(phone) {
 async function processPosCheckout() {
   const curTab = posTabs[activeTabIndex];
   if (!curTab || curTab.cart.length === 0) {
-    alert('Giỏ hàng trống! Vui lòng chọn ít nhất 1 sản phẩm trước khi thanh toán.');
+    showToast({ title: 'Giỏ hàng trống', message: 'Vui lòng chọn ít nhất 1 sản phẩm trước khi thanh toán.', type: 'warning' });
     return;
   }
 
@@ -954,4 +958,88 @@ function openShortcutsModal() {
 function closeShortcutsModal() {
   const modal = document.getElementById('shortcutsModal');
   if (modal) modal.classList.remove('open');
+}
+
+// ==========================================================================
+// THÔNG BÁO TOAST & GHI ĐÈ WINDOW.ALERT
+// ==========================================================================
+function showToast(arg1, arg2, arg3) {
+  let title = 'Thông báo';
+  let message = '';
+  let type = 'info';
+
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    title = arg1.title || 'Thông báo';
+    message = arg1.message || arg1.msg || '';
+    type = arg1.type || 'info';
+  } else if (typeof arg1 === 'string') {
+    if (arg3 !== undefined) {
+      title = arg1;
+      message = arg2 || '';
+      type = arg3 || 'info';
+    } else if (arg2 !== undefined) {
+      if (['success', 'info', 'warning', 'error', 'danger'].includes(arg1.toLowerCase())) {
+        type = arg1.toLowerCase() === 'danger' ? 'error' : arg1.toLowerCase();
+        title = type === 'success' ? 'Thành công' : type === 'error' ? 'Thất bại' : type === 'warning' ? 'Cảnh báo' : 'Thông báo';
+        message = arg2;
+      } else {
+        title = arg1;
+        message = arg2;
+        type = 'info';
+      }
+    } else {
+      title = 'Thông báo';
+      message = arg1;
+      type = 'info';
+    }
+  }
+
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    document.body.appendChild(container);
+  }
+
+  const icons = {
+    success: 'fas fa-check-circle',
+    warning: 'fas fa-exclamation-triangle',
+    error: 'fas fa-times-circle',
+    info: 'fas fa-info-circle'
+  };
+
+  const item = document.createElement('div');
+  item.className = `toast-item ${type}`;
+  item.innerHTML = `
+    <i class="${icons[type] || icons.info} toast-icon"></i>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-desc">${message}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+  `;
+
+  container.appendChild(item);
+  setTimeout(() => {
+    if (item && item.parentElement) item.remove();
+  }, 4000);
+}
+
+if (typeof window !== 'undefined') {
+  window.alert = function (message) {
+    const msgStr = String(message || '');
+    let type = 'info';
+    let title = 'Thông báo';
+    if (msgStr.toLowerCase().includes('thành công')) {
+      type = 'success';
+      title = 'Thành công';
+    } else if (msgStr.toLowerCase().includes('lỗi') || msgStr.toLowerCase().includes('không thể') || msgStr.toLowerCase().includes('hết hàng')) {
+      type = 'error';
+      title = 'Cảnh báo';
+    } else if (msgStr.toLowerCase().includes('vui lòng') || msgStr.toLowerCase().includes('chỉ còn')) {
+      type = 'warning';
+      title = 'Lưu ý';
+    }
+    showToast({ title, message: msgStr, type });
+  };
 }

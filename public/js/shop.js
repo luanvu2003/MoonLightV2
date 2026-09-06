@@ -2310,7 +2310,10 @@ function renderCheckoutPage() {
 
 async function handleCheckout(e) {
   e.preventDefault();
-  if (cart.length === 0) return alert('Giỏ hàng trống!');
+  if (cart.length === 0) {
+    showToast({ title: 'Giỏ hàng trống', message: 'Vui lòng chọn sản phẩm trước khi thanh toán!', type: 'warning' });
+    return;
+  }
 
   // Kiểm tra tồn kho toàn bộ giỏ hàng trước khi cho phép đặt
   const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
@@ -2325,17 +2328,33 @@ async function handleCheckout(e) {
         const s = v.sizes.find((sz) => (sz.size || sz.name) === item.size);
         const maxStock = s ? (s.stock ?? 999) : 999;
         if (item.quantity > maxStock) {
-          alert(`Sản phẩm "${item.name}" (${item.color} - Size ${item.size}) chỉ còn ${maxStock} cái trong kho nhưng bạn đang đặt ${item.quantity} cái. Vui lòng quay lại giỏ hàng điều chỉnh số lượng!`);
+          showToast({
+            title: 'Tồn kho không đủ',
+            message: `Sản phẩm "${item.name}" (${item.color} - Size ${item.size}) chỉ còn ${maxStock} cái trong kho. Vui lòng giảm số lượng!`,
+            type: 'warning'
+          });
           return;
         }
       }
     }
   }
 
-  const name = document.getElementById('cusName').value.trim();
-  const phone = document.getElementById('cusPhone').value.trim();
+  const name = document.getElementById('cusName')?.value.trim();
+  const phone = document.getElementById('cusPhone')?.value.trim();
   const note = document.getElementById('cusNote')?.value.trim() || '';
   const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+
+  if (!name) {
+    showToast({ title: 'Thiếu họ tên', message: 'Vui lòng nhập họ và tên người nhận hàng.', type: 'warning' });
+    document.getElementById('cusName')?.focus();
+    return;
+  }
+
+  if (!phone) {
+    showToast({ title: 'Thiếu số điện thoại', message: 'Vui lòng nhập số điện thoại người nhận hàng.', type: 'warning' });
+    document.getElementById('cusPhone')?.focus();
+    return;
+  }
 
   const provinceEl = document.getElementById('cusProvince');
   const districtEl = document.getElementById('cusDistrict');
@@ -2345,43 +2364,68 @@ async function handleCheckout(e) {
 
   // Kiểm tra tính hợp lệ của địa chỉ phân cấp
   if (provinceEl && !provinceEl.value) {
-    alert('Vui lòng chọn Tỉnh / Thành phố nhận hàng.');
+    showToast({ title: 'Thiếu địa chỉ', message: 'Vui lòng chọn Tỉnh / Thành phố nhận hàng.', type: 'warning' });
     provinceEl.focus();
     return;
   }
   if (districtEl && !districtEl.value) {
-    alert('Vui lòng chọn Quận / Huyện nhận hàng.');
+    showToast({ title: 'Thiếu địa chỉ', message: 'Vui lòng chọn Quận / Huyện nhận hàng.', type: 'warning' });
     districtEl.focus();
     return;
   }
   if (wardEl && !wardEl.value) {
-    alert('Vui lòng chọn Phường / Xã nhận hàng.');
+    showToast({ title: 'Thiếu địa chỉ', message: 'Vui lòng chọn Phường / Xã nhận hàng.', type: 'warning' });
     wardEl.focus();
     return;
   }
   if (streetEl && !streetEl.value.trim()) {
-    alert('Vui lòng nhập số nhà, tên đường nhận hàng.');
+    showToast({ title: 'Thiếu số nhà', message: 'Vui lòng nhập số nhà, tên đường nhận hàng.', type: 'warning' });
     streetEl.focus();
     return;
   }
 
-  // Cập nhật lại chuỗi địa chỉ
+  // Cập nhật lại chuỗi địa chỉ đầy đủ
   updateCheckoutAddressValue();
   const address = (addressHiddenEl?.value || '').trim() || (streetEl?.value || '').trim();
 
   if (!address) {
-    alert('Vui lòng nhập đầy đủ thông tin địa chỉ nhận hàng.');
+    showToast({ title: 'Thiếu địa chỉ', message: 'Vui lòng nhập đầy đủ thông tin địa chỉ nhận hàng.', type: 'warning' });
     return;
   }
 
+  // Chuẩn hóa toàn bộ danh sách mặt hàng để khớp schema OrderItem
+  const formattedItems = cart.map((item) => {
+    const pId = item.productId || item.id || item._id || 'prod_' + Date.now();
+    const pName = item.productName || item.name || 'Sản phẩm';
+    const pPrice = Number(item.price) || 0;
+    const pQty = Number(item.quantity) || 1;
+    return {
+      productId: pId,
+      id: pId,
+      productName: pName,
+      name: pName,
+      variant: item.variant || [item.color, item.size].filter(Boolean).join(' - ') || 'Tiêu chuẩn',
+      color: item.color || '',
+      size: item.size || '',
+      img: item.img || item.image || '',
+      price: pPrice,
+      quantity: pQty,
+      subtotal: (item.subtotal !== undefined && !isNaN(Number(item.subtotal)))
+        ? Number(item.subtotal)
+        : pPrice * pQty
+    };
+  });
+
   const orderCode = `ML-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = formattedItems.reduce((s, i) => s + i.subtotal, 0);
+  const total = subtotal;
 
   const newOrder = {
     id: orderCode,
     orderCode,
     customer: { name, phone, address, note },
-    items: [...cart],
+    items: formattedItems,
+    subtotal,
     total,
     status: 'pending',
     isPaid: false,
@@ -2389,13 +2433,29 @@ async function handleCheckout(e) {
     date: new Date().toLocaleString('vi-VN')
   };
 
+  // Nút submit trạng thái loading
+  const submitBtn = document.querySelector('.btn-place-order');
+  const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> ĐANG XỬ LÝ ĐẶT HÀNG...';
+    submitBtn.disabled = true;
+  }
+
   // Gửi API backend nếu có
   try {
     if (window.MoonlightAPI) {
       await window.MoonlightAPI.createOrder(newOrder);
     }
   } catch (err) {
-    alert(`Không thể hoàn tất đặt hàng: ${err.message}`);
+    if (submitBtn) {
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
+    }
+    showToast({
+      title: 'Không thể hoàn tất đặt hàng',
+      message: err.message || 'Lỗi kết nối máy chủ',
+      type: 'error'
+    });
     return;
   }
 
@@ -2418,9 +2478,26 @@ async function handleCheckout(e) {
 
   cart = [];
   saveCart();
+  updateCartIcon();
 
-  alert(`Đặt hàng thành công! Mã đơn của quý khách: ${orderCode}`);
-  window.location.href = 'index.html';
+  // Hiển thị thông báo và modal thành công
+  showToast({
+    title: 'Đặt hàng thành công! 🎉',
+    message: `Mã đơn của bạn: ${orderCode}`,
+    type: 'success',
+    duration: 8000
+  });
+
+  const successModal = document.getElementById('orderSuccessModal');
+  const codeEl = document.getElementById('successOrderCode');
+  if (successModal) {
+    if (codeEl) codeEl.textContent = orderCode;
+    successModal.classList.add('active');
+  } else {
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 2500);
+  }
 }
 
 // --- 8. TIỆN ÍCH & TƯƠNG TÁC GIAO DIỆN ---
@@ -2823,4 +2900,30 @@ function submitReview(e) {
 
   showToast({ title: 'Cảm ơn quý khách!', message: 'Đánh giá của bạn đã được hiển thị công khai.', type: 'success' });
   renderProductReviews(pid);
+}
+
+// GHI ĐÈ TOÀN BỘ WINDOW.ALERT MẶC ĐỊNH BẰNG THÔNG BÁO TOAST/NOTIFY SANG TRỌNG
+if (typeof window !== 'undefined') {
+  window.alert = function (message) {
+    if (typeof showToast === 'function') {
+      const msgStr = String(message || '');
+      let type = 'info';
+      let title = 'Thông báo';
+
+      if (msgStr.toLowerCase().includes('thành công')) {
+        type = 'success';
+        title = 'Thành công';
+      } else if (msgStr.toLowerCase().includes('lỗi') || msgStr.toLowerCase().includes('thất bại') || msgStr.toLowerCase().includes('không thể')) {
+        type = 'error';
+        title = 'Thông báo lỗi';
+      } else if (msgStr.toLowerCase().includes('vui lòng') || msgStr.toLowerCase().includes('hết hàng') || msgStr.toLowerCase().includes('chỉ còn')) {
+        type = 'warning';
+        title = 'Cảnh báo';
+      }
+
+      showToast({ title, message: msgStr, type });
+    } else {
+      console.log('[Notice]', message);
+    }
+  };
 }

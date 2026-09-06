@@ -97,6 +97,10 @@
                 <label>Mật khẩu</label>
                 <input type="password" id="password" placeholder="Nhập mật khẩu..." required>
             </div>
+            <div id="loginAlertBox" style="display:none; padding:11px 14px; border-radius:6px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:13px; margin-bottom:18px; align-items:center; gap:8px;">
+                <i class="fas fa-exclamation-circle" style="font-size:15px; flex-shrink:0;"></i>
+                <span id="loginAlertMsg">Tài khoản hoặc mật khẩu không chính xác!</span>
+            </div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 14px; justify-content: center;">
                 <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP HỆ THỐNG
             </button>
@@ -168,7 +172,12 @@
                 localStorage.setItem('moonlight_logs', JSON.stringify(logs));
                 window.location.href = 'admin.html';
             } else {
-                alert("Tài khoản hoặc mật khẩu không chính xác!");
+                const alertBox = document.getElementById('loginAlertBox');
+                const alertMsg = document.getElementById('loginAlertMsg');
+                if (alertBox && alertMsg) {
+                    alertMsg.textContent = 'Tài khoản hoặc mật khẩu không chính xác!';
+                    alertBox.style.display = 'flex';
+                }
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
