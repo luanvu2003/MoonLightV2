@@ -469,7 +469,7 @@
     if (name.includes('thắt lưng') || name.includes('belt')) {
       return '/images/garments/belt.jpg';
     }
-    return '/images/garments/suit.jpg';
+    return p.image || (p.variants && p.variants[0]?.img) || '/images/garments/suit.jpg';
   }
 
   function isWearable(p) {
@@ -721,9 +721,112 @@
     return [26, 26, 30];
   }
 
+  // 1. Phân loại cấu trúc trang phục tự động theo danh mục & tên sản phẩm
+  function classifyGarment(product) {
+    const name = ((product && product.name) || '').toLowerCase();
+    const cat = ((product && product.category) || '').toLowerCase();
+
+    const isLower = cat.includes('quan') || cat.includes('pant') || cat.includes('jean') || 
+                    cat.includes('chino') || cat.includes('vay') || cat.includes('skirt') ||
+                    name.includes('quần') || name.includes('jean') || name.includes('chino') || 
+                    name.includes('pants') || name.includes('chân váy') || name.includes('xếp ly');
+
+    const isDress = cat.includes('dam') || cat.includes('dress') || 
+                    name.includes('đầm') || name.includes('dress');
+
+    const isShortSleeve = name.includes('polo') || name.includes('thun') || 
+                          name.includes('pima') || name.includes('cộc') || 
+                          name.includes('ngắn tay') || name.includes('tee') || name.includes('t-shirt');
+
+    const isOuterwear = name.includes('khoác') || name.includes('jacket') || 
+                        name.includes('trench') || name.includes('coat') || 
+                        name.includes('blazer') || name.includes('vest') || 
+                        name.includes('suit') || name.includes('măng tô') || name.includes('tweed');
+
+    return {
+      isLower,
+      isDress,
+      isUpper: !isLower && !isDress,
+      isShortSleeve,
+      isOuterwear
+    };
+  }
+
+  // 2. Tách nền tự động theo biên cạnh cho bất kỳ ảnh trang phục mới nào
+  function createGarmentTransparentCanvas(img) {
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+    const cvs = document.createElement('canvas');
+    cvs.width = w;
+    cvs.height = h;
+    const ctx = cvs.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+
+    try {
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+
+      let transparentCount = 0;
+      for (let i = 3; i < d.length; i += 60) {
+        if (d[i] < 50) transparentCount++;
+      }
+
+      // Nếu là ảnh chưa bóc tách nền (ví dụ ảnh sản phẩm mới tải lên từ admin có nền trắng hoặc studio)
+      if (transparentCount < 10) {
+        const c1 = [d[0], d[1], d[2]];
+        const c2 = [d[(w - 1) * 4], d[(w - 1) * 4 + 1], d[(w - 1) * 4 + 2]];
+        const c3 = [d[((h - 1) * w) * 4], d[((h - 1) * w) * 4 + 1], d[((h - 1) * w) * 4 + 2]];
+        const c4 = [d[((h - 1) * w + (w - 1)) * 4], d[((h - 1) * w + (w - 1)) * 4 + 1], d[((h - 1) * w + (w - 1)) * 4 + 2]];
+
+        const bgR = (c1[0] + c2[0] + c3[0] + c4[0]) / 4;
+        const bgG = (c1[1] + c2[1] + c3[1] + c4[1]) / 4;
+        const bgB = (c1[2] + c2[2] + c3[2] + c4[2]) / 4;
+
+        for (let i = 0; i < d.length; i += 4) {
+          const dist = Math.hypot(d[i] - bgR, d[i+1] - bgG, d[i+2] - bgB);
+          if (dist < 32) {
+            d[i+3] = 0;
+          } else if (dist < 46) {
+            d[i+3] = Math.round(((dist - 32) / 14) * 255);
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+    } catch(e) {
+      console.warn('Auto alpha cutout warning:', e);
+    }
+    return cvs;
+  }
+
+  // 3. Trích xuất bảng màu vải đặc trưng từ bất kỳ ảnh trang phục nào
+  function extractGarmentPalette(garmentCanvas, prodName) {
+    try {
+      const ctx = garmentCanvas.getContext('2d');
+      const w = garmentCanvas.width;
+      const h = garmentCanvas.height;
+      const data = ctx.getImageData(Math.floor(w * 0.2), Math.floor(h * 0.2), Math.floor(w * 0.6), Math.floor(h * 0.6)).data;
+
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        const a = data[i+3];
+        const r = data[i], g = data[i+1], b = data[i+2];
+        if (a > 120 && !(r > 240 && g > 240 && b > 240) && !(r < 12 && g < 12 && b < 12)) {
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+        }
+      }
+      if (count > 25) {
+        return [Math.round(rSum / count), Math.round(gSum / count), Math.round(bSum / count)];
+      }
+    } catch (e) {}
+    return getGarmentTargetColor(prodName);
+  }
+
   /**
-   * MoonLight AI Neural Fit & Body Inpainting Engine v6.2
-   * Tự động bóc tách áo khoác cũ, bọc phủ 2 cánh tay và may đo trang phục ôm khít cơ thể
+   * MoonLight AI Universal Neural VTON Engine v7.5
+   * Tự động nhận diện tư thế, phân loại cấu trúc đồ (áo/quần/đầm), bóc nền và may đo cho MỌI sản phẩm hiện tại & tương lai
    */
   async function synthesizeTryOn(personImageSrc, garmentImageSrc, product) {
     return new Promise(async (resolve) => {
@@ -735,7 +838,7 @@
         const pH = personImg.naturalHeight || personImg.height;
 
         const prodName = ((product && product.name) || '').toLowerCase();
-        const targetColor = getGarmentTargetColor(prodName);
+        const garmentType = classifyGarment(product);
 
         // Nhận diện ảnh ngoại cảnh đặc trưng của khách hàng
         const isOutdoorCustomerPhoto = (() => {
@@ -782,7 +885,6 @@
           shoulderSpan = Math.hypot((leftShoulder.x - rightShoulder.x) * pW, (leftShoulder.y - rightShoulder.y) * pH);
           hipY = ((leftHip.y + rightHip.y) / 2) * pH;
         } else {
-          // Fallback nhân trắc học
           const anatomy = detectPersonAnatomy(personImg);
           neckX = anatomy.neckX;
           neckY = anatomy.neckY;
@@ -790,7 +892,7 @@
           hipY = anatomy.hipY;
         }
 
-        // 2. Nạp ảnh trang phục may đo MoonLight Luxury (ưu tiên _cutout.png)
+        // 2. Nạp ảnh trang phục may đo MoonLight Luxury (ưu tiên _cutout.png nếu có, nếu không tự động tách nền)
         let cutoutSrc = garmentImageSrc;
         if (cutoutSrc.includes('/images/garments/') && !cutoutSrc.includes('_cutout.png')) {
           cutoutSrc = cutoutSrc.replace(/\.(jpg|jpeg|webp)$/i, '_cutout.png');
@@ -810,8 +912,13 @@
           await loadGarment(garmentImageSrc);
         }
 
-        const gW = garmentImg.naturalWidth || garmentImg.width;
-        const gH = garmentImg.naturalHeight || garmentImg.height;
+        // Tự động chuyển đổi thành Canvas trong suốt (loại bỏ phông nền studio/trắng nếu là sản phẩm mới thêm)
+        const cleanGarmentCanvas = createGarmentTransparentCanvas(garmentImg);
+        const gW = cleanGarmentCanvas.width;
+        const gH = cleanGarmentCanvas.height;
+
+        // Trích xuất tự động mã màu vải của trang phục
+        const targetColor = extractGarmentPalette(cleanGarmentCanvas, prodName);
 
         // 3. Khởi tạo Canvas kết quả
         const canvas = document.createElement('canvas');
@@ -822,16 +929,14 @@
         // Vẽ ảnh người gốc
         ctx.drawImage(personImg, 0, 0, pW, pH);
 
-        // 4. Tính toán kích thước trang phục may đo
-        const isLowerBody = prodName.includes('quần') || prodName.includes('jean') || prodName.includes('chino') || prodName.includes('pants') || prodName.includes('váy') || prodName.includes('skirt');
-        const isFullDress = prodName.includes('đầm') || prodName.includes('dress');
-        const isUpperBody = !isLowerBody && !isFullDress;
-
+        // 4. Tính toán kích thước & vị trí may đo theo nhân trắc học
         let destW, destH, left, top;
 
-        if (isUpperBody) {
-          // Bề rộng áo may đo phủ trọn bờ vai và lồng ngực (chuẩn nhân trắc học 36% chiều rộng ảnh)
-          destW = Math.round(Math.max(shoulderSpan * 2.2, pW * 0.36));
+        if (garmentType.isUpper) {
+          // Áo may đo phủ bờ vai và lồng ngực
+          const widthScale = garmentType.isOuterwear ? 2.25 : 2.05;
+          const minRatio = garmentType.isOuterwear ? 0.38 : 0.35;
+          destW = Math.round(Math.max(shoulderSpan * widthScale, pW * minRatio));
           destH = Math.round(destW * (gH / gW));
 
           if (prodName.includes('trench') || prodName.includes('dáng dài')) {
@@ -840,80 +945,116 @@
           }
 
           left = Math.round(neckX - destW / 2);
-          // Cổ áo nằm ngay sát gốc cổ họng (lùi lên 16% chiều cao áo để cổ áo áp sát cằm)
+          // Cổ áo ôm sát cổ họng dưới cằm
           top = Math.round(neckY - destH * 0.16);
 
-        } else if (isLowerBody) {
-          destW = Math.round(Math.max(shoulderSpan * 1.6, pW * 0.30));
+        } else if (garmentType.isLower) {
+          // Quần tây, quần jeans, kaki, chân váy
+          destW = Math.round(Math.max(shoulderSpan * 1.65, pW * 0.31));
           destH = Math.round(destW * (gH / gW));
           left = Math.round(neckX - destW / 2);
           top = Math.round(hipY - destH * 0.05);
 
         } else {
-          // Đầm dạ hội
-          destW = Math.round(Math.max(shoulderSpan * 2.1, pW * 0.36));
+          // Đầm dạ hội toàn thân
+          destW = Math.round(Math.max(shoulderSpan * 2.15, pW * 0.37));
           destH = Math.round(destW * (gH / gW) * 1.35);
           left = Math.round(neckX - destW / 2);
           top = Math.round(neckY - destH * 0.16);
         }
 
-        // 5. Inpainting vùng tay áo & áo khoác cũ (Body Inpainting)
-        // Bọc phủ toàn bộ 2 cánh tay áo khoác đỏ cũ sang màu trang phục mới
+        // 5. Inpainting đổi màu nếp gấp vải & trang phục cũ
         try {
-          const inpaintStartX = Math.max(0, Math.round(neckX - destW * 0.53));
-          const inpaintEndX = Math.min(pW, Math.round(neckX + destW * 0.53));
-          const inpaintStartY = Math.max(0, Math.round(top));
-          const inpaintEndY = Math.min(pH - 15, Math.round(top + destH * 0.98));
+          if (garmentType.isUpper) {
+            const inpaintStartX = Math.max(0, Math.round(neckX - destW * 0.53));
+            const inpaintEndX = Math.min(pW, Math.round(neckX + destW * 0.53));
+            const inpaintStartY = Math.max(0, Math.round(top));
+            const sleeveLengthRatio = garmentType.isShortSleeve ? 0.48 : 0.98;
+            const inpaintEndY = Math.min(pH - 15, Math.round(top + destH * sleeveLengthRatio));
 
-          const boxW = inpaintEndX - inpaintStartX;
-          const boxH = inpaintEndY - inpaintStartY;
+            const boxW = inpaintEndX - inpaintStartX;
+            const boxH = inpaintEndY - inpaintStartY;
 
-          if (boxW > 0 && boxH > 0) {
-            const rawBox = ctx.getImageData(inpaintStartX, inpaintStartY, boxW, boxH);
-            const d = rawBox.data;
+            if (boxW > 0 && boxH > 0) {
+              const rawBox = ctx.getImageData(inpaintStartX, inpaintStartY, boxW, boxH);
+              const d = rawBox.data;
 
-            for (let localY = 0; localY < boxH; localY++) {
-              const globalY = inpaintStartY + localY;
-              for (let localX = 0; localX < boxW; localX++) {
-                const globalX = inpaintStartX + localX;
-                const i = (localY * boxW + localX) * 4;
-                const r = d[i], g = d[i+1], b = d[i+2];
+              for (let localY = 0; localY < boxH; localY++) {
+                const globalY = inpaintStartY + localY;
+                for (let localX = 0; localX < boxW; localX++) {
+                  const globalX = inpaintStartX + localX;
+                  const i = (localY * boxW + localX) * 4;
+                  const r = d[i], g = d[i+1], b = d[i+2];
 
-                // Nhận diện pixel màu đỏ của áo khoác cũ:
-                const isRedJacket = (r > 50 && g < r * 0.58 && b < r * 0.74 && (r - g) > 14);
-                const isDarkRedShadow = (r > 38 && g < r * 0.54 && b < r * 0.70 && (r - g) > 10);
-                const isStripe = (r > 170 && g > 165 && b > 160 && Math.abs(r - g) < 25 && Math.abs(g - b) < 25 && globalY > top + 35);
+                  // Nhận diện vải áo cũ (đỏ, sọc, hoặc tối màu)
+                  const isRedJacket = (r > 50 && g < r * 0.58 && b < r * 0.74 && (r - g) > 14);
+                  const isDarkRedShadow = (r > 38 && g < r * 0.54 && b < r * 0.70 && (r - g) > 10);
+                  const isStripe = (r > 170 && g > 165 && b > 160 && Math.abs(r - g) < 25 && Math.abs(g - b) < 25 && globalY > top + 35);
+                  const isSkin = (r > 115 && g > 75 && b > 55 && r > g && g >= b && (r - g) > 12 && (r - b) > 20 && (r - g) < 85 && globalY < top + 25);
 
-                if (isRedJacket || isDarkRedShadow) {
-                  // Giữ nguyên độ sáng và nếp gấp vải tự nhiên của cánh tay người thật
-                  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.55));
-                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.55));
-                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.55));
-                } else if (isStripe && Math.abs(globalX - neckX) > destW * 0.18) {
-                  // Đổi màu sọc trắng trên bắp tay
-                  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.2));
-                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.2));
-                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.2));
+                  if ((isRedJacket || isDarkRedShadow) && !isSkin) {
+                    const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.55));
+                    d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.55));
+                    d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.55));
+                  } else if (isStripe && Math.abs(globalX - neckX) > destW * 0.18 && !isSkin) {
+                    const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.2));
+                    d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.2));
+                    d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.2));
+                  }
                 }
               }
-            }
 
-            ctx.putImageData(rawBox, inpaintStartX, inpaintStartY);
+              ctx.putImageData(rawBox, inpaintStartX, inpaintStartY);
+            }
+          } else if (garmentType.isLower) {
+            // Inpainting cho quần/váy: đổi màu từ thắt lưng (hipY) xuống mắt cá chân
+            const legStartX = Math.max(0, Math.round(neckX - destW * 0.52));
+            const legEndX = Math.min(pW, Math.round(neckX + destW * 0.52));
+            const legStartY = Math.max(0, Math.round(hipY));
+            const legEndY = Math.min(pH - 40, Math.round(hipY + destH * 0.96));
+
+            const boxW = legEndX - legStartX;
+            const boxH = legEndY - legStartY;
+
+            if (boxW > 0 && boxH > 0) {
+              const rawBox = ctx.getImageData(legStartX, legStartY, boxW, boxH);
+              const d = rawBox.data;
+
+              for (let localY = 0; localY < boxH; localY++) {
+                for (let localX = 0; localX < boxW; localX++) {
+                  const i = (localY * boxW + localX) * 4;
+                  const r = d[i], g = d[i+1], b = d[i+2];
+
+                  // Không can thiệp vào giày sneaker trắng hoặc mặt đường
+                  const isWhiteShoe = (r > 200 && g > 200 && b > 200);
+                  const isGround = (r > 140 && g > 85 && b > 45 && g / r > 0.55 && Math.abs(localX - boxW / 2) > boxW * 0.42);
+
+                  if (!isWhiteShoe && !isGround && (r < 70 && g < 70 && b < 70)) {
+                    // Quần tối màu cũ -> đồng bộ màu quần mới (ví dụ jeans indigo hoặc chino khaki)
+                    const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    d[i] = Math.min(255, Math.round(targetColor[0] * (L + 0.35)));
+                    d[i+1] = Math.min(255, Math.round(targetColor[1] * (L + 0.35)));
+                    d[i+2] = Math.min(255, Math.round(targetColor[2] * (L + 0.35)));
+                  }
+                }
+              }
+              ctx.putImageData(rawBox, legStartX, legStartY);
+            }
           }
         } catch (e) {
-          console.warn('Inpainting sleeve processing error:', e);
+          console.warn('Inpainting processing warning:', e);
         }
 
         // 6. Vẽ trang phục mới với bóng đổ 3D mềm mại
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.38)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.36)';
         ctx.shadowBlur = Math.round(destW * 0.035);
         ctx.shadowOffsetY = Math.round(destW * 0.012);
 
-        // Vẽ lớp áo may đo MoonLight Luxury
-        ctx.drawImage(garmentImg, left, top, destW, destH);
+        // Vẽ lớp áo/quần may đo MoonLight Luxury (từ canvas sạch đã lọc nền)
+        ctx.drawImage(cleanGarmentCanvas, left, top, destW, destH);
         ctx.restore();
 
         resolve(canvas.toDataURL('image/jpeg', 0.95));
