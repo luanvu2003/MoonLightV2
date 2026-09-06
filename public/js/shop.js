@@ -1200,7 +1200,7 @@ function renderProductGrid(data, elementId) {
   }
 
   grid.innerHTML = data
-    .map((p) => {
+    .map((p, idx) => {
       const v = (p.variants && p.variants.length > 0) ? p.variants[0] : { img: p.image || '', price: p.price || 0 };
       const percent = p.salePercent || 0;
       const isLiked = wishlist.includes(p.id) || wishlist.includes(p._id);
@@ -1256,7 +1256,7 @@ function renderProductGrid(data, elementId) {
         </div>`;
 
       return `
-      <div class="product-card" data-id="${prodId}">
+      <div class="product-card card-enter-active" data-id="${prodId}" style="--card-delay: ${(idx % 8) * 0.04}s;">
           <div class="card-img">
               ${badgeText ? `<span class="badge-sale">${badgeText}</span>` : ''}
               <button class="wishlist-btn ${isLiked ? 'active' : ''}" onclick="toggleWishlist(this, '${prodId}')" title="Thêm vào yêu thích">
@@ -1287,12 +1287,44 @@ function renderProductGrid(data, elementId) {
 }
 
 function loadMoreProducts() {
-  displayedProducts += 4;
-  renderShop(displayedProducts);
+  const loadMoreBox = document.getElementById('loadMoreContainer');
+  const btn = loadMoreBox ? loadMoreBox.querySelector('.btn-luxury-outline') : null;
+  if (btn && btn.classList.contains('btn-loading')) return;
+
+  if (btn) {
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>ĐANG TẢI THÊM...</span>';
+  }
+
+  setTimeout(() => {
+    displayedProducts += 4;
+    renderShop(displayedProducts);
+    if (btn) {
+      btn.classList.remove('btn-loading');
+      btn.innerHTML = '<span>XEM THÊM</span> <i class="fas fa-arrow-down"></i>';
+    }
+    window.scrollBy({ top: 120, behavior: 'smooth' });
+  }, 260);
 }
 
 function loadMoreBestSellers() {
-  renderBestSellers(products.length);
+  const loadMoreBox = document.getElementById('loadMoreBestSeller');
+  const btn = loadMoreBox ? loadMoreBox.querySelector('.btn-luxury-outline') : null;
+  if (btn && btn.classList.contains('btn-loading')) return;
+
+  if (btn) {
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>ĐANG TẢI THÊM...</span>';
+  }
+
+  setTimeout(() => {
+    renderBestSellers(products.length);
+    if (btn) {
+      btn.classList.remove('btn-loading');
+      btn.innerHTML = '<span>XEM THÊM</span> <i class="fas fa-arrow-down"></i>';
+    }
+    window.scrollBy({ top: 120, behavior: 'smooth' });
+  }, 260);
 }
 
 // Lọc sản phẩm theo danh mục từ thanh Filter Pills

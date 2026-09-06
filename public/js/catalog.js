@@ -1112,8 +1112,100 @@ function applyFiltersAndRender(resetLimit = true) {
 }
 
 // ==========================================================================
-// 5. RENDER LƯỚI SẢN PHẨM & CARD CHI TIẾT
+// 5. RENDER LƯỚI SẢN PHẨM & CARD CHI TIẾT (VỚI HIỆU ỨNG LUXURY MƯỢT MÀ)
 // ==========================================================================
+function createCatalogCardHTML(p, idx, isNewAppend = false) {
+  const prodId = p._id || p.id;
+  const wishlist = getWishlistIds();
+  const isLiked = wishlist.includes(String(prodId));
+  const firstVariant = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
+  const priceNum = (firstVariant && firstVariant.price) ? firstVariant.price : (p.price || 0);
+  const displayPrice = priceNum ? Number(priceNum).toLocaleString('vi-VN') + '₫' : 'Liên hệ';
+  const oldPrice = (p.originalPrice && p.originalPrice > priceNum) ? Number(p.originalPrice).toLocaleString('vi-VN') + '₫' : '';
+  const imgUrl = (firstVariant && firstVariant.img) ? firstVariant.img : (p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800');
+  const percent = p.salePercent || 0;
+  const iconClass = isLiked ? 'fas' : 'far';
+  const badgeText = percent > 0 ? `-${percent}%` : (p.badge ? p.badge : '');
+
+  // Thu thập danh sách màu sắc đang có
+  const swatches = (p.variants || []).filter((va) => va.colorCode || va.hex || va.color);
+  const swatchesHtml = swatches.length > 0 ? `
+    <div class="card-swatches">
+      ${swatches.slice(0, 5).map((va, sIdx) => {
+        const hex = va.colorCode || va.hex || '#0a0a0a';
+        const vImg = va.img || p.image || '';
+        const vPrice = va.price || p.price || 0;
+        return `
+          <span class="swatch-dot ${sIdx === 0 ? 'active' : ''}" 
+                style="background: ${hex};" 
+                title="${va.color || ''}" 
+                onclick="changeCardVariant(event, '${prodId}', '${vImg}', ${vPrice})">
+          </span>`;
+      }).join('')}
+    </div>` : '';
+
+  // Thu thập danh sách size đang có
+  const allSizes = [];
+  if (p.variants && p.variants.length > 0) {
+    p.variants.forEach((va) => {
+      if (va.sizes && Array.isArray(va.sizes)) {
+        va.sizes.forEach((sz) => {
+          const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+          if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+        });
+      }
+    });
+  }
+  if (allSizes.length === 0 && p.sizes && Array.isArray(p.sizes)) {
+    p.sizes.forEach((sz) => {
+      const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
+      if (szName && !allSizes.includes(szName)) allSizes.push(szName);
+    });
+  }
+  if (allSizes.length === 0) {
+    allSizes.push('S', 'M', 'L', 'XL');
+  }
+
+  const sizesHtml = `
+    <div class="card-sizes">
+      ${allSizes.slice(0, 5).map((sz) => {
+        const isAdvised = (typeof catalogState !== 'undefined' && catalogState.selectedSizes && catalogState.selectedSizes.has(sz));
+        return `<span class="card-size-pill ${isAdvised ? 'highlight' : ''}">${sz}</span>`;
+      }).join('')}
+    </div>`;
+
+  // Độ trễ stagger animation để tạo hiệu ứng lướt mềm mại
+  const animDelay = isNewAppend ? Math.min(idx * 0.045, 0.4) : Math.min((idx % 12) * 0.035, 0.42);
+
+  return `
+    <div class="product-card card-enter-active" data-id="${prodId}" style="--card-delay: ${animDelay}s;">
+        <div class="card-img">
+            ${badgeText ? `<span class="badge-sale">${badgeText}</span>` : ''}
+            <button class="wishlist-btn ${isLiked ? 'active' : ''}" onclick="toggleWishlist(this, '${prodId}')" title="Thêm vào yêu thích">
+              <i class="${iconClass} fa-heart"></i>
+            </button>
+            <img src="${imgUrl}" alt="${p.name}" loading="lazy">
+            <div class="card-overlay-btns">
+                <a href="product.html?id=${prodId}" class="view-btn"><i class="far fa-eye"></i> XEM CHI TIẾT</a>
+                <button class="add-btn" onclick="quickAddToCart('${prodId}')"><i class="fas fa-shopping-cart"></i> THÊM NHANH</button>
+            </div>
+        </div>
+        <div class="card-info">
+            <h3><a href="product.html?id=${prodId}">${p.name}</a></h3>
+            <div class="product-meta">
+                <span class="stars"><i class="fas fa-star" style="color:#f59e0b;"></i> ${p.rating || 5}</span>
+                <span class="sold-count">Đã bán ${p.sold || 0}</span>
+            </div>
+            ${swatchesHtml}
+            ${sizesHtml}
+            <div class="price">
+                <span class="new-price">${displayPrice}</span>
+                ${oldPrice ? `<span class="old-price">${oldPrice}</span>` : ''}
+            </div>
+        </div>
+    </div>`;
+}
+
 function renderProductsGrid(products) {
   const grid = document.getElementById('catalogProductsGrid');
   const countEl = document.getElementById('catalogResultsCount');
@@ -1123,18 +1215,41 @@ function renderProductsGrid(products) {
   const totalCount = products ? products.length : 0;
   const currentLimit = catalogState.displayedLimit || 20;
 
+  // Hiệu ứng pulse cập nhật số lượng mượt mà
   if (countEl) {
     countEl.innerHTML = `Tìm thấy <strong>${totalCount}</strong> sản phẩm`;
+    countEl.classList.remove('count-updated');
+    void countEl.offsetWidth; // Force reflow để trigger animation
+    countEl.classList.add('count-updated');
   }
 
-  // Hiển thị hoặc ẩn nút XEM THÊM tùy vào số sản phẩm còn lại
+  // Quản lý nút XEM THÊM với hiệu ứng
   if (loadMoreBox) {
-    loadMoreBox.style.display = totalCount > currentLimit ? 'flex' : 'none';
+    if (totalCount > currentLimit) {
+      loadMoreBox.style.display = 'flex';
+      const remaining = totalCount - currentLimit;
+      loadMoreBox.innerHTML = `
+        <button class="btn-luxury-outline" onclick="loadMoreCatalogProducts()">
+          <span>XEM THÊM (${remaining} SẢN PHẨM)</span>
+          <i class="fas fa-arrow-down"></i>
+        </button>
+      `;
+    } else if (totalCount > 10) {
+      loadMoreBox.style.display = 'flex';
+      loadMoreBox.innerHTML = `
+        <div class="all-products-loaded">
+          <i class="fas fa-check-circle"></i> Đã hiển thị tất cả ${totalCount} sản phẩm
+        </div>
+      `;
+    } else {
+      loadMoreBox.style.display = 'none';
+      loadMoreBox.innerHTML = '';
+    }
   }
 
   if (totalCount === 0) {
     grid.innerHTML = `
-      <div class="catalog-empty-state">
+      <div class="catalog-empty-state card-enter-active">
         <div class="catalog-empty-icon"><i class="fas fa-search"></i></div>
         <div class="catalog-empty-title">Không tìm thấy sản phẩm phù hợp</div>
         <div class="catalog-empty-desc">Rất tiếc, không có sản phẩm nào khớp với tiêu chí bạn đã lọc. Hãy thử nới lỏng bộ lọc hoặc xóa bớt size đã chọn.</div>
@@ -1146,103 +1261,53 @@ function renderProductsGrid(products) {
     return;
   }
 
-  const wishlist = getWishlistIds();
   const sliced = products.slice(0, currentLimit);
-
-  grid.innerHTML = sliced.map((p, idx) => {
-    const prodId = p._id || p.id;
-    const isLiked = wishlist.includes(String(prodId));
-    const firstVariant = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
-    const priceNum = (firstVariant && firstVariant.price) ? firstVariant.price : (p.price || 0);
-    const displayPrice = priceNum ? Number(priceNum).toLocaleString('vi-VN') + '₫' : 'Liên hệ';
-    const oldPrice = (p.originalPrice && p.originalPrice > priceNum) ? Number(p.originalPrice).toLocaleString('vi-VN') + '₫' : '';
-    const imgUrl = (firstVariant && firstVariant.img) ? firstVariant.img : (p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800');
-    const percent = p.salePercent || 0;
-    const iconClass = isLiked ? 'fas' : 'far';
-    const badgeText = percent > 0 ? `-${percent}%` : (p.badge ? p.badge : '');
-
-    // Thu thập danh sách màu sắc đang có
-    const swatches = (p.variants || []).filter((va) => va.colorCode || va.hex || va.color);
-    const swatchesHtml = swatches.length > 0 ? `
-      <div class="card-swatches">
-        ${swatches.slice(0, 5).map((va, sIdx) => {
-          const hex = va.colorCode || va.hex || '#0a0a0a';
-          const vImg = va.img || p.image || '';
-          const vPrice = va.price || p.price || 0;
-          return `
-            <span class="swatch-dot ${sIdx === 0 ? 'active' : ''}" 
-                  style="background: ${hex};" 
-                  title="${va.color || ''}" 
-                  onclick="changeCardVariant(event, '${prodId}', '${vImg}', ${vPrice})">
-            </span>`;
-        }).join('')}
-      </div>` : '';
-
-    // Thu thập danh sách size đang có
-    const allSizes = [];
-    if (p.variants && p.variants.length > 0) {
-      p.variants.forEach((va) => {
-        if (va.sizes && Array.isArray(va.sizes)) {
-          va.sizes.forEach((sz) => {
-            const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
-            if (szName && !allSizes.includes(szName)) allSizes.push(szName);
-          });
-        }
-      });
-    }
-    if (allSizes.length === 0 && p.sizes && Array.isArray(p.sizes)) {
-      p.sizes.forEach((sz) => {
-        const szName = typeof sz === 'string' ? sz : (sz.size || sz.name);
-        if (szName && !allSizes.includes(szName)) allSizes.push(szName);
-      });
-    }
-    if (allSizes.length === 0) {
-      allSizes.push('S', 'M', 'L', 'XL');
-    }
-
-    const sizesHtml = `
-      <div class="card-sizes">
-        ${allSizes.slice(0, 5).map((sz) => {
-          const isAdvised = (typeof catalogState !== 'undefined' && catalogState.selectedSizes && catalogState.selectedSizes.has(sz));
-          return `<span class="card-size-pill ${isAdvised ? 'highlight' : ''}">${sz}</span>`;
-        }).join('')}
-      </div>`;
-
-    return `
-      <div class="product-card" data-id="${prodId}">
-          <div class="card-img">
-              ${badgeText ? `<span class="badge-sale">${badgeText}</span>` : ''}
-              <button class="wishlist-btn ${isLiked ? 'active' : ''}" onclick="toggleWishlist(this, '${prodId}')" title="Thêm vào yêu thích">
-                <i class="${iconClass} fa-heart"></i>
-              </button>
-              <img src="${imgUrl}" alt="${p.name}" loading="lazy">
-              <div class="card-overlay-btns">
-                  <a href="product.html?id=${prodId}" class="view-btn"><i class="far fa-eye"></i> XEM CHI TIẾT</a>
-                  <button class="add-btn" onclick="quickAddToCart('${prodId}')"><i class="fas fa-shopping-cart"></i> THÊM NHANH</button>
-              </div>
-          </div>
-          <div class="card-info">
-              <h3><a href="product.html?id=${prodId}">${p.name}</a></h3>
-              <div class="product-meta">
-                  <span class="stars"><i class="fas fa-star" style="color:#f59e0b;"></i> ${p.rating || 5}</span>
-                  <span class="sold-count">Đã bán ${p.sold || 0}</span>
-              </div>
-              ${swatchesHtml}
-              ${sizesHtml}
-              <div class="price">
-                  <span class="new-price">${displayPrice}</span>
-                  ${oldPrice ? `<span class="old-price">${oldPrice}</span>` : ''}
-              </div>
-          </div>
-      </div>`;
-  }).join('');
+  grid.innerHTML = sliced.map((p, idx) => createCatalogCardHTML(p, idx, false)).join('');
 }
 
-// Hàm bấm Xem Thêm sản phẩm
+// Hàm bấm Xem Thêm sản phẩm mượt mà (Append mượt, không xóa toàn bộ DOM)
 function loadMoreCatalogProducts() {
-  const step = catalogState.limitStep || 20;
-  catalogState.displayedLimit = (catalogState.displayedLimit || 20) + step;
-  renderProductsGrid(catalogState.filteredProducts || []);
+  const loadMoreBox = document.getElementById('catalogLoadMoreContainer');
+  const btn = loadMoreBox ? loadMoreBox.querySelector('.btn-luxury-outline') : null;
+  if (!btn || btn.classList.contains('btn-loading')) return;
+
+  // 1. Chuyển nút sang trạng thái đang tải cực mượt
+  btn.classList.add('btn-loading');
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>ĐANG TẢI THÊM...</span>';
+
+  // 2. Tạo độ trễ tự nhiên (260ms) để hiệu ứng chuyển động chân thật
+  setTimeout(() => {
+    const grid = document.getElementById('catalogProductsGrid');
+    const allProds = catalogState.filteredProducts || [];
+    const oldLimit = catalogState.displayedLimit || 20;
+    const step = catalogState.limitStep || 20;
+    const newLimit = oldLimit + step;
+    catalogState.displayedLimit = newLimit;
+
+    const newProducts = allProds.slice(oldLimit, newLimit);
+    if (grid && newProducts.length > 0) {
+      const newCardsHTML = newProducts.map((p, i) => createCatalogCardHTML(p, i, true)).join('');
+      grid.insertAdjacentHTML('beforeend', newCardsHTML);
+    }
+
+    // 3. Cập nhật nút bấm
+    if (newLimit >= allProds.length) {
+      if (loadMoreBox) {
+        loadMoreBox.innerHTML = `
+          <div class="all-products-loaded">
+            <i class="fas fa-check-circle"></i> Đã hiển thị tất cả ${allProds.length} sản phẩm
+          </div>
+        `;
+      }
+    } else {
+      btn.classList.remove('btn-loading');
+      const remaining = allProds.length - newLimit;
+      btn.innerHTML = `<span>XEM THÊM (${remaining} SẢN PHẨM)</span> <i class="fas fa-arrow-down"></i>`;
+    }
+
+    // 4. Cuộn nhẹ xuống để người dùng thấy ngay các sản phẩm mới
+    window.scrollBy({ top: 120, behavior: 'smooth' });
+  }, 260);
 }
 
 // Đổi ảnh và giá card khi bấm chọn chấm màu
@@ -1798,16 +1863,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Sự kiện Tìm kiếm
+  // Sự kiện Tìm kiếm với icon loading xoay mượt mà
   const searchInput = document.getElementById('catalogSearchInput');
   if (searchInput) {
     let searchDebounce = null;
+    const searchIcon = document.querySelector('.catalog-search-wrap .search-icon');
     searchInput.addEventListener('input', (e) => {
+      if (searchIcon) {
+        searchIcon.className = 'fas fa-circle-notch fa-spin search-icon';
+        searchIcon.style.color = 'var(--catalog-gold, #dfba73)';
+      }
       clearTimeout(searchDebounce);
       searchDebounce = setTimeout(() => {
+        if (searchIcon) {
+          searchIcon.className = 'fas fa-search search-icon';
+          searchIcon.style.color = '';
+        }
         catalogState.searchKeyword = e.target.value.trim();
         applyFiltersAndRender();
-      }, 300);
+      }, 200);
     });
   }
 

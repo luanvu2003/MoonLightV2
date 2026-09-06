@@ -1399,3 +1399,82 @@ body.catalog-body {
         font-size: 14.5px;
     }
 }
+
+/* ==========================================================================
+   LUXURY CARD ENTRANCE & SMOOTH FILTER TRANSITIONS
+   ========================================================================== */
+@keyframes luxuryCardEnter {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.975);
+    }
+    60% {
+        opacity: 0.95;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.product-card.card-enter-active {
+    animation: luxuryCardEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--card-delay, 0s);
+    will-change: transform, opacity;
+}
+
+/* Nút Xem Thêm Loading State */
+.btn-luxury-outline.btn-loading {
+    pointer-events: none !important;
+    opacity: 0.9 !important;
+    background: #0a0a0a !important;
+    color: #ffffff !important;
+    border-color: #0a0a0a !important;
+    cursor: wait !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-luxury-outline.btn-loading i {
+    animation: spinLoader 0.75s linear infinite !important;
+}
+
+@keyframes spinLoader {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* All products loaded pill */
+.all-products-loaded {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 50px;
+    color: #059669;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    animation: luxuryCardEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+[data-theme="dark"] .all-products-loaded {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
+}
+
+/* Catalog count updated pulse */
+.catalog-count-text.count-updated strong {
+    display: inline-block;
+    animation: countPulse 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--catalog-gold, #dfba73);
+}
+
+@keyframes countPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.22); color: #d4af37; }
+    100% { transform: scale(1); }
+}
+
