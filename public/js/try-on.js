@@ -816,12 +816,14 @@
 
         // 4. Inpainting vùng tay áo & áo khoác cũ (Body Inpainting)
         // Chuyển đổi toàn bộ pixel áo đỏ trên hai cánh tay sang tông màu của áo mới
-        // Tuyệt đối không làm đổi màu đường đất hay cảnh vật nền phía sau
+        // Tuyệt đối không chạm vào mặt/môi, đường đất nền hoặc xe máy
         try {
-          const inpaintStartY = Math.max(0, Math.floor(neckY - 20));
-          const inpaintEndY = Math.min(pH, Math.floor(hipY + 25));
-          const inpaintStartX = Math.max(0, Math.floor(neckX - shoulderSpan * 0.85));
-          const inpaintEndX = Math.min(pW, Math.floor(neckX + shoulderSpan * 0.85));
+          // Bề rộng cánh tay (bao trùm từ khuỷu tay trái sang khuỷu tay phải khi đút túi quần)
+          const inpaintStartX = Math.max(0, Math.round(neckX - pW * 0.23));
+          const inpaintEndX = Math.min(pW, Math.round(neckX + pW * 0.22));
+          // Vùng bắt đầu nghiêm ngặt DƯỚI CẰM để không ảnh hưởng môi/mặt
+          const inpaintStartY = Math.max(0, Math.round(neckY + 2));
+          const inpaintEndY = Math.min(pH - 15, Math.round(neckY + pW * 0.48));
 
           const boxW = inpaintEndX - inpaintStartX;
           const boxH = inpaintEndY - inpaintStartY;
@@ -837,24 +839,24 @@
                 const i = (localY * boxW + localX) * 4;
                 const r = d[i], g = d[i+1], b = d[i+2];
 
-                // Kiểm tra mask cơ thể (nếu có từ MediaPipe)
-                let isPerson = true;
-                if (bodyMaskData) {
-                  const maskIdx = (globalY * pW + globalX) * 4;
-                  isPerson = bodyMaskData[maskIdx] > 65;
-                }
-
                 // Nhận diện pixel màu đỏ của áo khoác cũ:
-                // Tỉ lệ G/R < 0.54 đảm bảo không bao giờ nhận nhầm đất đỏ (đất có G/R >= 0.64)
-                const isRedJacket = isPerson && (r > 60 && g < r * 0.54 && b < r * 0.72 && (r - g) > 20);
-                const isDarkRedShadow = isPerson && (r > 45 && g < r * 0.52 && b < r * 0.68 && (r - g) > 15);
+                // Tỉ lệ G/R < 0.58 đảm bảo không bao giờ nhận nhầm đất đỏ (đất cát có G/R >= 0.64)
+                const isRedJacket = (r > 55 && g < r * 0.58 && b < r * 0.72 && (r - g) > 16);
+                const isDarkRedShadow = (r > 40 && g < r * 0.54 && b < r * 0.68 && (r - g) > 12);
+                const isStripe = (r > 185 && g > 180 && b > 175 && Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && globalY > neckY + 25);
 
                 if (isRedJacket || isDarkRedShadow) {
                   // Giữ nguyên độ sáng và nếp gấp vải tự nhiên của cánh tay người thật
                   const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.6));
-                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.6));
-                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.6));
+                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.55));
+                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.55));
+                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.55));
+                } else if (isStripe && Math.abs(globalX - neckX) > pW * 0.13) {
+                  // Đổi màu sọc trắng trên bắp tay
+                  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                  d[i] = Math.min(255, Math.round(targetColor[0] * L * 1.2));
+                  d[i+1] = Math.min(255, Math.round(targetColor[1] * L * 1.2));
+                  d[i+2] = Math.min(255, Math.round(targetColor[2] * L * 1.2));
                 }
               }
             }
@@ -873,31 +875,31 @@
         let destW, destH, left, top;
 
         if (isUpperBody) {
-          // Bề rộng áo phủ trọn bờ vai và ngực (125% khoảng cách hai khớp vai)
-          destW = Math.round(shoulderSpan * 1.25);
+          // Bề rộng áo may đo phủ trọn bờ vai và lồng ngực (chuẩn nhân trắc học 44-46% chiều rộng ảnh)
+          destW = Math.round(Math.max(shoulderSpan * 2.25, pW * 0.45));
           destH = Math.round(destW * (gH / gW));
 
           if (prodName.includes('trench') || prodName.includes('dáng dài')) {
-            destW = Math.round(shoulderSpan * 1.30);
+            destW = Math.round(Math.max(shoulderSpan * 2.35, pW * 0.46));
             destH = Math.round(destW * 1.55);
           }
 
           left = Math.round(neckX - destW / 2);
-          // Cổ áo nằm ngay sát dưới cằm (cổ họng)
-          top = Math.round(neckY - destH * 0.05);
+          // Cổ áo nằm ngay sát gốc cổ họng (dưới cằm)
+          top = Math.round(neckY - 8);
 
         } else if (isLowerBody) {
-          destW = Math.round(shoulderSpan * 0.88);
+          destW = Math.round(Math.max(shoulderSpan * 1.8, pW * 0.38));
           destH = Math.round(destW * (gH / gW));
           left = Math.round(neckX - destW / 2);
           top = Math.round(hipY - destH * 0.05);
 
         } else {
           // Đầm dạ hội
-          destW = Math.round(shoulderSpan * 1.15);
+          destW = Math.round(Math.max(shoulderSpan * 2.1, pW * 0.44));
           destH = Math.round(destW * (gH / gW) * 1.35);
           left = Math.round(neckX - destW / 2);
-          top = Math.round(neckY - destH * 0.05);
+          top = Math.round(neckY - 8);
         }
 
         // 6. Vẽ trang phục mới với bóng đổ 3D mềm mại
