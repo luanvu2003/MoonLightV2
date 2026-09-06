@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phòng Thử Đồ Ảo AI · MoonLight Luxury Fashion</title>
-    <meta name="description" content="Trải nghiệm phòng thử đồ ảo công nghệ AI thông minh tại MoonLight. Tải ảnh toàn thân hoặc chọn người mẫu chuẩn để mặc thử toàn bộ bộ sưu tập vest, đầm, sơ mi đỉnh cao.">
+    <meta name="description" content="Trải nghiệm phòng thử đồ ảo công nghệ AI tại MoonLight. Tải ảnh toàn thân của bạn hoặc chọn người mẫu để mặc thử toàn bộ bộ sưu tập vest, sơ mi, đầm đỉnh cao.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css?v=3.2">
-    <link rel="stylesheet" href="./css/try-on.css?v=3.2">
+    <link rel="stylesheet" href="./css/style.css?v=3.3">
+    <link rel="stylesheet" href="./css/try-on.css?v=3.3">
 </head>
 
-<body>
+<body class="tryon-page">
     <!-- Luxury Page Preloader -->
     <div class="moonlight-preloader" id="pagePreloader">
         <div class="preloader-content">
@@ -53,23 +53,23 @@
         </div>
     </div>
 
-    <!-- Header Navigation -->
-    <header id="navbar" style="background: rgba(10, 10, 15, 0.95); box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+    <!-- Header Navigation (Đồng bộ chuẩn 100% với Catalog & Index) -->
+    <header id="navbar" style="background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #f1f5f9; padding: 12px 0;">
         <div class="container nav-container">
             <div class="logo">
-                <h1><a href="index.html" style="text-decoration:none; color:#fff;">MOON<span class="highlight">LIGHT</span>.</a></h1>
+                <h1><a href="index.html" style="text-decoration:none; color:#000;">MOON<span class="highlight">LIGHT</span>.</a></h1>
             </div>
 
             <nav class="menu">
-                <a href="index.html" style="color:#fff;">Trang chủ</a>
-                <a href="catalog.html" style="color:#fff;">Bộ Sưu Tập</a>
-                <a href="try-on.html" class="active nav-tryon" style="color:var(--gold);"><i class="fas fa-wand-magic-sparkles" style="margin-right: 4px;"></i> Thử Đồ AI <span class="ai-badge">NEW</span></a>
-                <a href="catalog.html?gender=Nam" style="color:#fff;">Thời Trang Nam</a>
-                <a href="catalog.html?gender=Nu" style="color:#fff;">Thời Trang Nữ</a>
-                <a href="index.html#footer" style="color:#fff;">Liên hệ</a>
+                <a href="index.html" style="color:#000;">Trang chủ</a>
+                <a href="catalog.html" style="color:#000;">Bộ Sưu Tập</a>
+                <a href="try-on.html" class="active nav-tryon" style="color:var(--gold);"><i class="fas fa-wand-magic-sparkles" style="color: var(--gold);"></i> Thử Đồ AI <span class="ai-badge">NEW</span></a>
+                <a href="catalog.html?gender=Nam" style="color:#000;">Thời Trang Nam</a>
+                <a href="catalog.html?gender=Nu" style="color:#000;">Thời Trang Nữ</a>
+                <a href="index.html#footer" style="color:#000;">Liên hệ</a>
             </nav>
 
-            <div class="nav-icons" style="color:#fff;">
+            <div class="nav-icons" style="color:#000;">
                 <div class="icon-item" onclick="toggleSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></div>
                 <div class="icon-item" onclick="toggleWishlistSidebar()" title="Danh sách yêu thích">
                     <i class="fas fa-heart"></i>
@@ -80,90 +80,101 @@
                     <span class="badge" id="cartBadge">0</span>
                 </div>
             </div>
-            <div class="mobile-toggle" onclick="toggleMobileMenu()" style="color:#fff;"><i class="fas fa-bars"></i></div>
+            <div class="mobile-toggle" onclick="toggleMobileMenu()" style="color:#000;"><i class="fas fa-bars"></i></div>
         </div>
     </header>
 
-    <!-- Main Studio Viewport -->
-    <main class="tryon-studio">
-        <!-- Studio Hero Header -->
-        <section class="tryon-hero">
-            <div class="container">
-                <div class="tryon-badge-ai"><i class="fas fa-sparkles"></i> AI FITTING AGENT 2.0</div>
-                <h1>PHÒNG THỬ ĐỒ ẢO MOONLIGHT</h1>
-                <p>Tải ảnh toàn thân của bạn hoặc chọn người mẫu chuẩn, sau đó chọn bất kỳ trang phục nào trong bộ sưu tập MoonLight để AI thay đồ trực tiếp và cảm nhận phom dáng chân thực trước khi mua.</p>
+    <!-- Studio Hero Banner (Đồng bộ giao diện sáng cao cấp với Catalog) -->
+    <section class="tryon-hero-banner">
+        <div class="container">
+            <div class="tryon-breadcrumb">
+                <a href="index.html"><i class="fas fa-house"></i> Trang chủ</a>
+                <span>/</span>
+                <a href="catalog.html">Bộ Sưu Tập</a>
+                <span>/</span>
+                <span style="color: var(--tryon-gold);">Phòng Thử Đồ Ảo AI</span>
+            </div>
+            <h1 class="tryon-hero-title">
+                <span>PHÒNG THỬ ĐỒ ẢO MOONLIGHT</span>
+                <span class="tryon-badge-tag"><i class="fas fa-wand-magic-sparkles"></i> AI STUDIO</span>
+            </h1>
+            <p class="tryon-hero-desc">
+                Tải ảnh toàn thân của bạn hoặc chọn người mẫu chuẩn, sau đó chọn bất kỳ sản phẩm nào trong cửa hàng để AI thay đổi trang phục trực tiếp với phom dáng và ánh sáng chân thực.
+            </p>
 
-                <!-- Steps Navigation -->
-                <div class="tryon-steps-nav">
-                    <div class="step-item active">
-                        <div class="step-num">1</div>
-                        <div class="step-text">Chọn Người Mẫu</div>
-                    </div>
-                    <div class="step-divider"></div>
-                    <div class="step-item active">
-                        <div class="step-num">2</div>
-                        <div class="step-text">Chọn Trang Phục</div>
-                    </div>
-                    <div class="step-divider"></div>
-                    <div class="step-item active">
-                        <div class="step-num">3</div>
-                        <div class="step-text">AI Thay Đồ</div>
-                    </div>
-                    <div class="step-divider"></div>
-                    <div class="step-item active">
-                        <div class="step-num">4</div>
-                        <div class="step-text">So Sánh & Đặt Mua</div>
-                    </div>
+            <!-- Steps Progress Bar -->
+            <div class="tryon-steps-bar">
+                <div class="step-box active">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Chọn Người Mẫu</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-box active">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Chọn Trang Phục</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-box active">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">AI Thay Đồ</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-box active">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">So Sánh & Đặt Mua</div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Studio Main Interactive Grid -->
+    <!-- Main Studio Wrapper -->
+    <main class="tryon-main-wrap">
         <div class="container">
             <div class="tryon-grid">
-                <!-- LEFT COLUMN: CONTROLS & SELECTION -->
+                
+                <!-- CỘT TRÁI: ĐIỀU KHIỂN & CHỌN TRANG PHỤC -->
                 <div class="tryon-controls-col">
                     
-                    <!-- STEP 1 CARD: PERSON / MODEL SELECTION -->
+                    <!-- BƯỚC 1: NGƯỜI MẪU / ẢNH TOÀN THÂN -->
                     <div class="tryon-card">
-                        <div class="card-title-row">
+                        <div class="card-header-line">
                             <h2><i class="fas fa-user-check"></i> Bước 1: Người Mẫu Thử Đồ</h2>
                         </div>
 
-                        <!-- Tab switcher: Mẫu có sẵn vs Tải ảnh lên -->
-                        <div class="tab-pill-group">
-                            <button class="tab-pill-btn active" data-tab="sample">
+                        <!-- Tab chọn nhanh: Người mẫu chuẩn vs Tải ảnh của bạn -->
+                        <div class="model-tabs">
+                            <button class="model-tab-btn active" data-tab="sample">
                                 <i class="fas fa-users"></i> Người Mẫu Chuẩn
                             </button>
-                            <button class="tab-pill-btn" data-tab="upload">
+                            <button class="model-tab-btn" data-tab="upload">
                                 <i class="fas fa-cloud-arrow-up"></i> Tải Ảnh Của Bạn
                             </button>
                         </div>
 
-                        <!-- Option A: Sample Models Grid -->
+                        <!-- Option A: Danh sách người mẫu chuẩn -->
                         <div class="sample-models-grid" id="sampleModelsGrid">
-                            <!-- Populated dynamically by try-on.js -->
+                            <!-- Render bằng JS -->
                         </div>
 
-                        <!-- Option B: Dropzone File Upload -->
+                        <!-- Option B: Kéo thả hoặc tải ảnh của bạn -->
                         <div class="dropzone-box" id="personDropzone" style="display: none;">
                             <input type="file" id="personFileInput" accept="image/*" style="display: none;">
                             <div class="dropzone-icon"><i class="fas fa-camera-retro"></i></div>
                             <div class="dropzone-title">Kéo thả hoặc tải ảnh toàn thân của bạn</div>
-                            <div class="dropzone-desc">Khuyên dùng ảnh chụp đứng thẳng toàn thân, nền sáng, rõ nét để đạt chất lượng AI tốt nhất.</div>
-                            <button class="btn-upload-file" type="button" onclick="document.getElementById('personFileInput').click()">
+                            <div class="dropzone-desc">Khuyên dùng ảnh chụp đứng thẳng toàn thân, nền sáng rõ nét để đạt chất lượng AI thử đồ tốt nhất.</div>
+                            <button class="btn-upload-local" type="button" onclick="document.getElementById('personFileInput').click()">
                                 <i class="fas fa-folder-open"></i> CHỌN ẢNH TỪ MÁY
                             </button>
                         </div>
 
-                        <!-- Selected Person Preview Card -->
+                        <!-- Khung xem trước người mẫu đã chọn -->
                         <div class="person-preview-box" id="personPreviewBox" style="display: none;">
                             <div class="person-thumb">
                                 <img id="personThumbImg" src="" alt="Selected Person">
                             </div>
                             <div class="person-meta">
                                 <h4 id="personNameText">Người mẫu đã chọn</h4>
-                                <p>Sẵn sàng cho thuật toán phân giải phom dáng AI</p>
+                                <p>Sẵn sàng để AI phân tích và thay đổi trang phục</p>
                             </div>
                             <button class="btn-remove-person" id="btnRemovePerson" title="Đổi người mẫu khác">
                                 <i class="fas fa-rotate-right"></i>
@@ -171,13 +182,13 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2 CARD: GARMENT PICKER -->
-                    <div class="tryon-card" style="margin-top: 25px;">
-                        <div class="card-title-row">
+                    <!-- BƯỚC 2: CHỌN TRANG PHỤC TỪ MOONLIGHT -->
+                    <div class="tryon-card">
+                        <div class="card-header-line">
                             <h2><i class="fas fa-shirt"></i> Bước 2: Chọn Trang Phục MoonLight</h2>
                         </div>
 
-                        <!-- Category Filter Pills -->
+                        <!-- Phân loại danh mục -->
                         <div class="wardrobe-tabs">
                             <button class="w-tab-btn active" data-cat="all">Tất Cả</button>
                             <button class="w-tab-btn" data-cat="vest">Vest & Suit</button>
@@ -186,18 +197,18 @@
                             <button class="w-tab-btn" data-cat="quan-au">Quần Âu</button>
                         </div>
 
-                        <!-- Search Box -->
+                        <!-- Ô tìm kiếm trang phục -->
                         <div class="wardrobe-search-wrap">
                             <i class="fas fa-search"></i>
-                            <input type="text" class="wardrobe-search-input" id="wardrobeSearch" placeholder="Tìm trang phục theo tên hoặc chất liệu...">
+                            <input type="text" class="wardrobe-search-input" id="wardrobeSearch" placeholder="Tìm kiếm trang phục (ví dụ: Vest, Sơ mi)...">
                         </div>
 
-                        <!-- Wardrobe Products Grid -->
+                        <!-- Grid sản phẩm cửa hàng -->
                         <div class="wardrobe-grid" id="wardrobeGrid">
-                            <!-- Populated dynamically by try-on.js -->
+                            <!-- Render bằng JS -->
                         </div>
 
-                        <!-- Selected Garment Overview Bar -->
+                        <!-- Thanh thông tin trang phục đang chọn -->
                         <div class="selected-garment-bar" id="selectedGarmentBar" style="display: none;">
                             <img id="sgThumb" class="sg-thumb" src="" alt="Garment">
                             <div class="sg-meta">
@@ -209,82 +220,84 @@
                             </div>
                         </div>
 
-                        <!-- STEP 3 TRIGGER BUTTON -->
+                        <!-- NÚT BẮT ĐẦU THỬ ĐỒ AI -->
                         <div class="tryon-cta-wrap">
                             <button class="btn-ai-generate" id="btnAiGenerate" disabled>
                                 <i class="fas fa-wand-magic-sparkles"></i>
                                 <span>KÍCH HOẠT THỬ ĐỒ VỚI AI</span>
                             </button>
-                            <div class="ai-meta-pills" style="justify-content: center;">
-                                <span class="ai-pill"><i class="fas fa-bolt"></i> Tốc độ cao ~ 2 giây</span>
-                                <span class="ai-pill"><i class="fas fa-shield-halved"></i> Bảo mật ảnh cá nhân 100%</span>
-                                <span class="ai-pill"><i class="fas fa-gem"></i> Ánh sáng chân thực</span>
+                            <div class="ai-meta-pills">
+                                <span class="ai-pill"><i class="fas fa-bolt"></i> Tốc độ cao ~ 2s</span>
+                                <span class="ai-pill"><i class="fas fa-shield-halved"></i> Bảo mật ảnh 100%</span>
+                                <span class="ai-pill"><i class="fas fa-gem"></i> Phom dáng chuẩn xác</span>
                             </div>
                         </div>
-
                     </div>
+
                 </div>
 
-                <!-- RIGHT COLUMN: AI SCANNING & BEFORE/AFTER RESULT SLIDER -->
+                <!-- CỘT PHẢI: XEM KẾT QUẢ & SO SÁNH BEFORE / AFTER -->
                 <div class="tryon-result-col">
                     <div class="tryon-card">
-                        <div class="card-title-row">
+                        <div class="card-header-line">
                             <h2><i class="fas fa-eye"></i> Kết Quả Thử Đồ Ảo (Before / After)</h2>
-                            <span style="font-size: 11.5px; color: var(--tryon-gold); font-weight: 600;">
-                                <i class="fas fa-arrows-left-right"></i> Kéo để so sánh
+                            <span style="font-size: 12px; color: var(--tryon-gold); font-weight: 600;">
+                                <i class="fas fa-arrows-left-right"></i> Kéo thanh trượt để so sánh
                             </span>
                         </div>
 
-                        <!-- Viewport: Scanner & Comparison Slider -->
+                        <!-- Khung hiển thị kết quả -->
                         <div class="result-viewport" id="resultViewport">
-                            <!-- Scanner Animation Overlay (Active while generating) -->
+                            <!-- Hiệu ứng quét Laser Hologram lúc đang xử lý -->
                             <div class="scanning-overlay" id="scanningOverlay">
                                 <div class="laser-beam"></div>
                                 <div class="radar-circle">
                                     <i class="fas fa-fingerprint radar-inner-icon"></i>
                                 </div>
-                                <div class="scan-status-text" id="scanStatusText">Đang quét dáng người mẫu...</div>
+                                <div class="scan-status-text" id="scanStatusText">Đang quét vóc dáng người mẫu...</div>
                                 <div class="scan-sub-text" id="scanSubText">MOONLIGHT AI NEURAL VTON ENGINE</div>
                             </div>
 
-                            <!-- Initial Placeholder / Empty State -->
+                            <!-- Trạng thái chờ ban đầu -->
                             <div class="empty-result-state" id="emptyResultState">
                                 <i class="fas fa-wand-magic-sparkles"></i>
                                 <h3>Sẵn Sàng Thử Đồ Ảo</h3>
-                                <p>Chọn người mẫu ở Bước 1, chọn trang phục ở Bước 2 và bấm nút <strong>"Kích Hoạt Thử Đồ Với AI"</strong> để xem ảnh biến hóa hoàn hảo tại đây!</p>
+                                <p>Chọn người mẫu ở Bước 1, chọn trang phục ở Bước 2 và bấm nút <strong>"Kích Hoạt Thử Đồ Với AI"</strong> để xem ảnh biến hóa tại đây!</p>
                             </div>
 
-                            <!-- Comparison Slider Container -->
+                            <!-- Thanh trượt so sánh Trước & Sau (Không méo hình, clip-path chuẩn xác) -->
                             <div class="comparison-container" id="comparisonContainer" style="display: none;">
-                                <!-- Tags -->
-                                <div class="badge-tag tag-before">ẢNH GỐC</div>
-                                <div class="badge-tag tag-after">AI ĐÃ MẶC ĐỒ</div>
-
-                                <!-- Background Image: Result AI outfit (After) -->
-                                <img id="afterImg" class="compare-img" src="" alt="AI Try-On Result">
-
-                                <!-- Foreground Overlay: Original Image (Before) -->
-                                <div class="compare-overlay" id="compareOverlay">
-                                    <img id="beforeImg" class="compare-img" src="" alt="Original Person">
+                                <!-- Lớp ảnh kết quả sau khi AI thay đồ (After) -->
+                                <div class="compare-layer-after">
+                                    <img id="afterImg" src="" alt="AI Try-On Result">
                                 </div>
 
-                                <!-- Central Draggable Handle -->
-                                <div class="slider-handle" id="sliderHandle">
+                                <!-- Lớp ảnh gốc trước khi thay đồ (Before) với clip-path -->
+                                <div class="compare-layer-before" id="compareOverlay">
+                                    <img id="beforeImg" src="" alt="Original Person">
+                                </div>
+
+                                <!-- Đường phân cách & nút kéo trượt -->
+                                <div class="slider-line" id="sliderLine"></div>
+                                <div class="slider-knob" id="sliderHandle">
                                     <i class="fas fa-chevron-left"></i>
                                     <i class="fas fa-chevron-right"></i>
                                 </div>
+
+                                <div class="tag-label tag-before">ẢNH GỐC</div>
+                                <div class="tag-label tag-after">AI ĐÃ MẶC ĐỒ</div>
                             </div>
                         </div>
 
-                        <!-- Action Panel Under Result -->
+                        <!-- Khung chi tiết sản phẩm đang mặc & Nút mua hàng -->
                         <div class="result-action-panel" id="resultActionPanel" style="display: none;">
                             <div class="worn-product-card">
                                 <img id="wpThumb" class="wp-thumb" src="" alt="Worn Product">
                                 <div class="wp-info">
-                                    <div class="wp-name" id="wpName">Bộ Vest Hoàng Gia</div>
+                                    <div class="wp-name" id="wpName">Tên sản phẩm</div>
                                     <div class="wp-price-box">
-                                        <span class="wp-price" id="wpPrice">3.200.000₫</span>
-                                        <span class="wp-old-price" id="wpOldPrice">4.200.000₫</span>
+                                        <span class="wp-price" id="wpPrice">0₫</span>
+                                        <span class="wp-old-price" id="wpOldPrice">0₫</span>
                                     </div>
                                 </div>
                             </div>
@@ -294,7 +307,7 @@
                                     <i class="fas fa-shopping-bag"></i> THÊM VÀO GIỎ HÀNG
                                 </button>
                                 <button class="btn-download-result" id="btnDownloadResult" type="button" title="Tải ảnh về máy">
-                                    <i class="fas fa-download"></i> TẢI ẢNH
+                                    <i class="fas fa-download"></i> TẢI ẢNH VỀ
                                 </button>
                                 <button class="btn-retry-different" type="button" onclick="document.getElementById('wardrobeGrid').scrollIntoView({behavior: 'smooth'})" title="Chọn mẫu khác">
                                     <i class="fas fa-shuffle"></i> ĐỔI MẪU KHÁC
@@ -333,7 +346,7 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
+    <!-- FOOTER (Đồng bộ hoàn toàn với Index & Catalog) -->
     <footer id="footer">
         <div class="container">
             <div class="footer-container">
@@ -375,8 +388,8 @@
     <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
 
     <!-- Scripts -->
-    <script src="./js/api.js?v=3.2"></script>
-    <script src="./js/shop.js?v=3.2"></script>
-    <script src="./js/try-on.js?v=3.2"></script>
+    <script src="./js/api.js?v=3.3"></script>
+    <script src="./js/shop.js?v=3.3"></script>
+    <script src="./js/try-on.js?v=3.3"></script>
 </body>
 </html>

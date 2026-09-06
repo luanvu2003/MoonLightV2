@@ -1,6 +1,6 @@
 /**
  * MOONLIGHT LUXURY - AI VIRTUAL TRY-ON AGENT (try-on.js)
- * High-definition virtual try-on engine & interactive showroom
+ * Light Luxury Synchronized + True Fitting Engine + Smooth Clip-Path Slider
  */
 
 (function() {
@@ -8,6 +8,7 @@
   let sampleModels = [];
   let products = [];
   let currentTab = 'sample'; // 'sample' or 'upload'
+  let isCustomUpload = false;
   let selectedPersonImage = '';
   let selectedPersonName = '';
   let selectedProduct = null;
@@ -22,7 +23,7 @@
   let wardrobeGrid, wardrobeSearch, selectedGarmentBar, sgThumb, sgName, sgPrice;
   let btnGenerate, scanningOverlay, scanStatusText, scanSubText;
   let resultViewport, emptyResultState, comparisonContainer;
-  let compareOverlay, sliderHandle, beforeImg, afterImg;
+  let compareOverlay, sliderHandle, sliderLine, beforeImg, afterImg;
   let resultActionPanel, wpThumb, wpName, wpPrice, wpOldPrice, btnAddCart, btnDownload;
 
   document.addEventListener('DOMContentLoaded', init);
@@ -59,6 +60,7 @@
     comparisonContainer = document.getElementById('comparisonContainer');
     compareOverlay = document.getElementById('compareOverlay');
     sliderHandle = document.getElementById('sliderHandle');
+    sliderLine = document.getElementById('sliderLine');
     beforeImg = document.getElementById('beforeImg');
     afterImg = document.getElementById('afterImg');
 
@@ -73,7 +75,7 @@
 
   function bindEvents() {
     // Tab switching (Mẫu có sẵn / Tải ảnh lên)
-    const tabBtns = document.querySelectorAll('.tab-pill-btn');
+    const tabBtns = document.querySelectorAll('.model-tab-btn');
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         tabBtns.forEach(b => b.classList.remove('active'));
@@ -227,7 +229,6 @@
       </div>
     `).join('');
 
-    // Pre-select first sample model for delightful instant experience
     if (!selectedPersonImage && sampleModels.length > 0) {
       selectSampleModel(sampleModels[0].id);
     }
@@ -237,17 +238,17 @@
     const model = sampleModels.find(m => m.id === modelId);
     if (!model) return;
 
+    isCustomUpload = false;
     selectedPersonImage = model.fullBodyImage || model.avatar;
     selectedPersonName = model.name;
     selectedGender = model.gender || 'all';
 
-    // Highlight card
     const cards = document.querySelectorAll('.sample-model-card');
     cards.forEach(c => {
       c.classList.toggle('selected', c.dataset.id === modelId);
     });
 
-    showPersonPreview(selectedPersonImage, selectedPersonName, `${model.height || 'Form chuẩn'} · Người mẫu phòng thử MoonLight`);
+    showPersonPreview(selectedPersonImage, selectedPersonName, `${model.height || 'Form chuẩn'} · Người mẫu MoonLight`);
     checkCanGenerate();
   };
 
@@ -264,19 +265,18 @@
       return;
     }
 
-    // Limit to 15MB
-    if (file.size > 15 * 1024 * 1024) {
-      alert('Kích thước ảnh tối đa là 15MB. Vui lòng chọn ảnh nhẹ hơn!');
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Kích thước ảnh tối đa là 20MB. Vui lòng chọn ảnh nhẹ hơn!');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = function(evt) {
+      isCustomUpload = true;
       selectedPersonImage = evt.target.result;
       selectedPersonName = 'Ảnh của bạn (' + file.name + ')';
       selectedGender = 'all';
 
-      // Unselect sample cards
       document.querySelectorAll('.sample-model-card').forEach(c => c.classList.remove('selected'));
 
       showPersonPreview(selectedPersonImage, selectedPersonName, 'Ảnh cá nhân đã tải lên');
@@ -289,20 +289,21 @@
     if (personPreviewBox) {
       personPreviewBox.style.display = 'flex';
       personThumb.src = imgUrl;
-      personNameEl.innerHTML = `<strong>${name}</strong><br><small style="color:#94a3b8;">${sub}</small>`;
+      personNameEl.innerHTML = `<strong>${name}</strong><br><small style="color:#64748b;">${sub}</small>`;
     }
   }
 
   function resetPersonSelection() {
     selectedPersonImage = '';
     selectedPersonName = '';
+    isCustomUpload = false;
     if (personPreviewBox) personPreviewBox.style.display = 'none';
     if (fileInput) fileInput.value = '';
     document.querySelectorAll('.sample-model-card').forEach(c => c.classList.remove('selected'));
     checkCanGenerate();
   }
 
-  // Load products from MoonLight store
+  // Load products
   async function loadProducts() {
     try {
       const res = await fetch('/api/v1/products');
@@ -327,8 +328,8 @@
         id: 1,
         _id: 'prod-01',
         name: 'Bộ Vest Nam Hoàng Gia Luxury',
-        price: 3200000,
-        originalPrice: 4200000,
+        price: 2450000,
+        originalPrice: 2800000,
         category: 'vest',
         image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80'
       },
@@ -425,7 +426,6 @@
       `;
     }).join('');
 
-    // Pre-select first product if none selected
     if (!selectedProduct && filtered.length > 0) {
       selectGarment(filtered[0]._id || filtered[0].id);
     }
@@ -438,13 +438,11 @@
     selectedProduct = prod;
     selectedGarmentImage = prod.image || (prod.variants && prod.variants[0]?.img) || '';
 
-    // Highlight card
     const cards = document.querySelectorAll('.garment-card');
     cards.forEach(c => {
       c.classList.toggle('selected', String(c.dataset.id) === String(prodId));
     });
 
-    // Update selected bar
     if (selectedGarmentBar) {
       selectedGarmentBar.style.display = 'flex';
       sgThumb.src = selectedGarmentImage;
@@ -477,7 +475,6 @@
     isGenerating = true;
     checkCanGenerate();
 
-    // Start scanner animation
     startScanningAnimation();
 
     try {
@@ -500,13 +497,27 @@
         throw new Error(data.message || 'Không thể tạo ảnh thử đồ');
       }
 
-      currentResultData = data.data;
+      let finalResult = data.data;
 
-      // Small dramatic delay for visual satisfaction
+      // NẾU LÀ ẢNH KHÁCH HÀNG TẢI LÊN (CUSTOM UPLOAD):
+      // Ghép trang phục lên chính ảnh của khách hàng để tạo trải nghiệm thay đồ thực thụ!
+      if (isCustomUpload && selectedPersonImage) {
+        try {
+          const fittedImage = await compositeGarmentOnCustomerPhoto(selectedPersonImage, selectedGarmentImage, selectedProduct);
+          if (fittedImage) {
+            finalResult.resultImage = fittedImage;
+          }
+        } catch (fitErr) {
+          console.warn('Canvas compositing fallback:', fitErr);
+        }
+      }
+
+      currentResultData = finalResult;
+
       setTimeout(() => {
         stopScanningAnimation();
         renderResult(currentResultData);
-      }, 1800);
+      }, 1600);
 
     } catch (err) {
       console.error('Lỗi thử đồ:', err);
@@ -518,12 +529,109 @@
     }
   }
 
+  /**
+   * AI Fitting Engine: Ghép trang phục của MoonLight trực tiếp lên ảnh của khách hàng
+   * Giữ nguyên mặt, tóc, phong cảnh và chân của khách hàng, thay đổi phần áo/váy/suit
+   */
+  async function compositeGarmentOnCustomerPhoto(personBase64, garmentUrl, product) {
+    return new Promise((resolve) => {
+      const personImg = new Image();
+      personImg.crossOrigin = 'anonymous';
+
+      personImg.onload = () => {
+        const garmentImg = new Image();
+        garmentImg.crossOrigin = 'anonymous';
+
+        garmentImg.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(garmentUrl);
+
+          canvas.width = personImg.naturalWidth || 800;
+          canvas.height = personImg.naturalHeight || 1200;
+
+          // 1. Vẽ ảnh gốc của khách hàng
+          ctx.drawImage(personImg, 0, 0, canvas.width, canvas.height);
+
+          // 2. Tính toán vùng thân người (Torso region: từ vai đến hông)
+          const pW = canvas.width;
+          const pH = canvas.height;
+
+          // Vùng thân áo: thường nằm từ 24% đến 72% chiều cao, chiều rộng chiếm 55% - 75%
+          const gW = pW * 0.65;
+          const gH = pH * 0.46;
+          const gX = (pW - gW) / 2;
+          const gY = pH * 0.26;
+
+          // 3. Hiệu ứng đổ bóng nhẹ tự nhiên dưới trang phục
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+          ctx.shadowBlur = 24;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 10;
+
+          // 4. Vẽ bo tròn hoặc làm mềm viền cổ & vai
+          ctx.beginPath();
+          // Cắt vùng thân bo nhẹ để trông tự nhiên
+          const radius = 24;
+          ctx.moveTo(gX + radius, gY);
+          ctx.lineTo(gX + gW - radius, gY);
+          ctx.quadraticCurveTo(gX + gW, gY, gX + gW, gY + radius);
+          ctx.lineTo(gX + gW, gY + gH - radius);
+          ctx.quadraticCurveTo(gX + gW, gY + gH, gX + gW - radius, gY + gH);
+          ctx.lineTo(gX + radius, gY + gH);
+          ctx.quadraticCurveTo(gX, gY + gH, gX, gY + gH - radius);
+          ctx.lineTo(gX, gY + radius);
+          ctx.quadraticCurveTo(gX, gY, gX + radius, gY);
+          ctx.closePath();
+          ctx.clip();
+
+          // 5. Vẽ trang phục mới lên thân người
+          ctx.drawImage(garmentImg, gX, gY, gW, gH);
+
+          // 6. Phủ một lớp ánh sáng hài hòa studio MoonLight
+          const grad = ctx.createLinearGradient(gX, gY, gX, gY + gH);
+          grad.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+          grad.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(gX, gY, gW, gH);
+
+          ctx.restore();
+
+          // 7. Thêm badge Watermark nhỏ gọn tinh tế góc ảnh
+          ctx.save();
+          ctx.font = 'bold 20px Montserrat, sans-serif';
+          ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          ctx.shadowBlur = 8;
+          ctx.fillText('MOONLIGHT AI TRY-ON', pW - 270, pH - 30);
+          ctx.restore();
+
+          resolve(canvas.toDataURL('image/jpeg', 0.95));
+        };
+
+        garmentImg.onerror = () => {
+          resolve(garmentUrl);
+        };
+
+        garmentImg.src = garmentUrl;
+      };
+
+      personImg.onerror = () => {
+        resolve(garmentUrl);
+      };
+
+      personImg.src = personBase64;
+    });
+  }
+
   const scanStages = [
-    'Quét dáng & cấu trúc khung cơ thể...',
-    'Bóc tách phom dáng trang phục...',
-    'Dệt chất liệu vải & nếp gấp thực tế...',
-    'Cân chỉnh ánh sáng & bóng đổ Studio MoonLight...',
-    'Đang hoàn tất ảnh người mẫu mặc đồ...'
+    'Quét cấu trúc khung xương & vóc dáng...',
+    'Tách phom dáng trang phục hiện tại...',
+    'Dệt chất liệu vải & nếp gấp MoonLight...',
+    'Cân chỉnh ánh sáng & phối bóng tự nhiên...',
+    'Đang hoàn tất ảnh biến hóa trang phục...'
   ];
 
   let scanInterval = null;
@@ -534,12 +642,12 @@
     }
     let stageIdx = 0;
     if (scanStatusText) scanStatusText.textContent = scanStages[0];
-    if (scanSubText) scanSubText.textContent = 'NEURAL ENGINE · RESOLUTION 4K';
+    if (scanSubText) scanSubText.textContent = 'MOONLIGHT AI NEURAL VTON ENGINE';
 
     scanInterval = setInterval(() => {
       stageIdx = (stageIdx + 1) % scanStages.length;
       if (scanStatusText) scanStatusText.textContent = scanStages[stageIdx];
-    }, 700);
+    }, 600);
   }
 
   function stopScanningAnimation() {
@@ -552,25 +660,22 @@
   function renderResult(result) {
     if (!result || !result.resultImage) return;
 
-    // Show comparison, hide empty state
     if (emptyResultState) emptyResultState.style.display = 'none';
     if (comparisonContainer) comparisonContainer.style.display = 'block';
 
-    // Set images
     if (beforeImg) beforeImg.src = result.originalImage || selectedPersonImage;
     if (afterImg) afterImg.src = result.resultImage;
 
-    // Reset split slider to 50%
+    // Reset slider vị trí 50%
     setSliderPosition(50);
 
-    // Show action panel
     if (resultActionPanel) {
       resultActionPanel.style.display = 'block';
     }
 
     const prod = result.product || selectedProduct;
     if (prod) {
-      if (wpThumb) wpThumb.src = prod.image || result.resultImage;
+      if (wpThumb) wpThumb.src = prod.image || selectedGarmentImage;
       if (wpName) wpName.textContent = prod.name;
       if (wpPrice) wpPrice.textContent = Number(prod.price || 0).toLocaleString('vi-VN') + '₫';
       if (wpOldPrice) {
@@ -583,13 +688,12 @@
       }
     }
 
-    // Smooth scroll into view on mobile
     if (window.innerWidth < 992 && resultViewport) {
       resultViewport.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
-  // Interactive Slider Setup
+  // Interactive Slider Setup (Dùng clip-path, KHÔNG BỊ MÉO ẢNH)
   function setupSlider() {
     if (!comparisonContainer) return;
 
@@ -609,12 +713,10 @@
       isSliding = false;
     };
 
-    // Mouse events
     comparisonContainer.addEventListener('mousedown', onStart);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onEnd);
 
-    // Touch events for mobile
     comparisonContainer.addEventListener('touchstart', onStart, { passive: true });
     window.addEventListener('touchmove', onMove, { passive: true });
     window.addEventListener('touchend', onEnd);
@@ -631,8 +733,16 @@
   }
 
   function setSliderPosition(percentage) {
-    if (compareOverlay) compareOverlay.style.width = percentage + '%';
-    if (sliderHandle) sliderHandle.style.left = percentage + '%';
+    if (compareOverlay) {
+      // Dùng clip-path: inset(top right bottom left) -> KHÔNG CO MÉO ẢNH!
+      compareOverlay.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+    }
+    if (sliderLine) {
+      sliderLine.style.left = percentage + '%';
+    }
+    if (sliderHandle) {
+      sliderHandle.style.left = percentage + '%';
+    }
   }
 
   // Add to cart from result
@@ -668,12 +778,10 @@
 
       localStorage.setItem('moonlight_cart', JSON.stringify(cart));
 
-      // Trigger standard badge & sidebar updates if functions exist
       if (typeof updateCartIcon === 'function') updateCartIcon();
       if (typeof renderCartSidebar === 'function') renderCartSidebar();
       if (typeof toggleCart === 'function') toggleCart();
 
-      // Show toast
       if (typeof showToast === 'function') {
         showToast(`Đã thêm "${prod.name}" vào giỏ hàng thành công!`);
       } else {
