@@ -2671,6 +2671,9 @@ async function handleCheckout(e) {
       if (transferConfirmedNotice) {
         transferConfirmedNotice.style.display = 'none';
       }
+
+      // Kích hoạt tự động lắng nghe tiền vào (Auto-Reconciliation Polling)
+      startAutoPaymentCheck(orderCode);
     } else if (modalBankingSec) {
       modalBankingSec.style.display = 'none';
     }
@@ -2681,6 +2684,41 @@ async function handleCheckout(e) {
       window.location.href = 'index.html';
     }, 2500);
   }
+}
+
+// --- TỰ ĐỘNG BẮT TÍN HIỆU TIỀN VÀO (AUTO PAYMENT LISTENER) ---
+let _pollPaymentTimer = null;
+function startAutoPaymentCheck(orderCode) {
+  if (_pollPaymentTimer) clearInterval(_pollPaymentTimer);
+  if (!orderCode) return;
+
+  _pollPaymentTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/v1/orders/${encodeURIComponent(orderCode)}/status`);
+      const json = await res.json();
+      if (json && json.success && json.data && json.data.isPaid) {
+        clearInterval(_pollPaymentTimer);
+        _pollPaymentTimer = null;
+
+        const qrBox = document.querySelector('.modal-banking-qr-wrapper');
+        const btn = document.getElementById('btnConfirmTransfer');
+        const notice = document.getElementById('transferConfirmedNotice');
+        if (qrBox) qrBox.style.display = 'none';
+        if (btn) btn.style.display = 'none';
+        if (notice) {
+          notice.style.display = 'flex';
+          notice.innerHTML = `<i class="fas fa-circle-check" style="color:#10b981; font-size:22px; margin-right:8px;"></i> <div><strong style="color:#059669; font-size:14px;">THANH TOÁN THÀNH CÔNG!</strong><p style="margin:2px 0 0 0; font-size:12px; color:#065f46;">Hệ thống đã tự động nhận diện tiền chuyển khoản từ tài khoản Agribank. Đơn hàng đang được đóng gói giao ngay!</p></div>`;
+        }
+
+        showToast({
+          title: 'Thanh toán thành công! 🎉',
+          message: `Đơn hàng ${orderCode} đã khớp lệnh thanh toán Agribank. Cảm ơn bạn!`,
+          type: 'success',
+          duration: 8000
+        });
+      }
+    } catch (err) {}
+  }, 2500);
 }
 
 // --- 8. TIỆN ÍCH & TƯƠNG TÁC GIAO DIỆN ---

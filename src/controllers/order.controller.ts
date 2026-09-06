@@ -370,4 +370,96 @@ export class OrderController {
       next(error);
     }
   }
+
+  static async handleWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = req.body || {};
+      console.log('💳 [Banking Webhook Received]:', JSON.stringify(data));
+
+      // Hỗ trợ cả SePay, Casso, PayOS và định dạng Webhook ngân hàng chuẩn
+      const content = String(data.content || data.description || data.addInfo || (data.data && data.data[0]?.description) || '');
+      const amount = Number(data.transferAmount || data.amount || (data.data && data.data[0]?.amount) || 0);
+      const refCode = String(data.referenceCode || data.id || (data.data && data.data[0]?.tid) || '');
+
+      // Tìm mã đơn hàng MoonLight: ML-YYYYMMDD-XXXX hoặc ML20260906XXXX
+      const match = content.match(/ML[-_]?[0-9]{8}[-_]?[0-9]{4}/i);
+      let orderCode = match ? match[0] : '';
+      if (!orderCode && data.orderCode) orderCode = String(data.orderCode);
+
+      if (!orderCode) {
+        sendSuccess(res, null, 'Webhook nhận thành công (Không có mã đơn hàng trong nội dung)');
+        return;
+      }
+
+      const normalizedCode = orderCode.toUpperCase();
+      const order: any = await Order.findOne({
+        $or: [
+          { orderCode: normalizedCode },
+          { orderCode: normalizedCode.replace(/-/g, '') },
+          { orderCode: new RegExp(orderCode.replace(/-/g, '[-_]?'), 'i') }
+        ]
+      });
+
+      if (!order) {
+        sendSuccess(res, null, `Không tìm thấy đơn hàng ${orderCode} trong hệ thống`);
+        return;
+      }
+
+      // Kiểm tra số tiền chuyển khoản nếu có
+      if (amount > 0 && amount < order.total) {
+        const warnNote = `[Khách chuyển thiếu tiền: nhận ${amount.toLocaleString('vi-VN')}₫ / cần ${order.total.toLocaleString('vi-VN')}₫. Ref: ${refCode}]`;
+        order.customer.note = order.customer.note ? `${order.customer.note} | ${warnNote}` : warnNote;
+        await order.save();
+        sendSuccess(res, order, 'Đã ghi nhận chuyển khoản nhưng số tiền chưa đủ');
+        return;
+      }
+
+      // Khớp lệnh thành công 100%!
+      order.isPaid = true;
+      order.customerTransferConfirmed = true;
+      const nowStr = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
+      const autoNote = `[Tự động khớp Webhook Ngân hàng (+${amount > 0 ? amount.toLocaleString('vi-VN') + '₫' : 'Đủ'}) lúc ${nowStr}, Ref: ${refCode || 'N/A'}]`;
+      order.customer.note = order.customer.note ? `${order.customer.note} | ${autoNote}` : autoNote;
+      await order.save();
+
+      // Đồng bộ thông tin khách hàng
+      if (order.customer?.phone) {
+        await CustomerService.syncCustomerStatsByPhone(
+          order.customer.phone,
+          order.customer.name,
+          order.customer.address
+        );
+      }
+
+      sendSuccess(res, { orderCode: order.orderCode, isPaid: true }, 'Khớp lệnh chuyển khoản tự động thành công!');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async checkPaymentStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const orderCode = String(req.params.orderCode || '').trim();
+      const isObjectId = mongoose.Types.ObjectId.isValid(orderCode);
+      const query: any = isObjectId
+        ? { $or: [{ orderCode }, { _id: orderCode }] }
+        : { orderCode };
+      const order: any = await Order.findOne(query).select('orderCode isPaid customerTransferConfirmed status total');
+
+      if (!order) {
+        sendError(res, 'Không tìm thấy đơn hàng', 404, 'ORDER_NOT_FOUND');
+        return;
+      }
+
+      sendSuccess(res, {
+        orderCode: order.orderCode,
+        isPaid: Boolean(order.isPaid),
+        customerTransferConfirmed: Boolean(order.customerTransferConfirmed),
+        status: order.status,
+        total: order.total
+      }, 'Lấy trạng thái thanh toán thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
