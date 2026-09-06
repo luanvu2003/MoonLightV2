@@ -18,6 +18,7 @@ import userRoutes from './routes/user.routes.js';
 import scheduleRoutes from './routes/schedule.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import systemRoutes from './routes/system.routes.js';
+import aiRoutes from './routes/ai.routes.js';
 
 import { Product } from './models/Product.js';
 import { LUXURY_PRODUCTS } from './config/defaultProducts.js';
@@ -61,8 +62,8 @@ app.use(
 );
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // 3. Phục vụ tài nguyên tĩnh Frontend
 app.use(express.static(publicDir));
@@ -77,11 +78,16 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/system', systemRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // 5. Tương thích ngược: Mount /api/products trỏ tới productRoutes
 app.use('/api/products', productRoutes);
 
 // 6. Định tuyến trang chuyên biệt Frontend
+app.get('/try-on', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'try-on.html'));
+});
+
 app.get('/admin', (_req: Request, res: Response) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });

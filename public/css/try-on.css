@@ -1,0 +1,1048 @@
+/* ==========================================================================
+   MOONLIGHT LUXURY - AI VIRTUAL TRY-ON AGENT (PHÒNG THỬ ĐỒ ẢO AI)
+   ========================================================================== */
+
+:root {
+  --tryon-gold: #d4af37;
+  --tryon-gold-glow: rgba(212, 175, 55, 0.35);
+  --tryon-dark: #0a0a0c;
+  --tryon-card-bg: #141418;
+  --tryon-card-border: rgba(212, 175, 55, 0.22);
+  --tryon-text: #f8fafc;
+  --tryon-muted: #94a3b8;
+  --tryon-accent: #eab308;
+  --tryon-cyan: #06b6d4;
+}
+
+/* Base try-on container wrapper */
+.tryon-studio {
+  background: radial-gradient(circle at 50% 10%, #1e1b2e 0%, #0c0b10 60%, #050507 100%);
+  color: var(--tryon-text);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+/* Header & Banner */
+.tryon-hero {
+  text-align: center;
+  padding: 50px 20px 35px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tryon-hero::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(circle, var(--tryon-gold-glow) 0%, transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.tryon-badge-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid var(--tryon-gold);
+  color: var(--tryon-gold);
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  animation: pulseGold 3s infinite alternate ease-in-out;
+}
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+  100% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.5); }
+}
+
+.tryon-hero h1 {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff 30%, var(--tryon-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tryon-hero p {
+  color: var(--tryon-muted);
+  font-size: 15.5px;
+  max-width: 720px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Steps Progress Bar */
+.tryon-steps-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin: 20px auto 40px;
+  max-width: 860px;
+  padding: 0 20px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.55;
+  transition: 0.3s;
+}
+
+.step-item.active {
+  opacity: 1;
+}
+
+.step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--tryon-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--tryon-gold);
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.step-item.active .step-num {
+  background: var(--tryon-gold);
+  color: #000;
+  box-shadow: 0 0 18px var(--tryon-gold);
+}
+
+.step-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.step-divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  max-width: 60px;
+}
+
+/* Main Studio Layout Grid */
+.tryon-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1.35fr;
+  gap: 35px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .tryon-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Studio Glass Card */
+.tryon-card {
+  background: rgba(20, 20, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+  padding: 26px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.tryon-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--tryon-gold), transparent);
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-title-row h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.card-title-row h2 i {
+  color: var(--tryon-gold);
+}
+
+/* Step 1: Model Selection & Upload Area */
+.tab-pill-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-pill-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--tryon-muted);
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tab-pill-btn.active {
+  background: rgba(212, 175, 55, 0.18);
+  color: var(--tryon-gold);
+  border: 1px solid var(--tryon-gold);
+}
+
+/* Upload Dropzone */
+.dropzone-box {
+  border: 2px dashed rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.25);
+  transition: 0.3s;
+  position: relative;
+}
+
+.dropzone-box:hover, .dropzone-box.dragover {
+  border-color: var(--tryon-gold);
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.dropzone-icon {
+  font-size: 38px;
+  color: var(--tryon-gold);
+  margin-bottom: 12px;
+}
+
+.dropzone-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.dropzone-desc {
+  font-size: 12.5px;
+  color: var(--tryon-muted);
+  margin-bottom: 14px;
+}
+
+.btn-upload-file {
+  background: linear-gradient(135deg, var(--tryon-gold), #b89223);
+  color: #000;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.25s;
+}
+
+.btn-upload-file:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Sample Model Cards Grid */
+.sample-models-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.sample-model-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.3s;
+  position: relative;
+}
+
+.sample-model-card:hover {
+  border-color: var(--tryon-gold);
+  transform: translateY(-3px);
+}
+
+.sample-model-card.selected {
+  border: 2px solid var(--tryon-gold);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.sample-model-card .model-img-wrap {
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+.sample-model-card .model-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: 0.4s;
+}
+
+.sample-model-card:hover .model-img-wrap img {
+  transform: scale(1.05);
+}
+
+.sample-model-card .model-info {
+  padding: 10px;
+}
+
+.sample-model-card .model-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sample-model-card .model-stats {
+  font-size: 11px;
+  color: var(--tryon-gold);
+  font-weight: 600;
+}
+
+.selected-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--tryon-gold);
+  color: #000;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  z-index: 5;
+}
+
+.sample-model-card.selected .selected-check {
+  display: flex;
+}
+
+/* Person Preview Preview Box */
+.person-preview-box {
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.person-thumb {
+  width: 70px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  flex-shrink: 0;
+  border: 1px solid var(--tryon-gold);
+}
+
+.person-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-meta {
+  flex: 1;
+}
+
+.person-meta h4 {
+  font-size: 13.5px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.person-meta p {
+  font-size: 11.5px;
+  color: var(--tryon-muted);
+}
+
+.btn-remove-person {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 8px;
+  transition: 0.2s;
+}
+
+.btn-remove-person:hover {
+  transform: scale(1.15);
+}
+
+/* Step 2: Wardrobe Catalog Picker */
+.wardrobe-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  scrollbar-width: thin;
+}
+
+.w-tab-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--tryon-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.25s;
+}
+
+.w-tab-btn:hover {
+  border-color: var(--tryon-gold);
+  color: #fff;
+}
+
+.w-tab-btn.active {
+  background: var(--tryon-gold);
+  color: #000;
+  border-color: var(--tryon-gold);
+  font-weight: 700;
+}
+
+.wardrobe-search-wrap {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.wardrobe-search-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px 10px 38px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: 0.25s;
+}
+
+.wardrobe-search-input:focus {
+  border-color: var(--tryon-gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+}
+
+.wardrobe-search-wrap i {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--tryon-muted);
+  font-size: 13px;
+}
+
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+
+.garment-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.25s;
+  position: relative;
+}
+
+.garment-card:hover {
+  border-color: var(--tryon-gold);
+  transform: translateY(-2px);
+}
+
+.garment-card.selected {
+  border: 2px solid var(--tryon-gold);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.garment-img {
+  height: 125px;
+  background: #0a0a0e;
+  overflow: hidden;
+}
+
+.garment-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.garment-info {
+  padding: 8px;
+  text-align: center;
+}
+
+.garment-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.garment-price {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tryon-gold);
+}
+
+.garment-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--tryon-gold);
+  color: #000;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  z-index: 5;
+}
+
+.garment-card.selected .garment-check {
+  display: flex;
+}
+
+/* Selected Garment Overview Bar */
+.selected-garment-bar {
+  margin-top: 16px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--tryon-gold);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sg-thumb {
+  width: 44px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.sg-meta {
+  flex: 1;
+}
+
+.sg-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sg-price {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tryon-gold);
+}
+
+/* Step 3: Trigger AI Virtual Try-On Button */
+.tryon-cta-wrap {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.btn-ai-generate {
+  width: 100%;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #d4af37 0%, #f3e08f 50%, #b89223 100%);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.35);
+  transition: all 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ai-generate:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.55);
+}
+
+.btn-ai-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.btn-ai-generate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transition: 0.5s;
+}
+
+.btn-ai-generate:hover::before {
+  left: 100%;
+}
+
+/* ==========================================================================
+   RESULT STAGE: LASER SCANNER & INTERACTIVE BEFORE/AFTER SLIDER
+   ========================================================================== */
+
+.result-viewport {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+/* Empty State / Placeholder */
+.empty-result-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--tryon-muted);
+  text-align: center;
+  padding: 30px;
+}
+
+.empty-result-state i {
+  font-size: 55px;
+  color: rgba(212, 175, 55, 0.4);
+  margin-bottom: 16px;
+}
+
+.empty-result-state h3 {
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+/* Scanning Radar & Animation */
+.scanning-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 15, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.scanning-overlay.active {
+  display: flex;
+}
+
+/* Holographic Laser Beam */
+.laser-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #06b6d4, #d4af37, #06b6d4, transparent);
+  box-shadow: 0 0 20px 4px #06b6d4, 0 0 35px 8px rgba(212, 175, 55, 0.6);
+  animation: laserScan 2.4s infinite ease-in-out alternate;
+  z-index: 25;
+}
+
+@keyframes laserScan {
+  0% { top: 2%; opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { top: 96%; opacity: 0.4; }
+}
+
+.radar-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px dashed var(--tryon-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: rotateRadar 6s linear infinite;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+@keyframes rotateRadar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.radar-inner-icon {
+  font-size: 38px;
+  color: var(--tryon-gold);
+  animation: pulseRadar 1.6s infinite alternate ease-in-out;
+}
+
+@keyframes pulseRadar {
+  0% { transform: scale(0.85); }
+  100% { transform: scale(1.15); }
+}
+
+.scan-status-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.scan-sub-text {
+  font-size: 12px;
+  color: var(--tryon-cyan);
+  letter-spacing: 0.5px;
+  font-family: monospace;
+}
+
+/* INTERACTIVE BEFORE / AFTER SLIDER */
+.comparison-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: ew-resize;
+}
+
+.compare-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.compare-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  border-right: 2px solid #fff;
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+.compare-overlay .compare-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Keep image aligned when clip width moves */
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Slider Handle */
+.slider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  background: var(--tryon-gold);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #000;
+  font-size: 12px;
+  z-index: 15;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px var(--tryon-gold);
+  cursor: ew-resize;
+  pointer-events: none;
+}
+
+.badge-tag {
+  position: absolute;
+  top: 14px;
+  padding: 5px 12px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  z-index: 12;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tag-before {
+  left: 14px;
+}
+
+.tag-after {
+  right: 14px;
+  border-color: var(--tryon-gold);
+  color: var(--tryon-gold);
+}
+
+/* Action Controls Under Result */
+.result-action-panel {
+  margin-top: 20px;
+  background: rgba(20, 20, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.worn-product-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wp-thumb {
+  width: 65px;
+  height: 78px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--tryon-gold);
+}
+
+.wp-info {
+  flex: 1;
+}
+
+.wp-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.wp-price-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tryon-gold);
+}
+
+.wp-old-price {
+  font-size: 12px;
+  color: var(--tryon-muted);
+  text-decoration: line-through;
+}
+
+.result-btns-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-add-cart-now {
+  flex: 1;
+  min-width: 170px;
+  background: var(--tryon-gold);
+  color: #000;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: 0.25s;
+}
+
+.btn-add-cart-now:hover {
+  background: #f3e08f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+}
+
+.btn-download-result, .btn-retry-different {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.25s;
+}
+
+.btn-download-result:hover, .btn-retry-different:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+}
+
+/* AI Spec Tags */
+.ai-meta-pills {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.ai-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--tryon-muted);
+}
+
+.ai-pill i {
+  color: var(--tryon-gold);
+}
+
+/* Navbar item new badge */
+.nav-tryon {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.ai-badge {
+  background: linear-gradient(135deg, #d4af37, #f59e0b);
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  animation: pulseBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
