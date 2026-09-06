@@ -2307,12 +2307,20 @@ function renderCheckoutPage() {
   if (subTotalEl) subTotalEl.innerText = `${total.toLocaleString('vi-VN')}₫`;
   if (totalEl) totalEl.innerText = `${total.toLocaleString('vi-VN')}₫`;
 
-  // Cập nhật thẻ VietQR xem trước và lắng nghe SĐT
+  // Cập nhật thẻ VietQR xem trước đồng bộ với mã đơn hàng
   updateVietQrPreview(total);
-  initCheckoutPhoneListener();
 }
 
 // --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR AGRIBANK ---
+function getOrCreateCheckoutOrderCode() {
+  if (!window._currentCheckoutOrderCode) {
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randCode = Math.floor(1000 + Math.random() * 9000);
+    window._currentCheckoutOrderCode = `ML-${todayStr}-${randCode}`;
+  }
+  return window._currentCheckoutOrderCode;
+}
+
 function updateVietQrPreview(forcedTotal) {
   const qrImg = document.getElementById('checkoutVietQrImg');
   const amountEl = document.getElementById('checkoutBankingAmount');
@@ -2324,9 +2332,8 @@ function updateVietQrPreview(forcedTotal) {
     total = cart.reduce((s, i) => s + ((Number(i.price) || 0) * (Number(i.quantity) || 1)), 0);
   }
 
-  const phoneEl = document.getElementById('cusPhone');
-  const phoneVal = phoneEl ? phoneEl.value.replace(/[^0-9]/g, '').slice(-9) : '';
-  const memo = phoneVal ? `ML ${phoneVal}` : 'MOONLIGHT';
+  // Luôn dùng mã đơn hàng duy nhất để nội dung CK ở form và popup modal khớp 100%
+  const memo = getOrCreateCheckoutOrderCode();
 
   if (amountEl) {
     amountEl.textContent = `${total.toLocaleString('vi-VN')}₫`;
@@ -2342,17 +2349,6 @@ function updateVietQrPreview(forcedTotal) {
     if (qrImg.src !== qrUrl) {
       qrImg.src = qrUrl;
     }
-  }
-}
-
-// Lắng nghe thay đổi SĐT để tự động cập nhật memo và QR
-function initCheckoutPhoneListener() {
-  const phoneEl = document.getElementById('cusPhone');
-  if (phoneEl && !phoneEl.dataset.vietQrBound) {
-    phoneEl.dataset.vietQrBound = 'true';
-    phoneEl.addEventListener('input', () => {
-      updateVietQrPreview();
-    });
   }
 }
 
@@ -2573,7 +2569,7 @@ async function handleCheckout(e) {
     };
   });
 
-  const orderCode = `ML-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const orderCode = getOrCreateCheckoutOrderCode();
   const subtotal = formattedItems.reduce((s, i) => s + i.subtotal, 0);
   const total = subtotal;
 
