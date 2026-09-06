@@ -289,6 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultTab = user.role === 'Staff' ? 'orders' : 'dashboard';
     switchTab(defaultTab);
     initAIAgent();
+
+    // Đồng bộ đơn hàng từ server ngay khi mở trang
+    syncAdminOrdersFromBackend();
+
+    // Tự động kiểm tra và cập nhật biến động trạng thái đơn hàng (Tiền về) mỗi 3.5s
+    setInterval(() => {
+        if (currentTab === 'orders' || currentTab === 'dashboard') {
+            syncAdminOrdersFromBackend();
+        }
+    }, 3500);
 });
 
 function checkAuth() {
@@ -616,6 +626,7 @@ function switchTab(tabName) {
         renderAdminProducts();
     } else if (tabName === 'orders') {
         renderAdminOrders();
+        syncAdminOrdersFromBackend();
     } else if (tabName === 'reviews') {
         renderAdminReviews();
     } else if (tabName === 'staff') {
@@ -2776,6 +2787,117 @@ function deleteProduct(id) {
 }
 
 // --- 7. TAB 3: QUẢN LÝ ĐƠN HÀNG (LUXURY ENHANCED VERSION) ---
+
+// Trích xuất thời gian chính xác của đơn hàng để sắp xếp từ mới nhất đến cũ nhất
+function getOrderTime(o) {
+    if (!o) return 0;
+    if (o.createdAt) {
+        const t = new Date(o.createdAt).getTime();
+        if (!isNaN(t) && t > 0) return t;
+    }
+    if (o.date) {
+        const str = String(o.date).trim();
+        const parts = str.split(' ');
+        if (parts.length === 2) {
+            const timeParts = parts[0].split(':');
+            const dateParts = parts[1].split('/');
+            if (dateParts.length === 3) {
+                const d = new Date(Number(dateParts[2]), Number(dateParts[1]) - 1, Number(dateParts[0]), Number(timeParts[0]) || 0, Number(timeParts[1]) || 0, Number(timeParts[2]) || 0);
+                if (!isNaN(d.getTime())) return d.getTime();
+            }
+        } else if (parts.length === 1 && parts[0].includes('/')) {
+            const dateParts = parts[0].split('/');
+            if (dateParts.length === 3) {
+                const d = new Date(Number(dateParts[2]), Number(dateParts[1]) - 1, Number(dateParts[0]));
+                if (!isNaN(d.getTime())) return d.getTime();
+            }
+        }
+        const d = new Date(o.date).getTime();
+        if (!isNaN(d) && d > 0) return d;
+    }
+    if (o._id && typeof o._id === 'string' && o._id.length === 24) {
+        const t = parseInt(o._id.substring(0, 8), 16) * 1000;
+        if (!isNaN(t) && t > 0) return t;
+    }
+    const m = String(o.id || o.orderCode || '').match(/ML[-_]?(\d{4})(\d{2})(\d{2})[-_]?(\d+)/i);
+    if (m) {
+        const d = new Date(`${m[1]}-${m[2]}-${m[3]}`).getTime();
+        const randSeed = Number(m[4]) || 0;
+        if (!isNaN(d)) return d + randSeed;
+    }
+    return 0;
+}
+
+// Đồng bộ đơn hàng từ Backend Server vào Admin thời gian thực (Cập nhật trạng thái Tiền Về)
+let _isSyncingAdminOrders = false;
+async function syncAdminOrdersFromBackend() {
+    if (_isSyncingAdminOrders) return;
+    try {
+        if (!window.MoonlightAPI) return;
+        _isSyncingAdminOrders = true;
+        const res = await window.MoonlightAPI.getOrders();
+        if (res && res.success && Array.isArray(res.data)) {
+            const backendOrders = res.data;
+            if (backendOrders.length > 0) {
+                const mappedBackendOrders = backendOrders.map(bo => {
+                    const id = bo.orderCode || bo._id;
+                    const isStore = ((bo.customer?.address || '').toLowerCase().includes('tại cửa hàng') || (bo.customer?.address || '').toLowerCase().includes('showroom') || bo.orderSource === 'pos');
+                    return {
+                        id,
+                        _id: bo._id,
+                        orderCode: bo.orderCode || id,
+                        createdAt: bo.createdAt,
+                        customer: bo.customer || {},
+                        items: (bo.items || []).map(i => ({
+                            id: i.productId || i.id || i._id,
+                            name: i.productName || i.name || 'Sản phẩm',
+                            color: i.color || '',
+                            size: i.size || '',
+                            variant: i.variant || '',
+                            price: Number(i.price) || 0,
+                            quantity: Number(i.quantity) || 1,
+                            img: i.img || i.image || ''
+                        })),
+                        total: Number(bo.total) || 0,
+                        subtotal: Number(bo.subtotal) || Number(bo.total) || 0,
+                        status: bo.status || 'pending',
+                        isPaid: Boolean(bo.isPaid),
+                        customerTransferConfirmed: Boolean(bo.customerTransferConfirmed),
+                        paymentMethod: bo.paymentMethod || 'COD',
+                        date: bo.createdAt ? new Date(bo.createdAt).toLocaleString('vi-VN') : (bo.date || new Date().toLocaleDateString('vi-VN')),
+                        orderSource: isStore ? 'pos' : 'online'
+                    };
+                });
+
+                // Merge đơn hàng từ server với local
+                const merged = [...mappedBackendOrders];
+                orders.forEach(lo => {
+                    const exists = merged.some(m => m.id === lo.id || (m.orderCode && m.orderCode === lo.id));
+                    if (!exists) {
+                        merged.push(lo);
+                    }
+                });
+
+                orders = merged;
+                localStorage.setItem('moonlight_orders', JSON.stringify(orders));
+
+                // Cập nhật lại giao diện đơn hàng
+                if (currentTab === 'orders') {
+                    const tbody = document.querySelector('.orders-table-wrapper tbody');
+                    if (tbody) {
+                        renderAdminOrders();
+                    }
+                }
+                updatePendingBadge();
+            }
+        }
+    } catch (err) {
+        console.warn('⚠️ Lỗi đồng bộ đơn hàng từ server:', err.message);
+    } finally {
+        _isSyncingAdminOrders = false;
+    }
+}
+
 function renderAdminOrders() {
     const container = document.getElementById('adminContent');
     if (!container) return;
@@ -2825,14 +2947,14 @@ function renderAdminOrders() {
         return matchesStatus && matchesChannel && matchesKeyword;
     });
 
-    // Sắp xếp
+    // Sắp xếp: MỚI NHẤT ĐẾN CŨ NHẤT (Newest to Oldest)
     if (orderSortBy === 'highest_amount') {
         list.sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0));
     } else if (orderSortBy === 'oldest') {
-        list.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        list.sort((a, b) => getOrderTime(a) - getOrderTime(b));
     } else {
-        // Mặc định mới nhất
-        list.sort((a, b) => String(b.id).localeCompare(String(a.id)));
+        // Mặc định: MỚI NHẤT TRƯỚC (Từ mới nhất đến cũ nhất)
+        list.sort((a, b) => getOrderTime(b) - getOrderTime(a));
     }
 
     container.innerHTML = `
