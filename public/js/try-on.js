@@ -252,6 +252,13 @@
     checkCanGenerate();
   };
 
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+      processImageFile(file);
+    }
+  }
+
   function optimizeImage(file, maxDimension = 1024, quality = 0.88) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -402,6 +409,9 @@
 
   function getCleanGarmentImage(p) {
     if (!p) return '/images/garments/suit.jpg';
+    if (p.image && p.image.startsWith('/images/garments/')) {
+      return p.image;
+    }
     const name = (p.name || '').toLowerCase();
     const cat = (p.category || '').toLowerCase();
 
@@ -450,8 +460,14 @@
     if (name.includes('quần') || name.includes('pant') || name.includes('trouser') || cat.includes('quan')) {
       return '/images/garments/pants.jpg';
     }
-    if (p.image && p.image.startsWith('/images/garments/')) {
-      return p.image;
+    if (name.includes('giày') || name.includes('loafer')) {
+      return '/images/garments/loafer.jpg';
+    }
+    if (name.includes('ví') || name.includes('wallet')) {
+      return '/images/garments/wallet.jpg';
+    }
+    if (name.includes('thắt lưng') || name.includes('belt')) {
+      return '/images/garments/belt.jpg';
     }
     return '/images/garments/suit.jpg';
   }

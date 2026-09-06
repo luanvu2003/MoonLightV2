@@ -20,7 +20,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Slimfit",
     "price": 2450000,
     "originalPrice": 2800000,
-    "image": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/suit.jpg",
     "rating": 5,
     "sold": 48,
     "salePercent": 12,
@@ -30,7 +30,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đen Hoàng Gia",
         "colorCode": "#000000",
         "hex": "#000000",
-        "img": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/suit.jpg",
         "price": 2450000,
         "sizes": [
           {
@@ -54,7 +54,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Xanh Navy Đêm",
         "colorCode": "#1a2a3a",
         "hex": "#1a2a3a",
-        "img": "https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/suit.jpg",
         "price": 2450000,
         "sizes": [
           {
@@ -83,7 +83,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Regular fit",
     "price": 890000,
     "originalPrice": 990000,
-    "image": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/shirt.jpg",
     "rating": 4.9,
     "sold": 125,
     "salePercent": 0,
@@ -93,7 +93,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Trắng Ngọc Trai",
         "colorCode": "#f8fafc",
         "hex": "#f8fafc",
-        "img": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/shirt.jpg",
         "price": 890000,
         "sizes": [
           {
@@ -132,7 +132,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Slimfit",
     "price": 650000,
     "originalPrice": 760000,
-    "image": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/polo.jpg",
     "rating": 4.8,
     "sold": 210,
     "salePercent": 15,
@@ -142,7 +142,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Be Ánh Kim",
         "colorCode": "#d2b48c",
         "hex": "#d2b48c",
-        "img": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/polo.jpg",
         "price": 650000,
         "sizes": [
           {
@@ -166,7 +166,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đen Obsidian",
         "colorCode": "#111827",
         "hex": "#111827",
-        "img": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/polo.jpg",
         "price": 650000,
         "sizes": [
           {
@@ -200,7 +200,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "May đo cao cấp",
     "price": 950000,
     "originalPrice": 1100000,
-    "image": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/pants.jpg",
     "rating": 4.9,
     "sold": 95,
     "salePercent": 0,
@@ -210,7 +210,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Xám Tro",
         "colorCode": "#708090",
         "hex": "#708090",
-        "img": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pants.jpg",
         "price": 950000,
         "sizes": [
           {
@@ -234,7 +234,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đen Tuyển Chọn",
         "colorCode": "#1a1a1a",
         "hex": "#1a1a1a",
-        "img": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pants.jpg",
         "price": 950000,
         "sizes": [
           {
@@ -273,7 +273,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Oversize",
     "price": 490000,
     "originalPrice": 550000,
-    "image": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/pima_tee.jpg",
     "rating": 4.7,
     "sold": 340,
     "salePercent": 11,
@@ -283,7 +283,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Trắng Sữa",
         "colorCode": "#fdfbf7",
         "hex": "#fdfbf7",
-        "img": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pima_tee.jpg",
         "price": 490000,
         "sizes": [
           {
@@ -312,7 +312,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đen Mờ Charcoal",
         "colorCode": "#222222",
         "hex": "#222222",
-        "img": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pima_tee.jpg",
         "price": 490000,
         "sizes": [
           {
@@ -346,7 +346,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Slimfit",
     "price": 1890000,
     "originalPrice": 2200000,
-    "image": "https://images.unsplash.com/photo-1548624313-039e222d730b?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/women_blazer.jpg",
     "rating": 5,
     "sold": 62,
     "salePercent": 14,
@@ -356,7 +356,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Nâu Kem Latte",
         "colorCode": "#c5a880",
         "hex": "#c5a880",
-        "img": "https://images.unsplash.com/photo-1548624313-039e222d730b?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/women_blazer.jpg",
         "price": 1890000,
         "sizes": [
           {
@@ -390,7 +390,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Dạ hội",
     "price": 2150000,
     "originalPrice": 2500000,
-    "image": "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/dress.jpg",
     "rating": 4.9,
     "sold": 38,
     "salePercent": 0,
@@ -400,7 +400,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đỏ Burgundy Quý Tộc",
         "colorCode": "#6b1426",
         "hex": "#6b1426",
-        "img": "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/dress.jpg",
         "price": 2150000,
         "sizes": [
           {
@@ -434,7 +434,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Regular fit",
     "price": 1150000,
     "originalPrice": 1350000,
-    "image": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/denim_jeans.jpg",
     "rating": 4.8,
     "sold": 145,
     "salePercent": 15,
@@ -444,7 +444,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Xanh Indigo Raw",
         "colorCode": "#1c2841",
         "hex": "#1c2841",
-        "img": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/denim_jeans.jpg",
         "price": 1150000,
         "sizes": [
           {
@@ -483,7 +483,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Xòe tự nhiên",
     "price": 780000,
     "originalPrice": 890000,
-    "image": "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/pleated_skirt.jpg",
     "rating": 4.8,
     "sold": 88,
     "salePercent": 12,
@@ -493,7 +493,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Vàng Champagne Mờ",
         "colorCode": "#e8d8b8",
         "hex": "#e8d8b8",
-        "img": "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/pleated_skirt.jpg",
         "price": 780000,
         "sizes": [
           {
@@ -522,7 +522,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Regular fit",
     "price": 920000,
     "originalPrice": 1050000,
-    "image": "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/silk_blouse.jpg",
     "rating": 4.9,
     "sold": 110,
     "salePercent": 0,
@@ -532,7 +532,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Hồng Phấn Pastel",
         "colorCode": "#f4dcd6",
         "hex": "#f4dcd6",
-        "img": "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/silk_blouse.jpg",
         "price": 920000,
         "sizes": [
           {
@@ -566,7 +566,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Freesize",
     "price": 850000,
     "originalPrice": 950000,
-    "image": "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/belt.jpg",
     "rating": 5,
     "sold": 190,
     "salePercent": 10,
@@ -576,7 +576,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Nâu Espresso",
         "colorCode": "#3d2314",
         "hex": "#3d2314",
-        "img": "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/belt.jpg",
         "price": 850000,
         "sizes": [
           {
@@ -600,7 +600,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Oversize",
     "price": 620000,
     "originalPrice": 700000,
-    "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/hoodie.jpg",
     "rating": 4.9,
     "sold": 145,
     "salePercent": 11,
@@ -610,7 +610,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Xám Khói",
         "colorCode": "#94a3b8",
         "hex": "#94a3b8",
-        "img": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/hoodie.jpg",
         "price": 620000,
         "sizes": [
           {
@@ -649,7 +649,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Regular fit",
     "price": 3200000,
     "originalPrice": 3600000,
-    "image": "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/trench_coat.jpg",
     "rating": 5,
     "sold": 35,
     "salePercent": 0,
@@ -659,7 +659,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Vàng Kaki Cổ Điển",
         "colorCode": "#c2a649",
         "hex": "#c2a649",
-        "img": "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/trench_coat.jpg",
         "price": 3200000,
         "sizes": [
           {
@@ -693,7 +693,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Slimfit",
     "price": 680000,
     "originalPrice": 750000,
-    "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/khaki_chino.jpg",
     "rating": 4.8,
     "sold": 160,
     "salePercent": 10,
@@ -703,7 +703,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Be Cát Sa Mạc",
         "colorCode": "#e0d5c1",
         "hex": "#e0d5c1",
-        "img": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/khaki_chino.jpg",
         "price": 680000,
         "sizes": [
           {
@@ -742,7 +742,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Regular fit",
     "price": 1450000,
     "originalPrice": 1700000,
-    "image": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/cashmere_sweater.jpg",
     "rating": 5,
     "sold": 52,
     "salePercent": 0,
@@ -752,7 +752,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Trắng Ngà Tự Nhiên",
         "colorCode": "#fdfbf7",
         "hex": "#fdfbf7",
-        "img": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/cashmere_sweater.jpg",
         "price": 1450000,
         "sizes": [
           {
@@ -791,7 +791,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Slimfit",
     "price": 2650000,
     "originalPrice": 3000000,
-    "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/tweed_suit.jpg",
     "rating": 5,
     "sold": 28,
     "salePercent": 0,
@@ -801,7 +801,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Houndstooth Đen Trắng",
         "colorCode": "#262626",
         "hex": "#262626",
-        "img": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/tweed_suit.jpg",
         "price": 2650000,
         "sizes": [
           {
@@ -835,7 +835,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
     "style": "Freesize",
     "price": 1250000,
     "originalPrice": 1450000,
-    "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/wallet.jpg",
     "rating": 4.9,
     "sold": 76,
     "salePercent": 0,
@@ -845,7 +845,7 @@ const CATALOG_FALLBACK_PRODUCTS = [
         "color": "Đen Bóng Sơn Mài",
         "colorCode": "#0a0a0a",
         "hex": "#0a0a0a",
-        "img": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/wallet.jpg",
         "price": 1250000,
         "sizes": [
           {
