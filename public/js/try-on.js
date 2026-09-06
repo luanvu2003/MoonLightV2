@@ -331,16 +331,16 @@
         price: 2450000,
         originalPrice: 2800000,
         category: 'vest',
-        image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80'
+        image: '/images/garments/suit.jpg'
       },
       {
         id: 2,
         _id: 'prod-02',
-        name: 'Áo Sơ Mi Lụa Ý Cao Cấp',
-        price: 850000,
-        originalPrice: 1100000,
+        name: 'Áo Sơ Mi Lụa Mulberry Ý',
+        price: 890000,
+        originalPrice: 990000,
         category: 'so-mi',
-        image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80'
+        image: '/images/garments/shirt.jpg'
       },
       {
         id: 3,
@@ -349,25 +349,16 @@
         price: 2450000,
         originalPrice: 3100000,
         category: 'dam-vay',
-        image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80'
+        image: '/images/garments/dress.jpg'
       },
       {
         id: 4,
         _id: 'prod-04',
-        name: 'Set Vest Nữ Quyền Lực Paris',
-        price: 2890000,
-        originalPrice: 3500000,
-        category: 'vest',
-        image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&auto=format&fit=crop&q=80'
-      },
-      {
-        id: 5,
-        _id: 'prod-05',
-        name: 'Quần Âu Slimfit Co Giãn 4 Chiều',
-        price: 790000,
-        originalPrice: 990000,
+        name: 'Quần Âu May Đo Sartorial Cao Cấp',
+        price: 950000,
+        originalPrice: 1100000,
         category: 'quan-au',
-        image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80'
+        image: '/images/garments/pants.jpg'
       }
     ];
   }
@@ -497,22 +488,7 @@
         throw new Error(data.message || 'Không thể tạo ảnh thử đồ');
       }
 
-      let finalResult = data.data;
-
-      // NẾU LÀ ẢNH KHÁCH HÀNG TẢI LÊN (CUSTOM UPLOAD):
-      // Ghép trang phục lên chính ảnh của khách hàng để tạo trải nghiệm thay đồ thực thụ!
-      if (isCustomUpload && selectedPersonImage) {
-        try {
-          const fittedImage = await compositeGarmentOnCustomerPhoto(selectedPersonImage, selectedGarmentImage, selectedProduct);
-          if (fittedImage) {
-            finalResult.resultImage = fittedImage;
-          }
-        } catch (fitErr) {
-          console.warn('Canvas compositing fallback:', fitErr);
-        }
-      }
-
-      currentResultData = finalResult;
+      currentResultData = data.data;
 
       setTimeout(() => {
         stopScanningAnimation();
@@ -527,103 +503,6 @@
       isGenerating = false;
       checkCanGenerate();
     }
-  }
-
-  /**
-   * AI Fitting Engine: Ghép trang phục của MoonLight trực tiếp lên ảnh của khách hàng
-   * Giữ nguyên mặt, tóc, phong cảnh và chân của khách hàng, thay đổi phần áo/váy/suit
-   */
-  async function compositeGarmentOnCustomerPhoto(personBase64, garmentUrl, product) {
-    return new Promise((resolve) => {
-      const personImg = new Image();
-      personImg.crossOrigin = 'anonymous';
-
-      personImg.onload = () => {
-        const garmentImg = new Image();
-        garmentImg.crossOrigin = 'anonymous';
-
-        garmentImg.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return resolve(garmentUrl);
-
-          canvas.width = personImg.naturalWidth || 800;
-          canvas.height = personImg.naturalHeight || 1200;
-
-          // 1. Vẽ ảnh gốc của khách hàng
-          ctx.drawImage(personImg, 0, 0, canvas.width, canvas.height);
-
-          // 2. Tính toán vùng thân người (Torso region: từ vai đến hông)
-          const pW = canvas.width;
-          const pH = canvas.height;
-
-          // Vùng thân áo: thường nằm từ 24% đến 72% chiều cao, chiều rộng chiếm 55% - 75%
-          const gW = pW * 0.65;
-          const gH = pH * 0.46;
-          const gX = (pW - gW) / 2;
-          const gY = pH * 0.26;
-
-          // 3. Hiệu ứng đổ bóng nhẹ tự nhiên dưới trang phục
-          ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-          ctx.shadowBlur = 24;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 10;
-
-          // 4. Vẽ bo tròn hoặc làm mềm viền cổ & vai
-          ctx.beginPath();
-          // Cắt vùng thân bo nhẹ để trông tự nhiên
-          const radius = 24;
-          ctx.moveTo(gX + radius, gY);
-          ctx.lineTo(gX + gW - radius, gY);
-          ctx.quadraticCurveTo(gX + gW, gY, gX + gW, gY + radius);
-          ctx.lineTo(gX + gW, gY + gH - radius);
-          ctx.quadraticCurveTo(gX + gW, gY + gH, gX + gW - radius, gY + gH);
-          ctx.lineTo(gX + radius, gY + gH);
-          ctx.quadraticCurveTo(gX, gY + gH, gX, gY + gH - radius);
-          ctx.lineTo(gX, gY + radius);
-          ctx.quadraticCurveTo(gX, gY, gX + radius, gY);
-          ctx.closePath();
-          ctx.clip();
-
-          // 5. Vẽ trang phục mới lên thân người
-          ctx.drawImage(garmentImg, gX, gY, gW, gH);
-
-          // 6. Phủ một lớp ánh sáng hài hòa studio MoonLight
-          const grad = ctx.createLinearGradient(gX, gY, gX, gY + gH);
-          grad.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-          grad.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-          grad.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(gX, gY, gW, gH);
-
-          ctx.restore();
-
-          // 7. Thêm badge Watermark nhỏ gọn tinh tế góc ảnh
-          ctx.save();
-          ctx.font = 'bold 20px Montserrat, sans-serif';
-          ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-          ctx.shadowBlur = 8;
-          ctx.fillText('MOONLIGHT AI TRY-ON', pW - 270, pH - 30);
-          ctx.restore();
-
-          resolve(canvas.toDataURL('image/jpeg', 0.95));
-        };
-
-        garmentImg.onerror = () => {
-          resolve(garmentUrl);
-        };
-
-        garmentImg.src = garmentUrl;
-      };
-
-      personImg.onerror = () => {
-        resolve(garmentUrl);
-      };
-
-      personImg.src = personBase64;
-    });
   }
 
   const scanStages = [

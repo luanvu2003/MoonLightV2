@@ -48,6 +48,108 @@ export const SAMPLE_MODELS = [
   }
 ];
 
+/**
+ * Gọi API IDM-VTON ZeroGPU (HuggingFace) để tạo ảnh thử đồ thật từ trí tuệ nhân tạo
+ */
+async function callIdmVtonHF(personImage: string, garmentImage: string, garmentDesc: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 16000);
+
+  try {
+    // 1. Upload ảnh người
+    let humanPath = personImage;
+    if (personImage.startsWith('data:') || personImage.startsWith('http')) {
+      let blob: Blob;
+      if (personImage.startsWith('data:')) {
+        const b64 = personImage.replace(/^data:image\/\w+;base64,/, '');
+        blob = new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
+      } else {
+        const fRes = await fetch(personImage, { signal: controller.signal });
+        blob = await fRes.blob();
+      }
+
+      const fd = new FormData();
+      fd.append('files', blob, 'person.jpg');
+      const upRes = await fetch('https://yisol-idm-vton.hf.space/upload', {
+        method: 'POST',
+        body: fd,
+        signal: controller.signal
+      });
+      const upData: any = await upRes.json();
+      if (Array.isArray(upData) && upData[0]) {
+        humanPath = upData[0];
+      }
+    }
+
+    // 2. Upload ảnh trang phục
+    let garmPath = garmentImage;
+    if (garmentImage.startsWith('data:') || garmentImage.startsWith('http') || garmentImage.startsWith('/')) {
+      let blob: Blob;
+      if (garmentImage.startsWith('data:')) {
+        const b64 = garmentImage.replace(/^data:image\/\w+;base64,/, '');
+        blob = new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
+      } else {
+        const fetchUrl = garmentImage.startsWith('http') ? garmentImage : `http://127.0.0.1:${process.env.PORT || 10000}${garmentImage}`;
+        const fRes = await fetch(fetchUrl, { signal: controller.signal });
+        blob = await fRes.blob();
+      }
+
+      const fd = new FormData();
+      fd.append('files', blob, 'garment.jpg');
+      const upRes = await fetch('https://yisol-idm-vton.hf.space/upload', {
+        method: 'POST',
+        body: fd,
+        signal: controller.signal
+      });
+      const upData: any = await upRes.json();
+      if (Array.isArray(upData) && upData[0]) {
+        garmPath = upData[0];
+      }
+    }
+
+    // 3. Kích hoạt model IDM-VTON
+    const callRes = await fetch('https://yisol-idm-vton.hf.space/call/tryon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: [
+          {
+            background: { path: humanPath, meta: { _type: 'gradio.FileData' } },
+            layers: [],
+            composite: null
+          },
+          { path: garmPath, meta: { _type: 'gradio.FileData' } },
+          garmentDesc || 'luxury garment outfit',
+          true,
+          false,
+          20,
+          42
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    const { event_id } = await callRes.json();
+    if (!event_id) return null;
+
+    // 4. Nhận kết quả từ luồng SSE
+    const sseRes = await fetch(`https://yisol-idm-vton.hf.space/call/tryon/${event_id}`, {
+      signal: controller.signal
+    });
+    const sseText = await sseRes.text();
+    const match = sseText.match(/https:\/\/yisol-idm-vton\.hf\.space\/file=[^\s",]+/);
+    if (match && match[0]) {
+      clearTimeout(timeoutId);
+      return match[0];
+    }
+  } catch (err: any) {
+    // Timeout hoặc fallback an toàn
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  return null;
+}
+
 export class AIController {
   /**
    * Lấy danh sách người mẫu ảo mẫu có sẵn
@@ -189,26 +291,39 @@ export class AIController {
         }
       }
 
-      // 3. AI Simulation Engine cao cấp: Tạo ảnh kết quả chân thực với độ phân giải cao
+      // 3. Tích hợp IDM-VTON AI trực tiếp từ HuggingFace (ZeroGPU)
+      if (!resultImageUrl && personImage && targetGarmentUrl) {
+        try {
+          const hfResult = await callIdmVtonHF(personImage, targetGarmentUrl, product?.name || 'luxury outfit');
+          if (hfResult) {
+            resultImageUrl = hfResult;
+            provider = 'idm-vton-ai';
+          }
+        } catch (hfErr: any) {
+          console.warn('⚠️ HF IDM-VTON error, fallback sang studio simulation:', hfErr.message);
+        }
+      }
+
+      // 4. AI Studio Simulation Engine: Trả về ảnh người mẫu toàn thân chuyên nghiệp mặc trang phục chuẩn
       if (!resultImageUrl) {
         provider = 'simulation';
-        const gender = modelGender || product?.gender || 'female';
+        const gender = modelGender || product?.gender || 'male';
         const productName = (product?.name || '').toLowerCase();
 
-        if (productName.includes('vest') || productName.includes('suit')) {
-          if (gender === 'male' || productName.includes('hoàng gia') || productName.includes('italian')) {
+        if (productName.includes('vest') || productName.includes('suit') || productName.includes('blazer')) {
+          if (gender === 'male' || productName.includes('nam') || productName.includes('hoàng gia') || productName.includes('italian')) {
             resultImageUrl = 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=1000&auto=format&fit=crop&q=90';
           } else {
             resultImageUrl = 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1000&auto=format&fit=crop&q=90';
           }
-        } else if (productName.includes('đầm') || productName.includes('váy')) {
+        } else if (productName.includes('đầm') || productName.includes('váy') || productName.includes('dress')) {
           resultImageUrl = 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1000&auto=format&fit=crop&q=90';
-        } else if (productName.includes('sơ mi') || productName.includes('shirt')) {
+        } else if (productName.includes('sơ mi') || productName.includes('shirt') || productName.includes('somi')) {
           resultImageUrl = 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=1000&auto=format&fit=crop&q=90';
-        } else if (productName.includes('quần') || productName.includes('trouser')) {
-          resultImageUrl = 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1000&auto=format&fit=crop&q=90';
+        } else if (productName.includes('quần') || productName.includes('trouser') || productName.includes('pant') || productName.includes('quanau')) {
+          resultImageUrl = 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=1000&auto=format&fit=crop&q=90';
         } else {
-          resultImageUrl = targetGarmentUrl || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1000&auto=format&fit=crop&q=90';
+          resultImageUrl = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=90';
         }
       }
 
