@@ -6568,7 +6568,7 @@ async function executeDeployProcess() {
         }
 
         // Kích hoạt mô phỏng tiến trình từng bước sinh động
-        setTimeout(() => {
+        let t1 = setTimeout(() => {
             updateDeployStepUI(1, 'done', 'Hoàn tất');
             updateDeployStepUI(2, 'active', 'Kiểm tra');
             if (stepTitle) stepTitle.innerText = '[Bước 2/4] Kiểm tra các gói thư viện dependency...';
@@ -6577,16 +6577,19 @@ async function executeDeployProcess() {
             appendConsole('📦 [2/4] Kiểm tra tính tương thích thư viện npm...');
         }, 1200);
 
-        setTimeout(() => {
+        let t2 = setTimeout(() => {
             updateDeployStepUI(2, 'done', 'Hoàn tất');
             updateDeployStepUI(3, 'active', 'Biên dịch');
             if (stepTitle) stepTitle.innerText = '[Bước 3/4] Đang biên dịch mã nguồn TypeScript (npm run build)...';
             if (progressBar) progressBar.style.width = '75%';
             if (percentText) percentText.innerText = '75%';
             appendConsole('⚙️ [3/4] tsc (TypeScript Compiler) đang build dist/...');
+            appendConsole('⏳ Quá trình build dist trên VPS có thể mất khoảng 15-30 giây...');
         }, 2600);
 
         const res = await MoonlightAPI.deploySystem();
+        clearTimeout(t1);
+        clearTimeout(t2);
 
         if (res && res.success) {
             // Dừng đồng hồ
@@ -6663,15 +6666,19 @@ async function executeDeployProcess() {
                 updateDeployStepUI(i, 'error', 'Thất bại');
             }
         }
+        let errMsg = err.message || 'Lỗi không xác định';
+        if (errMsg.includes('aborted') || errMsg.includes('thời gian chờ')) {
+            errMsg = 'Quá thời gian phản hồi (Timeout). Máy chủ VPS có thể vẫn đang tiếp tục biên dịch trong nền, vui lòng đợi 15-30 giây rồi làm mới trang.';
+        }
         if (stepTitle) stepTitle.innerHTML = '<span style="color:#ef4444;"><i class="fas fa-circle-xmark"></i> CẬP NHẬT THẤT BẠI</span>';
-        appendConsole(`\n❌ Lỗi tiến trình: ${err.message}`);
+        appendConsole(`\n❌ Lỗi tiến trình: ${errMsg}`);
         if (actionBtns) actionBtns.style.display = 'flex';
         const confirmBtn = document.getElementById('btnConfirmDeploy');
         if (confirmBtn) {
             confirmBtn.disabled = false;
             confirmBtn.innerHTML = '<i class="fas fa-rotate-right"></i> THỬ LẠI';
         }
-        showToast("Lỗi Deploy", err.message, "error");
+        showToast("Lỗi Deploy", errMsg, "error");
     }
 }
 

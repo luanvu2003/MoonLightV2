@@ -40,16 +40,27 @@ const MoonlightAPI = {
       headers: this.getHeaders(options.headers || {})
     };
 
+    let timeoutId = null;
     try {
-      // Timeout 6 giây để không bao giờ bị treo vĩnh viễn khi VPS đang reload
+      // Timeout linh hoạt: mặc định 30 giây cho tác vụ thông thường, hoặc custom cho các tác vụ dài như deploy (180s)
       let controller = null;
       if (!opts.signal && typeof AbortController !== 'undefined') {
-        controller = new AbortController();
-        opts.signal = controller.signal;
-        setTimeout(() => controller.abort(), 6000);
+        const timeoutMs = options.timeout !== undefined ? options.timeout : 30000;
+        if (timeoutMs > 0) {
+          controller = new AbortController();
+          opts.signal = controller.signal;
+          timeoutId = setTimeout(() => {
+            controller.abort(new Error(`Yêu cầu mạng quá thời gian chờ (${Math.round(timeoutMs / 1000)}s). Vui lòng thử lại.`));
+          }, timeoutMs);
+        }
       }
 
       const res = await fetch(url, opts);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
@@ -57,6 +68,10 @@ const MoonlightAPI = {
       }
       return data;
     } catch (err) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       console.warn(`[MoonlightAPI] Request to ${endpoint} failed:`, err.message);
       throw err;
     }
@@ -279,7 +294,8 @@ const MoonlightAPI = {
 
   async deploySystem() {
     return this.request('/system/deploy', {
-      method: 'POST'
+      method: 'POST',
+      timeout: 180000 // 3 phút cho git pull, build TypeScript và reload PM2
     });
   }
 };
