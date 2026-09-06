@@ -1661,15 +1661,30 @@ function quickAddToCart(productId) {
 
   const firstVariant = prod.variants && prod.variants.length > 0 ? prod.variants[0] : null;
   let firstSize = 'Freesize';
+  let firstStock = 10;
   if (firstVariant && firstVariant.sizes && firstVariant.sizes.length > 0) {
-    const s0 = firstVariant.sizes[0];
-    firstSize = typeof s0 === 'string' ? s0 : (s0.size || s0.name || 'Freesize');
+    const availableSize = firstVariant.sizes.find(s => (typeof s === 'object' && s !== null ? (s.stock > 0) : true)) || firstVariant.sizes[0];
+    firstSize = typeof availableSize === 'string' ? availableSize : (availableSize.size || availableSize.name || 'Freesize');
+    firstStock = typeof availableSize === 'object' && availableSize !== null ? (availableSize.stock ?? 10) : 10;
+  }
+
+  if (firstStock <= 0) {
+    if (typeof showToast === 'function') {
+      showToast({ title: 'Hết hàng', message: `Sản phẩm "${prod.name}" hiện đã tạm hết hàng!`, type: 'warning' });
+    }
+    return;
   }
 
   const cart = getCart();
   const existingIdx = cart.findIndex(it => String(it.id) === String(productId) && it.size === firstSize);
 
   if (existingIdx > -1) {
+    if (cart[existingIdx].quantity >= firstStock) {
+      if (typeof showToast === 'function') {
+        showToast({ title: 'Tồn kho giới hạn', message: `Kho chỉ còn ${firstStock} cái. Bạn đã có đủ số lượng trong giỏ!`, type: 'warning' });
+      }
+      return;
+    }
     cart[existingIdx].quantity += 1;
   } else {
     cart.push({

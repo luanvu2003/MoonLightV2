@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Order } from '../models/Order.js';
+import { Product } from '../models/Product.js';
 import { CustomerService } from '../services/customer.service.js';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js';
 import { OrderStatus, PaymentMethod } from '../types/enums.js';
@@ -84,6 +85,33 @@ export class OrderController {
       if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
         sendError(res, 'Giỏ hàng không có sản phẩm nào', 400, 'EMPTY_CART');
         return;
+      }
+
+      // Kiểm tra tồn kho từng sản phẩm trong đơn hàng
+      for (const item of orderData.items) {
+        try {
+          const prodId = item.id || item._id;
+          if (prodId) {
+            const prod = await Product.findById(prodId);
+            if (prod && Array.isArray(prod.variants)) {
+              const v = prod.variants.find((va: any) => va.color === item.color);
+              if (v && Array.isArray(v.sizes)) {
+                const s = v.sizes.find((sz: any) => (sz.size || sz.name) === item.size);
+                if (s && s.stock < item.quantity) {
+                  sendError(
+                    res,
+                    `Sản phẩm "${item.name}" (${item.color} - Size ${item.size}) chỉ còn ${s.stock} sản phẩm trong kho, không thể đặt ${item.quantity} cái.`,
+                    400,
+                    'INSUFFICIENT_STOCK'
+                  );
+                  return;
+                }
+              }
+            }
+          }
+        } catch {
+          // Bỏ qua nếu prodId không phải ObjectId
+        }
       }
 
       // Tự sinh mã đơn hàng nếu chưa có
