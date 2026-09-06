@@ -724,7 +724,7 @@ function updateVietQrCode(amount) {
   const qrImg = document.getElementById('posQrImg');
   if (!qrImg) return;
   const orderCode = `POS${Date.now().toString().slice(-6)}`;
-  qrImg.src = `https://img.vietqr.io/image/Agribank-5490205425168-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('MoonLight ' + orderCode)}&accountName=VU%20PHAM%20LUAN`;
+  qrImg.src = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('MoonLight ' + orderCode)}&accountName=VU%20PHAM%20LUAN`;
 }
 
 // 9. Kiểm tra hạng khách hàng tự động
@@ -867,7 +867,7 @@ function showReceiptModal(order, staffName) {
   setT('recDate', new Date().toLocaleString('vi-VN'));
   setT('recStaff', staffName);
   setT('recCustomer', `${order.customer.name} (${order.customer.phone})`);
-  setT('recPaymentMethod', order.paymentMethod === 'banking' ? 'Agribank QR' : 'Tiền mặt');
+  setT('recPaymentMethod', order.paymentMethod === 'banking' ? 'TPBank QR' : 'Tiền mặt');
 
   const itemsBody = document.getElementById('recItemsBody');
   if (itemsBody) {

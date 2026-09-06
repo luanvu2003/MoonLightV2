@@ -2994,7 +2994,7 @@ function renderAdminOrders() {
                             if (isPaid) {
                                 paymentPill = `<span class="payment-method-pill banking-paid"><i class="fas fa-circle-check"></i> Banking (Đã trả)</span>`;
                             } else if (o.customerTransferConfirmed) {
-                                paymentPill = `<div style="display:flex; flex-direction:column; gap:2px;"><span class="payment-method-pill banking-paid" style="background:#ecfdf5; color:#059669; border:1px solid #10b981; font-weight:700;"><i class="fas fa-check-circle"></i> Khách đã báo CK</span><span style="font-size:10px; color:#f59e0b;"><i class="fas fa-search-dollar"></i> Check Agribank</span></div>`;
+                                paymentPill = `<div style="display:flex; flex-direction:column; gap:2px;"><span class="payment-method-pill banking-paid" style="background:#ecfdf5; color:#059669; border:1px solid #10b981; font-weight:700;"><i class="fas fa-check-circle"></i> Khách đã báo CK</span><span style="font-size:10px; color:#f59e0b;"><i class="fas fa-search-dollar"></i> Check TPBank</span></div>`;
                             } else {
                                 paymentPill = `<span class="payment-method-pill banking-pending"><i class="fas fa-clock"></i> Chờ chuyển khoản</span>`;
                             }
@@ -3319,7 +3319,7 @@ function showOrderDetail(id) {
                 <h4><i class="fas fa-info-circle"></i> Trạng Thái & Thanh Toán</h4>
                 <div class="order-info-row"><span>Ngày đặt:</span><strong>${order.date || 'Hôm nay'}</strong></div>
                 <div class="order-info-row"><span>Phương thức:</span><strong>${order.paymentMethod || 'COD'}</strong></div>
-                <div class="order-info-row"><span>Tiền về tài khoản:</span><strong>${order.isPaid ? '<span style="color:#10b981"><i class="fas fa-check-circle"></i> Đã Nhận</span>' : (order.customerTransferConfirmed ? '<span style="color:#f59e0b"><i class="fas fa-exclamation-circle"></i> Khách đã báo chuyển khoản (Cần check app Agribank)</span>' : '<span style="color:var(--gold-light)">Chưa Nhận</span>')}</strong></div>
+                <div class="order-info-row"><span>Tiền về tài khoản:</span><strong>${order.isPaid ? '<span style="color:#10b981"><i class="fas fa-check-circle"></i> Đã Nhận</span>' : (order.customerTransferConfirmed ? '<span style="color:#f59e0b"><i class="fas fa-exclamation-circle"></i> Khách đã báo chuyển khoản (Cần check app TPBank)</span>' : '<span style="color:var(--gold-light)">Chưa Nhận</span>')}</strong></div>
                 <div class="order-info-row"><span>Trạng thái đơn:</span><strong>${order.status === 'completed' ? '<span style="color:#10b981">Đã Hoàn Tất</span>' : (order.status === 'cancelled' ? '<span style="color:#ef4444">Đã Hủy</span>' : '<span style="color:var(--gold-light)">Đang Chờ Xử Lý</span>')}</strong></div>
             </div>
         </div>

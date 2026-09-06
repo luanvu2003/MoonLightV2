@@ -2311,7 +2311,7 @@ function renderCheckoutPage() {
   updateVietQrPreview(total);
 }
 
-// --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR AGRIBANK ---
+// --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR TPBANK ---
 function getOrCreateCheckoutOrderCode() {
   if (!window._currentCheckoutOrderCode) {
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -2345,7 +2345,7 @@ function updateVietQrPreview(forcedTotal) {
   }
 
   if (qrImg) {
-    const qrUrl = `https://img.vietqr.io/image/Agribank-5490205425168-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=VU%20PHAM%20LUAN`;
+    const qrUrl = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=VU%20PHAM%20LUAN`;
     if (qrImg.src !== qrUrl) {
       qrImg.src = qrUrl;
     }
@@ -2444,7 +2444,7 @@ async function handleConfirmTransfer(customCode) {
 
     showToast({
       title: 'Xác nhận thành công! 🎉',
-      message: `Cảm ơn bạn! Đơn hàng ${code} đã được ghi nhận thanh toán Agribank.`,
+      message: `Cảm ơn bạn! Đơn hàng ${code} đã được ghi nhận thanh toán TPBank.`,
       type: 'success',
       duration: 6000
     });
@@ -2661,7 +2661,7 @@ async function handleCheckout(e) {
       if (modalTransferAmount) modalTransferAmount.textContent = `${total.toLocaleString('vi-VN')}₫`;
       if (modalTransferMemo) modalTransferMemo.textContent = orderCode;
       if (modalVietQrImg) {
-        modalVietQrImg.src = `https://img.vietqr.io/image/Agribank-5490205425168-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
+        modalVietQrImg.src = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
       }
       if (btnConfirmTransfer) {
         btnConfirmTransfer.style.display = 'inline-flex';
@@ -2707,12 +2707,12 @@ function startAutoPaymentCheck(orderCode) {
         if (btn) btn.style.display = 'none';
         if (notice) {
           notice.style.display = 'flex';
-          notice.innerHTML = `<i class="fas fa-circle-check" style="color:#10b981; font-size:22px; margin-right:8px;"></i> <div><strong style="color:#059669; font-size:14px;">THANH TOÁN THÀNH CÔNG!</strong><p style="margin:2px 0 0 0; font-size:12px; color:#065f46;">Hệ thống đã tự động nhận diện tiền chuyển khoản từ tài khoản Agribank. Đơn hàng đang được đóng gói giao ngay!</p></div>`;
+          notice.innerHTML = `<i class="fas fa-circle-check" style="color:#10b981; font-size:22px; margin-right:8px;"></i> <div><strong style="color:#059669; font-size:14px;">THANH TOÁN THÀNH CÔNG!</strong><p style="margin:2px 0 0 0; font-size:12px; color:#065f46;">Hệ thống đã tự động nhận diện tiền chuyển khoản từ tài khoản TPBank. Đơn hàng đang được đóng gói giao ngay!</p></div>`;
         }
 
         showToast({
           title: 'Thanh toán thành công! 🎉',
-          message: `Đơn hàng ${orderCode} đã khớp lệnh thanh toán Agribank. Cảm ơn bạn!`,
+          message: `Đơn hàng ${orderCode} đã khớp lệnh thanh toán TPBank. Cảm ơn bạn!`,
           type: 'success',
           duration: 8000
         });
