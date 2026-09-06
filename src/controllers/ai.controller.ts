@@ -52,165 +52,257 @@ export const SAMPLE_MODELS = [
 ];
 
 /**
+ * Danh sách HuggingFace Space mirrors cho IDM-VTON (fallback khi space chính bị lỗi)
+ */
+const HF_VTON_SPACES = [
+  'https://yisol-idm-vton.hf.space',
+  'https://levihsu-ootdiffusion.hf.space',
+];
+
+/**
+ * Upload blob lên HuggingFace Space, trả về path trên server
+ */
+async function uploadToHFSpace(spaceUrl: string, blob: Blob, filename: string, signal: AbortSignal): Promise<string | null> {
+  const fd = new FormData();
+  fd.append('files', blob, filename);
+  const upRes = await fetch(`${spaceUrl}/upload`, {
+    method: 'POST',
+    body: fd,
+    signal
+  });
+  if (!upRes.ok) return null;
+  const upData: any = await upRes.json();
+  if (Array.isArray(upData) && upData[0]) return upData[0];
+  return null;
+}
+
+/**
+ * Chuyển đổi personImage/garmentImage thành Blob để upload
+ */
+async function imageSourceToBlob(src: string, signal: AbortSignal): Promise<Blob> {
+  if (src.startsWith('data:')) {
+    const b64 = src.replace(/^data:image\/\w+;base64,/, '');
+    return new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
+  } else if (src.startsWith('/')) {
+    try {
+      const localPath = path.join(process.cwd(), 'public', src);
+      const fileBuf = await fs.promises.readFile(localPath);
+      return new Blob([fileBuf], { type: 'image/jpeg' });
+    } catch {
+      const fetchUrl = `http://127.0.0.1:${ENV.PORT}${src}`;
+      const fRes = await fetch(fetchUrl, { signal });
+      return await fRes.blob();
+    }
+  } else {
+    const fRes = await fetch(src, { signal });
+    return await fRes.blob();
+  }
+}
+
+/**
+ * Parse kết quả SSE từ HuggingFace, trả về URL ảnh hoặc null
+ */
+function parseHFSseResult(sseText: string, spaceUrl: string): string | null {
+  // Format 1: URL trực tiếp trong SSE text
+  const escapedUrl = spaceUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const urlMatch = sseText.match(new RegExp(`${escapedUrl}/file=[^\\s",}]+`));
+  if (urlMatch && urlMatch[0]) return urlMatch[0];
+
+  // Format 2: JSON data array với url field
+  const jsonDataMatch = sseText.match(/data:\s*(\[[\s\S]*?\])\s*(?:\n|$)/);
+  if (jsonDataMatch && jsonDataMatch[1]) {
+    try {
+      const results = JSON.parse(jsonDataMatch[1]);
+      if (Array.isArray(results)) {
+        for (const item of results) {
+          if (item && typeof item === 'object') {
+            const url = item.url || item.path || (item.value && item.value.url);
+            if (url && typeof url === 'string' && url.startsWith('http')) return url;
+            if (url && typeof url === 'string' && url.startsWith('/file=')) return `${spaceUrl}${url}`;
+          }
+          // Nếu item là string URL
+          if (typeof item === 'string' && (item.startsWith('http') || item.startsWith('/file='))) {
+            return item.startsWith('http') ? item : `${spaceUrl}${item}`;
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Format 3: JSON object đơn lẻ
+  const jsonObjMatch = sseText.match(/data:\s*(\{[\s\S]*?\})\s*(?:\n|$)/);
+  if (jsonObjMatch && jsonObjMatch[1]) {
+    try {
+      const obj = JSON.parse(jsonObjMatch[1]);
+      const url = obj.url || obj.path || obj.image;
+      if (url && typeof url === 'string') {
+        return url.startsWith('http') ? url : `${spaceUrl}${url}`;
+      }
+    } catch {}
+  }
+
+  // Format 4: Bất kỳ URL ảnh HF nào
+  const genericUrlMatch = sseText.match(/https?:\/\/[^\s",}]*(?:\.png|\.jpg|\.jpeg|\.webp|file=[^\s",}]+)/i);
+  if (genericUrlMatch && genericUrlMatch[0]) return genericUrlMatch[0];
+
+  return null;
+}
+
+/**
  * Gọi API IDM-VTON ZeroGPU (HuggingFace) để tạo ảnh thử đồ thật từ trí tuệ nhân tạo
- * Timeout: 90 giây (ZeroGPU queue có thể mất 20-60s)
+ * Có retry 3 lần với exponential backoff, timeout 120 giây
  */
 async function callIdmVtonHF(personImage: string, garmentImage: string, garmentDesc: string): Promise<string | null> {
-  const uploadController = new AbortController();
-  const uploadTimeout = setTimeout(() => uploadController.abort(), 30000); // 30s cho upload
+  const MAX_RETRIES = 3;
 
-  try {
-    console.log('🤖 IDM-VTON: Bắt đầu xử lý...');
-    console.log('   - Person image:', personImage.substring(0, 80) + '...');
-    console.log('   - Garment image:', garmentImage);
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    // Chọn space: lần 1 dùng space chính, lần sau rotate sang mirror
+    const spaceUrl = HF_VTON_SPACES[(attempt - 1) % HF_VTON_SPACES.length];
+    console.log(`🤖 IDM-VTON: Lần thử ${attempt}/${MAX_RETRIES} - Space: ${spaceUrl}`);
 
-    // 1. Upload ảnh người
-    let humanPath = personImage;
-    if (personImage.startsWith('data:') || personImage.startsWith('http')) {
-      let blob: Blob;
-      if (personImage.startsWith('data:')) {
-        const b64 = personImage.replace(/^data:image\/\w+;base64,/, '');
-        blob = new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
-      } else {
-        const fRes = await fetch(personImage, { signal: uploadController.signal });
-        blob = await fRes.blob();
-      }
-
-      const fd = new FormData();
-      fd.append('files', blob, 'person.jpg');
-      const upRes = await fetch('https://yisol-idm-vton.hf.space/upload', {
-        method: 'POST',
-        body: fd,
-        signal: uploadController.signal
-      });
-      const upData: any = await upRes.json();
-      if (Array.isArray(upData) && upData[0]) {
-        humanPath = upData[0];
-        console.log('   ✅ Upload person thành công:', humanPath);
-      }
-    }
-
-    // 2. Upload ảnh trang phục
-    let garmPath = garmentImage;
-    if (garmentImage.startsWith('data:') || garmentImage.startsWith('http') || garmentImage.startsWith('/')) {
-      let blob: Blob;
-      if (garmentImage.startsWith('data:')) {
-        const b64 = garmentImage.replace(/^data:image\/\w+;base64,/, '');
-        blob = new Blob([Buffer.from(b64, 'base64')], { type: 'image/jpeg' });
-      } else if (garmentImage.startsWith('/')) {
-        try {
-          const localPath = path.join(process.cwd(), 'public', garmentImage);
-          const fileBuf = await fs.promises.readFile(localPath);
-          blob = new Blob([fileBuf], { type: 'image/jpeg' });
-          console.log('   📁 Đọc garment từ disk:', localPath);
-        } catch {
-          const fetchUrl = `http://127.0.0.1:${ENV.PORT}${garmentImage}`;
-          const fRes = await fetch(fetchUrl, { signal: uploadController.signal });
-          blob = await fRes.blob();
-        }
-      } else {
-        const fRes = await fetch(garmentImage, { signal: uploadController.signal });
-        blob = await fRes.blob();
-      }
-
-      const fd = new FormData();
-      fd.append('files', blob, 'garment.jpg');
-      const upRes = await fetch('https://yisol-idm-vton.hf.space/upload', {
-        method: 'POST',
-        body: fd,
-        signal: uploadController.signal
-      });
-      const upData: any = await upRes.json();
-      if (Array.isArray(upData) && upData[0]) {
-        garmPath = upData[0];
-        console.log('   ✅ Upload garment thành công:', garmPath);
-      }
-    }
-
-    clearTimeout(uploadTimeout);
-
-    // 3. Kích hoạt model IDM-VTON (không dùng abort cho bước này, dùng timeout riêng)
-    const inferController = new AbortController();
-    const inferTimeout = setTimeout(() => inferController.abort(), 90000); // 90s cho inference
+    const uploadController = new AbortController();
+    const uploadTimeout = setTimeout(() => uploadController.abort(), 45000); // 45s cho upload
 
     try {
-      console.log('   🚀 Gửi request tới IDM-VTON model...');
-      const callRes = await fetch('https://yisol-idm-vton.hf.space/call/tryon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: [
-            {
-              background: { path: humanPath, meta: { _type: 'gradio.FileData' } },
-              layers: [],
-              composite: null
-            },
-            { path: garmPath, meta: { _type: 'gradio.FileData' } },
-            garmentDesc || 'luxury garment outfit',
-            true,
-            false,
-            20,
-            42
-          ]
-        }),
-        signal: inferController.signal
-      });
+      console.log('   - Person image:', personImage.substring(0, 80) + '...');
+      console.log('   - Garment image:', garmentImage.substring(0, 80) + '...');
 
-      const { event_id } = await callRes.json();
-      if (!event_id) {
-        console.warn('   ❌ IDM-VTON: Không nhận được event_id');
-        clearTimeout(inferTimeout);
-        return null;
-      }
-      console.log('   📡 Nhận event_id:', event_id, '- Đang chờ kết quả...');
-
-      // 4. Nhận kết quả từ luồng SSE (chờ lâu - đây là bước AI xử lý)
-      const sseRes = await fetch(`https://yisol-idm-vton.hf.space/call/tryon/${event_id}`, {
-        signal: inferController.signal
-      });
-      const sseText = await sseRes.text();
-
-      // Parse kết quả - tìm URL ảnh
-      const urlMatch = sseText.match(/https:\/\/yisol-idm-vton\.hf\.space\/file=[^\s",]+/);
-      if (urlMatch && urlMatch[0]) {
-        console.log('   🎉 IDM-VTON thành công! Ảnh kết quả:', urlMatch[0]);
-        clearTimeout(inferTimeout);
-        return urlMatch[0];
+      // 1. Upload ảnh người
+      let humanPath = personImage;
+      if (personImage.startsWith('data:') || personImage.startsWith('http') || personImage.startsWith('/')) {
+        const blob = await imageSourceToBlob(personImage, uploadController.signal);
+        const uploaded = await uploadToHFSpace(spaceUrl, blob, 'person.jpg', uploadController.signal);
+        if (uploaded) {
+          humanPath = uploaded;
+          console.log('   ✅ Upload person thành công:', humanPath);
+        } else {
+          console.warn('   ⚠️ Upload person thất bại, dùng URL gốc');
+        }
       }
 
-      // Fallback: parse JSON data
-      const jsonMatch = sseText.match(/data:\s*(\[.*\])/);
-      if (jsonMatch && jsonMatch[1]) {
-        try {
-          const results = JSON.parse(jsonMatch[1]);
-          if (results[0] && results[0].url) {
-            console.log('   🎉 IDM-VTON thành công (JSON)! Ảnh:', results[0].url);
-            clearTimeout(inferTimeout);
-            return results[0].url;
+      // 2. Upload ảnh trang phục
+      let garmPath = garmentImage;
+      if (garmentImage.startsWith('data:') || garmentImage.startsWith('http') || garmentImage.startsWith('/')) {
+        const blob = await imageSourceToBlob(garmentImage, uploadController.signal);
+        const uploaded = await uploadToHFSpace(spaceUrl, blob, 'garment.jpg', uploadController.signal);
+        if (uploaded) {
+          garmPath = uploaded;
+          console.log('   ✅ Upload garment thành công:', garmPath);
+        } else {
+          console.warn('   ⚠️ Upload garment thất bại, dùng URL gốc');
+        }
+      }
+
+      clearTimeout(uploadTimeout);
+
+      // 3. Kích hoạt model IDM-VTON
+      const inferController = new AbortController();
+      const inferTimeout = setTimeout(() => inferController.abort(), 120000); // 120s cho inference
+
+      try {
+        console.log('   🚀 Gửi request tới IDM-VTON model...');
+        const callRes = await fetch(`${spaceUrl}/call/tryon`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: [
+              {
+                background: { path: humanPath, meta: { _type: 'gradio.FileData' } },
+                layers: [],
+                composite: null
+              },
+              { path: garmPath, meta: { _type: 'gradio.FileData' } },
+              garmentDesc || 'luxury garment outfit',
+              true,
+              false,
+              20,
+              42
+            ]
+          }),
+          signal: inferController.signal
+        });
+
+        if (!callRes.ok) {
+          console.warn(`   ❌ IDM-VTON: HTTP ${callRes.status} - ${callRes.statusText}`);
+          clearTimeout(inferTimeout);
+          // Backoff trước khi retry
+          if (attempt < MAX_RETRIES) {
+            const delay = Math.min(5000 * Math.pow(2, attempt - 1), 20000);
+            console.log(`   ⏳ Chờ ${delay / 1000}s trước khi thử lại...`);
+            await new Promise(r => setTimeout(r, delay));
           }
-        } catch {}
+          continue;
+        }
+
+        const callData: any = await callRes.json();
+        const eventId = callData.event_id;
+        if (!eventId) {
+          console.warn('   ❌ IDM-VTON: Không nhận được event_id. Response:', JSON.stringify(callData).substring(0, 200));
+          clearTimeout(inferTimeout);
+          if (attempt < MAX_RETRIES) {
+            const delay = Math.min(5000 * Math.pow(2, attempt - 1), 20000);
+            await new Promise(r => setTimeout(r, delay));
+          }
+          continue;
+        }
+        console.log('   📡 Nhận event_id:', eventId, '- Đang chờ kết quả...');
+
+        // 4. Nhận kết quả từ luồng SSE
+        const sseRes = await fetch(`${spaceUrl}/call/tryon/${eventId}`, {
+          signal: inferController.signal
+        });
+        const sseText = await sseRes.text();
+
+        // Kiểm tra lỗi trong SSE
+        if (sseText.includes('"error"') || sseText.includes('queue_full') || sseText.includes('GPU quota')) {
+          console.warn('   ⚠️ IDM-VTON: Space lỗi hoặc hết quota. SSE:', sseText.substring(0, 200));
+          clearTimeout(inferTimeout);
+          if (attempt < MAX_RETRIES) {
+            const delay = Math.min(8000 * Math.pow(2, attempt - 1), 30000);
+            console.log(`   ⏳ Chờ ${delay / 1000}s trước khi thử lại...`);
+            await new Promise(r => setTimeout(r, delay));
+          }
+          continue;
+        }
+
+        // Parse kết quả
+        const resultUrl = parseHFSseResult(sseText, spaceUrl);
+        if (resultUrl) {
+          console.log('   🎉 IDM-VTON thành công! Ảnh kết quả:', resultUrl);
+          clearTimeout(inferTimeout);
+          return resultUrl;
+        }
+
+        console.warn('   ⚠️ IDM-VTON: Không tìm thấy URL ảnh. SSE text:', sseText.substring(0, 400));
+        clearTimeout(inferTimeout);
+
+      } catch (inferErr: any) {
+        clearTimeout(inferTimeout);
+        if (inferErr.name === 'AbortError') {
+          console.warn(`   ⏱️ IDM-VTON: Inference timeout (120s) - lần ${attempt}`);
+        } else {
+          console.warn(`   ❌ IDM-VTON inference error (lần ${attempt}):`, inferErr.message);
+        }
       }
 
-      console.warn('   ⚠️ IDM-VTON: Không tìm thấy URL ảnh trong response. SSE text:', sseText.substring(0, 300));
-      clearTimeout(inferTimeout);
-
-    } catch (inferErr: any) {
-      clearTimeout(inferTimeout);
-      if (inferErr.name === 'AbortError') {
-        console.warn('   ⏱️ IDM-VTON: Inference timeout (90s)');
+    } catch (err: any) {
+      clearTimeout(uploadTimeout);
+      if (err.name === 'AbortError') {
+        console.warn(`   ⏱️ IDM-VTON: Upload timeout (45s) - lần ${attempt}`);
       } else {
-        console.warn('   ❌ IDM-VTON inference error:', inferErr.message);
+        console.warn(`   ❌ IDM-VTON upload error (lần ${attempt}):`, err.message);
       }
     }
 
-  } catch (err: any) {
-    clearTimeout(uploadTimeout);
-    if (err.name === 'AbortError') {
-      console.warn('   ⏱️ IDM-VTON: Upload timeout (30s)');
-    } else {
-      console.warn('   ❌ IDM-VTON upload error:', err.message);
+    // Exponential backoff trước khi retry
+    if (attempt < MAX_RETRIES) {
+      const delay = Math.min(5000 * Math.pow(2, attempt - 1), 20000);
+      console.log(`   ⏳ Backoff ${delay / 1000}s trước lần thử ${attempt + 1}...`);
+      await new Promise(r => setTimeout(r, delay));
     }
   }
+
+  console.warn('   ❌ IDM-VTON: Tất cả các lần thử đều thất bại');
   return null;
 }
 
@@ -384,38 +476,12 @@ export class AIController {
         }
       }
 
-      // 4. Nếu không có kết quả IDM-VTON và là ảnh tải lên cá nhân của khách:
-      // Không trả về ảnh người mẫu lạ (sẽ khiến khách khó chịu), để client Neural Synthesizer ghép chuẩn
-      if (!resultImageUrl && req.body.isCustomUpload) {
-        provider = 'neural-fit';
-        resultImageUrl = ''; // client sẽ tự động ghép trang phục lên ảnh thật của khách
-      } else if (!resultImageUrl) {
-        // Áp dụng cho 4 người mẫu mặc định của MoonLight
-        provider = 'simulation';
-        const gender = modelGender || product?.gender || 'male';
-        const productName = (product?.name || '').toLowerCase();
-
-        if (productName.includes('cashmere') || productName.includes('len') || productName.includes('cổ lọ')) {
-          resultImageUrl = '/images/garments/cashmere_sweater.jpg';
-        } else if (productName.includes('trench') || productName.includes('coat')) {
-          resultImageUrl = '/images/garments/trench_coat.jpg';
-        } else if (productName.includes('tweed')) {
-          resultImageUrl = '/images/garments/tweed_suit.jpg';
-        } else if (productName.includes('polo')) {
-          resultImageUrl = '/images/garments/polo.jpg';
-        } else if (productName.includes('hoodie')) {
-          resultImageUrl = '/images/garments/hoodie.jpg';
-        } else if (productName.includes('vest') || productName.includes('suit')) {
-          resultImageUrl = '/images/garments/suit.jpg';
-        } else if (productName.includes('sơ mi') || productName.includes('shirt')) {
-          resultImageUrl = '/images/garments/shirt.jpg';
-        } else if (productName.includes('đầm') || productName.includes('váy') || productName.includes('dress')) {
-          resultImageUrl = '/images/garments/dress.jpg';
-        } else if (productName.includes('quần') || productName.includes('jean') || productName.includes('pant')) {
-          resultImageUrl = '/images/garments/pants.jpg';
-        } else {
-          resultImageUrl = targetGarmentUrl || '/images/garments/suit.jpg';
-        }
+      // 4. Nếu không có kết quả từ bất kỳ AI provider nào:
+      // Trả về provider='client-synthesis' để frontend dùng engine client-side cải tiến
+      if (!resultImageUrl) {
+        provider = 'client-synthesis';
+        resultImageUrl = ''; // client sẽ tự xử lý với engine synthesis cải tiến
+        console.log('   ℹ️ Không có AI provider nào trả kết quả, chuyển sang client-side synthesis');
       }
 
       const processingTimeMs = Date.now() - startTime;
