@@ -1493,7 +1493,10 @@ function renderDetailHTML() {
       </div>
 
       <div class="pd-option-group">
-        <span class="option-label">Kích thước: <strong id="sizeName" style="color:var(--gold, #dfba73); font-weight:700;">${selectedSizeName ? selectedSizeName : 'Vui lòng chọn size'}</strong></span>
+        <div class="size-header-row">
+          <span class="option-label" style="margin-bottom:0;">Kích thước: <strong id="sizeName" style="color:var(--gold, #dfba73); font-weight:700;">${selectedSizeName ? selectedSizeName : 'Vui lòng chọn size'}</strong></span>
+          <div id="sizeStockBadge"></div>
+        </div>
         <div class="size-selector" id="sizeSelectorContainer"></div>
       </div>
 
@@ -1561,14 +1564,25 @@ function selectSize(name, stock, btn) {
 
   selectedSizeName = name;
   const sizeNameEl = document.getElementById('sizeName');
-  if (sizeNameEl) {
-    let stockHint = '';
+  if (sizeNameEl) sizeNameEl.innerText = name;
+
+  const badgeContainer = document.getElementById('sizeStockBadge');
+  if (badgeContainer) {
     if (stock <= 5) {
-      stockHint = ` <span style="color:#ef4444; font-size:12.5px; font-weight:600;"><i class="fas fa-fire"></i> Chỉ còn ${stock} cái!</span>`;
+      badgeContainer.innerHTML = `
+        <span class="luxury-stock-badge urgency">
+          <span class="flame-icon-box"><i class="fas fa-fire-flame-curved"></i></span>
+          <span class="badge-text">Chỉ còn <strong>${stock}</strong> cái!</span>
+          <span class="pulse-beacon"></span>
+        </span>
+      `;
     } else {
-      stockHint = ` <span style="color:#64748b; font-size:12.5px; font-weight:500;">(Còn ${stock} sản phẩm)</span>`;
+      badgeContainer.innerHTML = `
+        <span class="luxury-stock-badge available">
+          <i class="fas fa-check-circle"></i> Còn <strong>${stock}</strong> sản phẩm
+        </span>
+      `;
     }
-    sizeNameEl.innerHTML = `${name}${stockHint}`;
   }
 
   // Tự động điều chỉnh số lượng nếu số lượng chọn vượt quá tồn kho

@@ -1,9 +1,50 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { CustomerService } from '../services/customer.service.js';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js';
 import { OrderStatus, PaymentMethod } from '../types/enums.js';
+
+async function restoreOrderStock(items: any[]): Promise<void> {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    try {
+      const prodId = String(item.id || item._id);
+      const qty = Number(item.quantity) || 1;
+      const color = String(item.color || '').trim();
+      const size = String(item.size || '').trim();
+
+      if (mongoose.Types.ObjectId.isValid(prodId)) {
+        await Product.findOneAndUpdate(
+          {
+            _id: prodId,
+            variants: {
+              $elemMatch: {
+                color: color,
+                sizes: { $elemMatch: { $or: [{ size: size }, { name: size }] } }
+              }
+            }
+          },
+          {
+            $inc: {
+              "variants.$[v].sizes.$[s].stock": qty,
+              sold: -qty
+            }
+          },
+          {
+            arrayFilters: [
+              { "v.color": color },
+              { $or: [{ "s.size": size }, { "s.name": size }] }
+            ]
+          }
+        );
+      }
+    } catch (err) {
+      console.warn('⚠️ Lỗi hoàn kho đơn hàng:', err);
+    }
+  }
+}
 
 export class OrderController {
   static async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -87,30 +128,70 @@ export class OrderController {
         return;
       }
 
-      // Kiểm tra tồn kho từng sản phẩm trong đơn hàng
+      // 1. Trừ kho nguyên tử (Atomic Operations) chống Race Condition khi đặt cùng lúc
+      const decrementedItems: Array<{ prodId: string; color: string; size: string; quantity: number }> = [];
+
       for (const item of orderData.items) {
-        try {
-          const prodId = item.id || item._id;
-          if (prodId) {
-            const prod = await Product.findById(prodId);
-            if (prod && Array.isArray(prod.variants)) {
-              const v = prod.variants.find((va: any) => va.color === item.color);
-              if (v && Array.isArray(v.sizes)) {
-                const s = v.sizes.find((sz: any) => (sz.size || sz.name) === item.size);
-                if (s && s.stock < item.quantity) {
-                  sendError(
-                    res,
-                    `Sản phẩm "${item.name}" (${item.color} - Size ${item.size}) chỉ còn ${s.stock} sản phẩm trong kho, không thể đặt ${item.quantity} cái.`,
-                    400,
-                    'INSUFFICIENT_STOCK'
-                  );
-                  return;
+        const prodId = String(item.id || item._id);
+        const qty = Number(item.quantity) || 1;
+        const color = String(item.color || '').trim();
+        const size = String(item.size || '').trim();
+
+        if (mongoose.Types.ObjectId.isValid(prodId)) {
+          // Điều kiện tiên quyết: tồn kho hiện tại PHẢI >= qty
+          const updatedProduct = await Product.findOneAndUpdate(
+            {
+              _id: prodId,
+              variants: {
+                $elemMatch: {
+                  color: color,
+                  sizes: {
+                    $elemMatch: {
+                      $or: [{ size: size }, { name: size }],
+                      stock: { $gte: qty }
+                    }
+                  }
                 }
               }
+            },
+            {
+              $inc: {
+                "variants.$[v].sizes.$[s].stock": -qty,
+                sold: qty
+              }
+            },
+            {
+              arrayFilters: [
+                { "v.color": color },
+                { $or: [{ "s.size": size }, { "s.name": size }] }
+              ],
+              new: true
             }
+          );
+
+          if (!updatedProduct) {
+            // Tồn kho không đủ hoặc vừa có khách khác mua trước trong tích tắc!
+            // Rollback lại các món đã trừ trước đó trong đơn này
+            await restoreOrderStock(decrementedItems);
+
+            let currentRemaining = 0;
+            try {
+              const currentProd = await Product.findById(prodId);
+              const curVar = currentProd?.variants?.find((v: any) => v.color === color);
+              const curSz = curVar?.sizes?.find((s: any) => (s.size || s.name) === size);
+              currentRemaining = curSz ? (curSz.stock || 0) : 0;
+            } catch {}
+
+            sendError(
+              res,
+              `Sản phẩm "${item.name}" (${color} - Size ${size}) vừa có khách đặt trước! Hiện trong kho chỉ còn ${currentRemaining} cái (bạn đang đặt ${qty} cái). Vui lòng cập nhật lại giỏ hàng.`,
+              400,
+              'CONCURRENT_STOCK_EXCEEDED'
+            );
+            return;
           }
-        } catch {
-          // Bỏ qua nếu prodId không phải ObjectId
+
+          decrementedItems.push({ prodId, color, size, quantity: qty });
         }
       }
 
@@ -163,6 +244,12 @@ export class OrderController {
         return;
       }
 
+      const oldOrder = await Order.findById(id);
+      if (!oldOrder) {
+        sendError(res, 'Không tìm thấy đơn hàng để cập nhật', 404, 'ORDER_NOT_FOUND');
+        return;
+      }
+
       const updateData: any = { status };
       if (cancelReason) updateData.cancelReason = cancelReason;
       if (req.user) updateData.processedBy = req.user.id;
@@ -171,6 +258,11 @@ export class OrderController {
       if (!updatedOrder) {
         sendError(res, 'Không tìm thấy đơn hàng để cập nhật', 404, 'ORDER_NOT_FOUND');
         return;
+      }
+
+      // Nếu hủy đơn -> Tự động hoàn lại tồn kho cho các sản phẩm
+      if (status === OrderStatus.Cancelled && oldOrder.status !== OrderStatus.Cancelled) {
+        await restoreOrderStock(oldOrder.items);
       }
 
       // Khi đơn hoàn thành hoặc thay đổi trạng thái, đồng bộ điểm chi tiêu khách hàng
@@ -195,6 +287,11 @@ export class OrderController {
       if (!deletedOrder) {
         sendError(res, 'Không tìm thấy đơn hàng để xóa', 404, 'ORDER_NOT_FOUND');
         return;
+      }
+
+      // Nếu đơn chưa hủy mà bị xóa -> hoàn trả tồn kho
+      if (deletedOrder.status !== OrderStatus.Cancelled && deletedOrder.items) {
+        await restoreOrderStock(deletedOrder.items);
       }
 
       // Đồng bộ lại chi tiêu của khách hàng sau khi xóa đơn
