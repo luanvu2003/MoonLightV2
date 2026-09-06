@@ -73,6 +73,8 @@ export interface IOrder {
   total: number;
   paymentMethod: PaymentMethod;
   status: OrderStatus;
+  isPaid?: boolean;
+  customerTransferConfirmed?: boolean;
   processedBy?: any;
   cancelReason?: string;
   createdAt?: Date;

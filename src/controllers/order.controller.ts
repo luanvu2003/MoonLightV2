@@ -331,4 +331,43 @@ export class OrderController {
       next(error);
     }
   }
+
+  static async confirmTransfer(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const orderCode = String(req.params.orderCode || '').trim();
+      const isObjectId = mongoose.Types.ObjectId.isValid(orderCode);
+      const query: any = isObjectId
+        ? { $or: [{ orderCode }, { _id: orderCode }] }
+        : { orderCode };
+
+      const order: any = await Order.findOne(query);
+
+      if (!order) {
+        sendError(res, 'Không tìm thấy đơn hàng cần xác nhận chuyển khoản', 404, 'ORDER_NOT_FOUND');
+        return;
+      }
+
+      order.isPaid = true;
+      order.customerTransferConfirmed = true;
+      const nowStr = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
+      const transferNote = `[Khách xác nhận đã chuyển khoản MB Bank lúc ${nowStr}]`;
+      if (order.customer) {
+        order.customer.note = order.customer.note ? `${order.customer.note} | ${transferNote}` : transferNote;
+      }
+      await order.save();
+
+      // Đồng bộ thông tin khách hàng nếu cần
+      if (order.customer?.phone) {
+        await CustomerService.syncCustomerStatsByPhone(
+          order.customer.phone,
+          order.customer.name,
+          order.customer.address
+        );
+      }
+
+      sendSuccess(res, order, 'Xác nhận chuyển khoản ngân hàng thành công!');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

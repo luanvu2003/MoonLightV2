@@ -152,6 +152,12 @@ const MoonlightAPI = {
     });
   },
 
+  async confirmBankTransfer(orderCode) {
+    return this.request(`/orders/${orderCode}/confirm-transfer`, {
+      method: 'POST'
+    });
+  },
+
   async deleteOrder(id) {
     return this.request(`/orders/${id}`, {
       method: 'DELETE'

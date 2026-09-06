@@ -135,13 +135,70 @@
                                 <div class="card-content"><div class="card-icon"><i class="fas fa-university"></i></div><div class="card-text"><h4>Chuyển khoản ngân hàng</h4><p>Quét mã QR hoặc chuyển khoản 24/7</p></div></div>
                             </label>
                             <div id="bankingInfo" class="banking-info-box" style="display: none;">
-                                <div class="bank-details">
-                                    <p><strong>Ngân hàng:</strong> MB Bank (Quân Đội)</p>
-                                    <p><strong>Số tài khoản:</strong> <span class="highlight-text">0393203037</span></p>
-                                    <p><strong>Chủ tài khoản:</strong> VU PHAM LUAN</p>
-                                    <p><strong>Nội dung CK:</strong> Tên + SĐT</p>
+                                <div class="banking-top-header">
+                                    <div class="bank-pill-badge">
+                                        <i class="fas fa-university bank-icon-badge"></i>
+                                        <div class="bank-title-group">
+                                            <div class="bank-pill-title">MB BANK</div>
+                                            <div class="bank-pill-sub">Ngân hàng TMCP Quân Đội</div>
+                                        </div>
+                                    </div>
+                                    <div class="napas-vietqr-badge">
+                                        <i class="fas fa-bolt"></i> VietQR &bull; Napas 247
+                                    </div>
                                 </div>
-                                <div class="qr-code-placeholder"><i class="fas fa-qrcode"></i><span>Mã QR nhận tiền</span></div>
+
+                                <div class="banking-grid-content">
+                                    <div class="banking-details-col">
+                                        <div class="banking-field-item">
+                                            <span class="bf-label">Ngân hàng:</span>
+                                            <span class="bf-val highlight-bold">MB Bank (Quân Đội)</span>
+                                        </div>
+                                        <div class="banking-field-item">
+                                            <span class="bf-label">Số tài khoản:</span>
+                                            <div class="bf-val-group">
+                                                <span class="bf-val highlight-stk" id="checkoutStk">0393203037</span>
+                                                <button type="button" class="btn-copy-tag" onclick="copyText('0393203037', 'Đã chép số tài khoản MB!')" title="Sao chép STK">
+                                                    <i class="far fa-copy"></i> Sao chép
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="banking-field-item">
+                                            <span class="bf-label">Chủ tài khoản:</span>
+                                            <span class="bf-val highlight-owner">VU PHAM LUAN</span>
+                                        </div>
+                                        <div class="banking-field-item">
+                                            <span class="bf-label">Số tiền:</span>
+                                            <div class="bf-val-group">
+                                                <span class="bf-val highlight-amount" id="checkoutBankingAmount">0₫</span>
+                                                <button type="button" class="btn-copy-tag" onclick="copyTransferAmount()" title="Sao chép số tiền">
+                                                    <i class="far fa-copy"></i> Sao chép
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="banking-field-item">
+                                            <span class="bf-label">Nội dung CK:</span>
+                                            <div class="bf-val-group">
+                                                <span class="bf-val highlight-memo" id="checkoutBankingMemo">MOONLIGHT</span>
+                                                <button type="button" class="btn-copy-tag" onclick="copyTransferMemo()" title="Sao chép nội dung">
+                                                    <i class="far fa-copy"></i> Sao chép
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="banking-quick-tip">
+                                            <i class="fas fa-bolt"></i> Mở ứng dụng ngân hàng bất kỳ (MB, VCB, MoMo...) quét mã QR để chuyển khoản tự động tức thì.
+                                        </div>
+                                    </div>
+
+                                    <div class="banking-qr-col">
+                                        <div class="vietqr-frame">
+                                            <img id="checkoutVietQrImg" src="" alt="Mã VietQR Chuyển Khoản MB Bank" class="vietqr-img">
+                                            <div class="vietqr-scan-label">
+                                                <i class="fas fa-qrcode"></i> Quét mã VietQR 24/7
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" class="btn-place-order">ĐẶT HÀNG NGAY</button>
@@ -182,6 +239,60 @@
                 <p style="margin-top:6px; font-size:12.5px; color:#64748b;"><i class="fas fa-shield-alt" style="color:#10b981; margin-right:6px;"></i> Quý khách được kiểm tra hàng trước khi thanh toán.</p>
             </div>
 
+            <!-- MODAL BANKING INFO (Hiển thị khi chọn chuyển khoản ngân hàng) -->
+            <div id="modalBankingSection" class="modal-banking-section" style="display: none;">
+                <div class="modal-banking-header">
+                    <div class="mbh-badge"><i class="fas fa-qrcode"></i> QUÉT MÃ VIETQR THANH TOÁN</div>
+                    <p class="mbh-sub">Mở ứng dụng ngân hàng quét mã bên dưới để thanh toán nhanh chóng</p>
+                </div>
+
+                <div class="modal-banking-qr-wrapper">
+                    <div class="modal-vietqr-box">
+                        <img id="modalVietQrImg" src="" alt="VietQR Đơn Hàng" class="modal-vietqr-img">
+                        <div class="modal-vietqr-pulse"><span class="pulse-dot"></span> Sẵn sàng nhận chuyển khoản 24/7</div>
+                    </div>
+                </div>
+
+                <div class="modal-banking-summary">
+                    <div class="mbs-row">
+                        <span class="mbs-label">Ngân hàng:</span>
+                        <strong class="mbs-val">MB Bank (Quân Đội)</strong>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Số tài khoản:</span>
+                        <div class="mbs-val-copy">
+                            <strong class="mbs-val gold-text">0393203037</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyText('0393203037', 'Đã chép số tài khoản!')" title="Sao chép STK"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Chủ tài khoản:</span>
+                        <strong class="mbs-val">VU PHAM LUAN</strong>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Số tiền:</span>
+                        <div class="mbs-val-copy">
+                            <strong class="mbs-val gold-text" id="modalTransferAmount">0₫</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyModalAmount()" title="Sao chép số tiền"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="mbs-row highlight-memo-row">
+                        <span class="mbs-label">Nội dung CK:</span>
+                        <div class="mbs-val-copy">
+                            <strong id="modalTransferMemo" class="memo-code">ML-0000</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyModalMemo()" title="Sao chép nội dung"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="btnConfirmTransfer" class="btn-confirm-transfer" onclick="handleConfirmTransfer()">
+                    <i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG
+                </button>
+                <div id="transferConfirmedNotice" class="transfer-confirmed-box" style="display: none;">
+                    <i class="fas fa-check-double"></i> <span>Đã ghi nhận thông báo chuyển khoản! Moon Light đang đối soát và sẽ chuẩn bị đơn hàng ngay.</span>
+                </div>
+            </div>
+
             <div class="success-modal-actions">
                 <a href="index.html" class="modal-action-btn secondary">
                     <i class="fas fa-home"></i> <span>Về Trang Chủ</span>
@@ -207,11 +318,12 @@
             if (type === 'banking') {
                 document.getElementById('payment_banking').closest('.payment-card').classList.add('selected');
                 document.getElementById('payment_banking').checked = true;
-                bankBox.style.display = 'flex';
+                if (bankBox) bankBox.style.display = 'block';
+                if (typeof updateVietQrPreview === 'function') updateVietQrPreview();
             } else {
                 document.getElementById('payment_cod').closest('.payment-card').classList.add('selected');
                 document.getElementById('payment_cod').checked = true;
-                bankBox.style.display = 'none';
+                if (bankBox) bankBox.style.display = 'none';
             }
         }
     </script>

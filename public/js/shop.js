@@ -2306,6 +2306,163 @@ function renderCheckoutPage() {
 
   if (subTotalEl) subTotalEl.innerText = `${total.toLocaleString('vi-VN')}₫`;
   if (totalEl) totalEl.innerText = `${total.toLocaleString('vi-VN')}₫`;
+
+  // Cập nhật thẻ VietQR xem trước và lắng nghe SĐT
+  updateVietQrPreview(total);
+  initCheckoutPhoneListener();
+}
+
+// --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR MB BANK ---
+function updateVietQrPreview(forcedTotal) {
+  const qrImg = document.getElementById('checkoutVietQrImg');
+  const amountEl = document.getElementById('checkoutBankingAmount');
+  const memoEl = document.getElementById('checkoutBankingMemo');
+  if (!qrImg && !amountEl && !memoEl) return;
+
+  let total = (typeof forcedTotal === 'number') ? forcedTotal : 0;
+  if (total === 0 && Array.isArray(cart) && cart.length > 0) {
+    total = cart.reduce((s, i) => s + ((Number(i.price) || 0) * (Number(i.quantity) || 1)), 0);
+  }
+
+  const phoneEl = document.getElementById('cusPhone');
+  const phoneVal = phoneEl ? phoneEl.value.replace(/[^0-9]/g, '').slice(-9) : '';
+  const memo = phoneVal ? `ML ${phoneVal}` : 'MOONLIGHT';
+
+  if (amountEl) {
+    amountEl.textContent = `${total.toLocaleString('vi-VN')}₫`;
+    amountEl.dataset.rawAmount = String(total);
+  }
+
+  if (memoEl) {
+    memoEl.textContent = memo;
+  }
+
+  if (qrImg) {
+    const qrUrl = `https://img.vietqr.io/image/MB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=VU%20PHAM%20LUAN`;
+    if (qrImg.src !== qrUrl) {
+      qrImg.src = qrUrl;
+    }
+  }
+}
+
+// Lắng nghe thay đổi SĐT để tự động cập nhật memo và QR
+function initCheckoutPhoneListener() {
+  const phoneEl = document.getElementById('cusPhone');
+  if (phoneEl && !phoneEl.dataset.vietQrBound) {
+    phoneEl.dataset.vietQrBound = 'true';
+    phoneEl.addEventListener('input', () => {
+      updateVietQrPreview();
+    });
+  }
+}
+
+function copyText(text, successMsg = 'Đã sao chép thành công!') {
+  if (!text) return;
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast({ title: 'Đã sao chép', message: successMsg, type: 'success', duration: 2500 });
+    }).catch(() => {
+      fallbackCopy(text, successMsg);
+    });
+  } else {
+    fallbackCopy(text, successMsg);
+  }
+}
+
+function fallbackCopy(text, successMsg) {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) {
+      showToast({ title: 'Đã sao chép', message: successMsg, type: 'success', duration: 2500 });
+    }
+  } catch (err) {
+    showToast({ title: 'Sao chép', message: text, type: 'info', duration: 3000 });
+  }
+}
+
+function copyTransferAmount() {
+  const amountEl = document.getElementById('checkoutBankingAmount');
+  const val = amountEl ? (amountEl.dataset.rawAmount || amountEl.textContent.replace(/[^0-9]/g, '')) : '0';
+  copyText(val, `Đã chép số tiền: ${Number(val).toLocaleString('vi-VN')}₫`);
+}
+
+function copyTransferMemo() {
+  const memoEl = document.getElementById('checkoutBankingMemo');
+  const val = memoEl ? memoEl.textContent.trim() : 'MOONLIGHT';
+  copyText(val, `Đã chép nội dung: ${val}`);
+}
+
+function copyModalAmount() {
+  const amountEl = document.getElementById('modalTransferAmount');
+  const val = amountEl ? amountEl.textContent.replace(/[^0-9]/g, '') : (window._currentCheckoutTotal || '0');
+  copyText(val, `Đã chép số tiền: ${Number(val).toLocaleString('vi-VN')}₫`);
+}
+
+function copyModalMemo() {
+  const memoEl = document.getElementById('modalTransferMemo');
+  const val = memoEl ? memoEl.textContent.trim() : (window._currentCheckoutOrderCode || 'MOONLIGHT');
+  copyText(val, `Đã chép nội dung: ${val}`);
+}
+
+async function handleConfirmTransfer(customCode) {
+  const code = customCode || window._currentCheckoutOrderCode;
+  if (!code) {
+    showToast({ title: 'Lỗi', message: 'Không tìm thấy mã đơn hàng để xác nhận.', type: 'warning' });
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmTransfer');
+  const notice = document.getElementById('transferConfirmedNotice');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> ĐANG XÁC NHẬN CHUYỂN KHOẢN...';
+  }
+
+  try {
+    if (window.MoonlightAPI && window.MoonlightAPI.confirmBankTransfer) {
+      await window.MoonlightAPI.confirmBankTransfer(code);
+    }
+
+    // Cập nhật trạng thái trong localStorage nếu có
+    try {
+      let orders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];
+      const ord = orders.find(o => o.orderCode === code || o.id === code);
+      if (ord) {
+        ord.isPaid = true;
+        ord.customerTransferConfirmed = true;
+        localStorage.setItem('moonlight_orders', JSON.stringify(orders));
+      }
+    } catch (e) {}
+
+    if (btn) btn.style.display = 'none';
+    if (notice) notice.style.display = 'flex';
+
+    showToast({
+      title: 'Xác nhận thành công! 🎉',
+      message: `Cảm ơn bạn! Đơn hàng ${code} đã được ghi nhận thanh toán MB Bank.`,
+      type: 'success',
+      duration: 6000
+    });
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG';
+    }
+    showToast({
+      title: 'Xác nhận chuyển khoản',
+      message: err.message || 'Đã ghi nhận thông tin xác nhận của bạn.',
+      type: 'info'
+    });
+  }
 }
 
 async function handleCheckout(e) {
@@ -2490,8 +2647,38 @@ async function handleCheckout(e) {
 
   const successModal = document.getElementById('orderSuccessModal');
   const codeEl = document.getElementById('successOrderCode');
+  const modalBankingSec = document.getElementById('modalBankingSection');
+  const modalVietQrImg = document.getElementById('modalVietQrImg');
+  const modalTransferAmount = document.getElementById('modalTransferAmount');
+  const modalTransferMemo = document.getElementById('modalTransferMemo');
+  const btnConfirmTransfer = document.getElementById('btnConfirmTransfer');
+  const transferConfirmedNotice = document.getElementById('transferConfirmedNotice');
+
+  window._currentCheckoutOrderCode = orderCode;
+  window._currentCheckoutTotal = total;
+
   if (successModal) {
     if (codeEl) codeEl.textContent = orderCode;
+
+    if (paymentMethod === 'banking' && modalBankingSec) {
+      modalBankingSec.style.display = 'block';
+      if (modalTransferAmount) modalTransferAmount.textContent = `${total.toLocaleString('vi-VN')}₫`;
+      if (modalTransferMemo) modalTransferMemo.textContent = orderCode;
+      if (modalVietQrImg) {
+        modalVietQrImg.src = `https://img.vietqr.io/image/MB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
+      }
+      if (btnConfirmTransfer) {
+        btnConfirmTransfer.style.display = 'inline-flex';
+        btnConfirmTransfer.disabled = false;
+        btnConfirmTransfer.innerHTML = '<i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG';
+      }
+      if (transferConfirmedNotice) {
+        transferConfirmedNotice.style.display = 'none';
+      }
+    } else if (modalBankingSec) {
+      modalBankingSec.style.display = 'none';
+    }
+
     successModal.classList.add('active');
   } else {
     setTimeout(() => {

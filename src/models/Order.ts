@@ -92,6 +92,14 @@ const OrderSchema = new Schema<IOrder>(
       default: OrderStatus.Pending,
       index: true
     },
+    isPaid: {
+      type: Boolean,
+      default: false
+    },
+    customerTransferConfirmed: {
+      type: Boolean,
+      default: false
+    },
     processedBy: {
       type: Schema.Types.Mixed,
       default: null
