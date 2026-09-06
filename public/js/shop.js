@@ -1977,10 +1977,295 @@ function toggleWishlist(btn, id) {
 
 // --- 7. LOGIC THANH TOÁN (CHECKOUT) ---
 
+// --- QUẢN LÝ ĐỊA CHỈ HÀNH CHÍNH (TỈNH/THÀNH - QUẬN/HUYỆN - PHƯỜNG/XÃ) ---
+const addressGeoState = {
+  provinces: [],
+  districtsCache: {},
+  wardsCache: {},
+  initialized: false
+};
+
+// 63 tỉnh thành Việt Nam (chuẩn hóa dự phòng)
+const VN_PROVINCES_FALLBACK = [
+  { code: 1, name: "Thành phố Hà Nội" },
+  { code: 79, name: "Thành phố Hồ Chí Minh" },
+  { code: 31, name: "Thành phố Hải Phòng" },
+  { code: 48, name: "Thành phố Đà Nẵng" },
+  { code: 92, name: "Thành phố Cần Thơ" },
+  { code: 89, name: "Tỉnh An Giang" },
+  { code: 77, name: "Tỉnh Bà Rịa - Vũng Tàu" },
+  { code: 24, name: "Tỉnh Bắc Giang" },
+  { code: 6, name: "Tỉnh Bắc Kạn" },
+  { code: 95, name: "Tỉnh Bạc Liêu" },
+  { code: 27, name: "Tỉnh Bắc Ninh" },
+  { code: 83, name: "Tỉnh Bến Tre" },
+  { code: 52, name: "Tỉnh Bình Định" },
+  { code: 74, name: "Tỉnh Bình Dương" },
+  { code: 70, name: "Tỉnh Bình Phước" },
+  { code: 60, name: "Tỉnh Bình Thuận" },
+  { code: 96, name: "Tỉnh Cà Mau" },
+  { code: 4, name: "Tỉnh Cao Bằng" },
+  { code: 66, name: "Tỉnh Đắk Lắk" },
+  { code: 67, name: "Tỉnh Đắk Nông" },
+  { code: 11, name: "Tỉnh Điện Biên" },
+  { code: 75, name: "Tỉnh Đồng Nai" },
+  { code: 87, name: "Tỉnh Đồng Tháp" },
+  { code: 64, name: "Tỉnh Gia Lai" },
+  { code: 2, name: "Tỉnh Hà Giang" },
+  { code: 35, name: "Tỉnh Hà Nam" },
+  { code: 42, name: "Tỉnh Hà Tĩnh" },
+  { code: 30, name: "Tỉnh Hải Dương" },
+  { code: 93, name: "Tỉnh Hậu Giang" },
+  { code: 17, name: "Tỉnh Hòa Bình" },
+  { code: 33, name: "Tỉnh Hưng Yên" },
+  { code: 56, name: "Tỉnh Khánh Hòa" },
+  { code: 91, name: "Tỉnh Kiên Giang" },
+  { code: 62, name: "Tỉnh Kon Tum" },
+  { code: 12, name: "Tỉnh Lai Châu" },
+  { code: 68, name: "Tỉnh Lâm Đồng" },
+  { code: 20, name: "Tỉnh Lạng Sơn" },
+  { code: 10, name: "Tỉnh Lào Cai" },
+  { code: 80, name: "Tỉnh Long An" },
+  { code: 36, name: "Tỉnh Nam Định" },
+  { code: 40, name: "Tỉnh Nghệ An" },
+  { code: 37, name: "Tỉnh Ninh Bình" },
+  { code: 58, name: "Tỉnh Ninh Thuận" },
+  { code: 25, name: "Tỉnh Phú Thọ" },
+  { code: 54, name: "Tỉnh Phú Yên" },
+  { code: 44, name: "Tỉnh Quảng Bình" },
+  { code: 49, name: "Tỉnh Quảng Nam" },
+  { code: 51, name: "Tỉnh Quảng Ngãi" },
+  { code: 22, name: "Tỉnh Quảng Ninh" },
+  { code: 45, name: "Tỉnh Quảng Trị" },
+  { code: 94, name: "Tỉnh Sóc Trăng" },
+  { code: 14, name: "Tỉnh Sơn La" },
+  { code: 72, name: "Tỉnh Tây Ninh" },
+  { code: 34, name: "Tỉnh Thái Bình" },
+  { code: 19, name: "Tỉnh Thái Nguyên" },
+  { code: 38, name: "Tỉnh Thanh Hóa" },
+  { code: 46, name: "Tỉnh Thừa Thiên Huế" },
+  { code: 82, name: "Tỉnh Tiền Giang" },
+  { code: 84, name: "Tỉnh Trà Vinh" },
+  { code: 8, name: "Tỉnh Tuyên Quang" },
+  { code: 86, name: "Tỉnh Vĩnh Long" },
+  { code: 26, name: "Tỉnh Vĩnh Phúc" },
+  { code: 15, name: "Tỉnh Yên Bái" }
+];
+
+function updateCheckoutAddressValue() {
+  const provinceEl = document.getElementById('cusProvince');
+  const districtEl = document.getElementById('cusDistrict');
+  const wardEl = document.getElementById('cusWard');
+  const streetEl = document.getElementById('cusStreet');
+  const addressHiddenEl = document.getElementById('cusAddress');
+  const previewCard = document.getElementById('addressPreviewCard');
+  const previewText = document.getElementById('addressPreviewText');
+
+  if (!provinceEl || !addressHiddenEl) return;
+
+  const street = (streetEl?.value || '').trim();
+  const provinceName = (provinceEl.selectedIndex > 0 && !provinceEl.options[provinceEl.selectedIndex].text.startsWith('--'))
+    ? provinceEl.options[provinceEl.selectedIndex].text
+    : '';
+  const districtName = (districtEl && districtEl.selectedIndex > 0 && !districtEl.options[districtEl.selectedIndex].text.startsWith('--'))
+    ? districtEl.options[districtEl.selectedIndex].text
+    : '';
+  const wardName = (wardEl && wardEl.selectedIndex > 0 && !wardEl.options[wardEl.selectedIndex].text.startsWith('--'))
+    ? wardEl.options[wardEl.selectedIndex].text
+    : '';
+
+  const parts = [];
+  if (street) parts.push(street);
+  if (wardName) parts.push(wardName);
+  if (districtName) parts.push(districtName);
+  if (provinceName) parts.push(provinceName);
+
+  const full = parts.join(', ');
+  addressHiddenEl.value = full;
+
+  if (previewCard && previewText) {
+    if (full && (street || wardName || districtName || provinceName)) {
+      previewCard.style.display = 'flex';
+      previewText.textContent = full;
+    } else {
+      previewCard.style.display = 'none';
+    }
+  }
+}
+
+async function initCheckoutAddressSelector() {
+  const provinceEl = document.getElementById('cusProvince');
+  const districtEl = document.getElementById('cusDistrict');
+  const wardEl = document.getElementById('cusWard');
+  const streetEl = document.getElementById('cusStreet');
+
+  if (!provinceEl || !districtEl || !wardEl || !streetEl) return;
+  if (addressGeoState.initialized) return;
+  addressGeoState.initialized = true;
+
+  // Lắng nghe nhập số nhà, tên đường
+  streetEl.addEventListener('input', updateCheckoutAddressValue);
+
+  // 1. Tải danh sách Tỉnh/Thành phố
+  try {
+    provinceEl.innerHTML = '<option value="">-- Đang nạp danh sách Tỉnh / Thành phố... --</option>';
+    let list = [];
+    try {
+      const res = await fetch('https://provinces.open-api.vn/api/v1/p/');
+      if (res.ok) {
+        list = await res.json();
+      }
+    } catch (apiErr) {
+      console.warn('Lỗi kết nối open-api.vn, sử dụng fallback dự phòng:', apiErr);
+    }
+
+    if (!list || list.length === 0) {
+      list = VN_PROVINCES_FALLBACK;
+    }
+
+    addressGeoState.provinces = list;
+    provinceEl.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>' +
+      list.map(p => `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`).join('');
+
+  } catch (err) {
+    console.error('Lỗi khởi tạo danh sách tỉnh thành:', err);
+    provinceEl.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>' +
+      VN_PROVINCES_FALLBACK.map(p => `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`).join('');
+  }
+
+  // 2. Sự kiện thay đổi Tỉnh / Thành phố
+  provinceEl.addEventListener('change', async function () {
+    const pCode = this.value;
+    districtEl.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+    districtEl.disabled = true;
+    wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+    wardEl.disabled = true;
+    updateCheckoutAddressValue();
+
+    if (!pCode) return;
+
+    districtEl.innerHTML = '<option value="">-- Đang nạp Quận / Huyện... --</option>';
+
+    try {
+      let districts = addressGeoState.districtsCache[pCode];
+      if (!districts) {
+        const res = await fetch(`https://provinces.open-api.vn/api/v1/p/${pCode}?depth=2`);
+        if (res.ok) {
+          const data = await res.json();
+          districts = data.districts || [];
+          addressGeoState.districtsCache[pCode] = districts;
+        }
+      }
+
+      if (districts && districts.length > 0) {
+        districtEl.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>' +
+          districts.map(d => `<option value="${d.code}" data-name="${d.name}">${d.name}</option>`).join('');
+        districtEl.disabled = false;
+      } else {
+        districtEl.innerHTML = '<option value="">-- Không có dữ liệu quận/huyện --</option>';
+      }
+    } catch (dErr) {
+      console.error('Lỗi nạp danh sách quận huyện:', dErr);
+      districtEl.innerHTML = '<option value="">-- Lỗi nạp dữ liệu (Vui lòng thử lại) --</option>';
+    }
+  });
+
+  // 3. Sự kiện thay đổi Quận / Huyện
+  districtEl.addEventListener('change', async function () {
+    const dCode = this.value;
+    wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+    wardEl.disabled = true;
+    updateCheckoutAddressValue();
+
+    if (!dCode) return;
+
+    wardEl.innerHTML = '<option value="">-- Đang nạp Phường / Xã... --</option>';
+
+    try {
+      let wards = addressGeoState.wardsCache[dCode];
+      if (!wards) {
+        const res = await fetch(`https://provinces.open-api.vn/api/v1/d/${dCode}?depth=2`);
+        if (res.ok) {
+          const data = await res.json();
+          wards = data.wards || [];
+          addressGeoState.wardsCache[dCode] = wards;
+        }
+      }
+
+      if (wards && wards.length > 0) {
+        wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>' +
+          wards.map(w => `<option value="${w.code}" data-name="${w.name}">${w.name}</option>`).join('');
+        wardEl.disabled = false;
+      } else {
+        wardEl.innerHTML = '<option value="">-- Không có dữ liệu phường/xã --</option>';
+      }
+    } catch (wErr) {
+      console.error('Lỗi nạp danh sách phường xã:', wErr);
+      wardEl.innerHTML = '<option value="">-- Lỗi nạp dữ liệu (Vui lòng thử lại) --</option>';
+    }
+  });
+
+  // 4. Sự kiện thay đổi Phường / Xã
+  wardEl.addEventListener('change', function () {
+    updateCheckoutAddressValue();
+  });
+
+  // 5. Khôi phục thông tin khách hàng đã đặt lần trước nếu có
+  try {
+    const savedCustomer = JSON.parse(localStorage.getItem('moonlight_saved_customer') || 'null');
+    if (savedCustomer) {
+      const cusNameEl = document.getElementById('cusName');
+      const cusPhoneEl = document.getElementById('cusPhone');
+      if (cusNameEl && !cusNameEl.value && savedCustomer.name) cusNameEl.value = savedCustomer.name;
+      if (cusPhoneEl && !cusPhoneEl.value && savedCustomer.phone) cusPhoneEl.value = savedCustomer.phone;
+      if (savedCustomer.street && !streetEl.value) streetEl.value = savedCustomer.street;
+
+      if (savedCustomer.provinceCode) {
+        provinceEl.value = savedCustomer.provinceCode;
+        const pCode = savedCustomer.provinceCode;
+        districtEl.innerHTML = '<option value="">-- Đang nạp Quận / Huyện... --</option>';
+        fetch(`https://provinces.open-api.vn/api/v1/p/${pCode}?depth=2`)
+          .then(r => r.json())
+          .then(data => {
+            const districts = data.districts || [];
+            addressGeoState.districtsCache[pCode] = districts;
+            districtEl.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>' +
+              districts.map(d => `<option value="${d.code}" data-name="${d.name}">${d.name}</option>`).join('');
+            districtEl.disabled = false;
+            if (savedCustomer.districtCode) {
+              districtEl.value = savedCustomer.districtCode;
+              const dCode = savedCustomer.districtCode;
+              wardEl.innerHTML = '<option value="">-- Đang nạp Phường / Xã... --</option>';
+              return fetch(`https://provinces.open-api.vn/api/v1/d/${dCode}?depth=2`)
+                .then(r => r.json())
+                .then(wData => {
+                  const wards = wData.wards || [];
+                  addressGeoState.wardsCache[dCode] = wards;
+                  wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>' +
+                    wards.map(w => `<option value="${w.code}" data-name="${w.name}">${w.name}</option>`).join('');
+                  wardEl.disabled = false;
+                  if (savedCustomer.wardCode) {
+                    wardEl.value = savedCustomer.wardCode;
+                  }
+                  updateCheckoutAddressValue();
+                });
+            }
+          })
+          .catch(e => console.warn('Không thể tự động khôi phục quận/phường:', e));
+      }
+    }
+  } catch (err) {
+    console.warn('Lỗi đọc moonlight_saved_customer:', err);
+  }
+}
+
 function renderCheckoutPage() {
   const container = document.getElementById('checkoutItems');
   const subTotalEl = document.getElementById('checkoutSubtotal');
   const totalEl = document.getElementById('checkoutTotal');
+
+  // Khởi tạo bộ chọn địa chỉ nếu đang ở trang checkout
+  initCheckoutAddressSelector();
 
   if (!container) return;
 
@@ -2047,11 +2332,47 @@ async function handleCheckout(e) {
     }
   }
 
-  const name = document.getElementById('cusName').value;
-  const phone = document.getElementById('cusPhone').value;
-  const address = document.getElementById('cusAddress').value;
-  const note = document.getElementById('cusNote').value;
+  const name = document.getElementById('cusName').value.trim();
+  const phone = document.getElementById('cusPhone').value.trim();
+  const note = document.getElementById('cusNote')?.value.trim() || '';
   const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+
+  const provinceEl = document.getElementById('cusProvince');
+  const districtEl = document.getElementById('cusDistrict');
+  const wardEl = document.getElementById('cusWard');
+  const streetEl = document.getElementById('cusStreet');
+  const addressHiddenEl = document.getElementById('cusAddress');
+
+  // Kiểm tra tính hợp lệ của địa chỉ phân cấp
+  if (provinceEl && !provinceEl.value) {
+    alert('Vui lòng chọn Tỉnh / Thành phố nhận hàng.');
+    provinceEl.focus();
+    return;
+  }
+  if (districtEl && !districtEl.value) {
+    alert('Vui lòng chọn Quận / Huyện nhận hàng.');
+    districtEl.focus();
+    return;
+  }
+  if (wardEl && !wardEl.value) {
+    alert('Vui lòng chọn Phường / Xã nhận hàng.');
+    wardEl.focus();
+    return;
+  }
+  if (streetEl && !streetEl.value.trim()) {
+    alert('Vui lòng nhập số nhà, tên đường nhận hàng.');
+    streetEl.focus();
+    return;
+  }
+
+  // Cập nhật lại chuỗi địa chỉ
+  updateCheckoutAddressValue();
+  const address = (addressHiddenEl?.value || '').trim() || (streetEl?.value || '').trim();
+
+  if (!address) {
+    alert('Vui lòng nhập đầy đủ thông tin địa chỉ nhận hàng.');
+    return;
+  }
 
   const orderCode = `ML-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -2077,6 +2398,18 @@ async function handleCheckout(e) {
     alert(`Không thể hoàn tất đặt hàng: ${err.message}`);
     return;
   }
+
+  // Lưu thông tin khách hàng để tự điền cho lần sau
+  try {
+    localStorage.setItem('moonlight_saved_customer', JSON.stringify({
+      name,
+      phone,
+      street: streetEl?.value?.trim() || '',
+      provinceCode: provinceEl?.value || '',
+      districtCode: districtEl?.value || '',
+      wardCode: wardEl?.value || ''
+    }));
+  } catch (saveErr) {}
 
   // Lưu vào LocalStorage
   let orders = JSON.parse(localStorage.getItem('moonlight_orders')) || [];

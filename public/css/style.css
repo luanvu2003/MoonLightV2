@@ -437,10 +437,99 @@ a { text-decoration: none; color: inherit; }
 /* CHECKOUT STYLE */
 .checkout-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 50px; }
 .checkout-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid #eee; padding-bottom: 10px; letter-spacing: 1px; }
-.checkout-form-col input, .checkout-form-col textarea { width: 100%; padding: 12px 15px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; outline: none; font-family: var(--font); }
-.checkout-form-col input:focus, .checkout-form-col textarea:focus { border-color: var(--gold); }
+.checkout-form-col input, .checkout-form-col textarea, .checkout-form-col select { width: 100%; padding: 12px 15px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; outline: none; font-family: var(--font); }
+.checkout-form-col input:focus, .checkout-form-col textarea:focus, .checkout-form-col select:focus { border-color: var(--gold); }
 .checkout-form-col label { font-size: 13px; font-weight: 600; margin-bottom: 5px; display: block; }
 .checkout-form-col .form-group { margin-bottom: 15px; }
+
+/* LUXURY ADDRESS SELECTOR COMPONENT */
+.checkout-address-block { margin-bottom: 16px; background: #fafbfc; border: 1px solid #edf2f7; border-radius: 8px; padding: 16px; }
+.address-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.address-field-item { margin-bottom: 10px !important; }
+.address-field-item label { font-size: 12px !important; color: #475569; margin-bottom: 4px !important; }
+
+.custom-select-wrap { position: relative; width: 100%; }
+.custom-select-wrap select {
+  width: 100%;
+  padding: 11px 32px 11px 12px;
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-select-wrap select:hover:not(:disabled) { border-color: var(--gold, #dfba73); }
+.custom-select-wrap select:focus {
+  border-color: var(--gold, #dfba73);
+  box-shadow: 0 0 0 3px rgba(223, 186, 115, 0.18);
+  background-color: #fff;
+}
+.custom-select-wrap select:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+.custom-select-wrap .select-arrow-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.custom-select-wrap:hover .select-arrow-icon { color: var(--gold, #dfba73); }
+
+.address-preview-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, rgba(223, 186, 115, 0.12) 0%, rgba(223, 186, 115, 0.03) 100%);
+  border: 1px dashed rgba(223, 186, 115, 0.6);
+  border-radius: 6px;
+  animation: fadeInAddress 0.3s ease;
+}
+@keyframes fadeInAddress {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.address-preview-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold, #dfba73);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.address-preview-body { display: flex; flex-direction: column; gap: 3px; }
+.address-preview-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #856404; }
+.address-preview-text { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.45; }
+
+@media (max-width: 768px) {
+  .address-select-grid { grid-template-columns: 1fr; gap: 8px; }
+  .checkout-address-block { padding: 12px; }
+}
 .payment-section-wrapper { margin-bottom: 30px; }
 .payment-card { display: flex; align-items: center; gap: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; transition: 0.3s; background: #fff; }
 .payment-card:hover { border-color: #aaa; }

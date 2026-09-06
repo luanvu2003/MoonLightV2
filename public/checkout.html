@@ -6,7 +6,7 @@
     <title>Thanh Toán - Moon Light</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/style.css?v=3.0">
 </head>
 <body>
 
@@ -67,8 +67,62 @@
                     <form id="checkoutForm" onsubmit="handleCheckout(event)">
                         <div class="form-group"><label>Họ và tên *</label><input type="text" id="cusName" required placeholder="Ví dụ: Nguyễn Văn A"></div>
                         <div class="form-group"><label>Số điện thoại *</label><input type="tel" id="cusPhone" required placeholder="Ví dụ: 0912345678"></div>
-                        <div class="form-group"><label>Địa chỉ nhận hàng *</label><input type="text" id="cusAddress" required placeholder="Số nhà, đường, phường/xã..."></div>
-                        <div class="form-group"><label>Ghi chú đơn hàng</label><textarea id="cusNote" rows="2" placeholder="Ví dụ: Giao giờ hành chính..."></textarea></div>
+                        <!-- ĐỊA CHỈ GIAO HÀNG PHÂN CẤP CHUẨN LUXURY -->
+                        <div class="checkout-address-block">
+                            <label style="font-size:13px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; color:#0f172a;">
+                                <i class="fas fa-map-marker-alt" style="color:var(--gold, #dfba73);"></i> Địa chỉ nhận hàng *
+                            </label>
+                            
+                            <div class="address-select-grid">
+                                <div class="form-group address-field-item">
+                                    <label for="cusProvince">Tỉnh / Thành phố *</label>
+                                    <div class="custom-select-wrap">
+                                        <select id="cusProvince" required>
+                                            <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group address-field-item">
+                                    <label for="cusDistrict">Quận / Huyện *</label>
+                                    <div class="custom-select-wrap">
+                                        <select id="cusDistrict" required disabled>
+                                            <option value="">-- Chọn Quận / Huyện --</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                    </div>
+                                </div>
+
+                                <div class="form-group address-field-item">
+                                    <label for="cusWard">Phường / Xã *</label>
+                                    <div class="custom-select-wrap">
+                                        <select id="cusWard" required disabled>
+                                            <option value="">-- Chọn Phường / Xã --</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 4px; margin-bottom: 8px;">
+                                <label for="cusStreet">Số nhà, tên đường *</label>
+                                <input type="text" id="cusStreet" required placeholder="Ví dụ: 127 Tăng Bạt Hổ, Hẻm 4, Tòa nhà Bitexco...">
+                            </div>
+
+                            <!-- Input ẩn giữ đồng bộ dữ liệu hoàn chỉnh để tương thích 100% với backend & localStorage -->
+                            <input type="hidden" id="cusAddress" name="cusAddress" required>
+
+                            <!-- Thẻ xem trước địa chỉ giao hàng -->
+                            <div class="address-preview-card" id="addressPreviewCard" style="display: none;">
+                                <div class="address-preview-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="address-preview-body">
+                                    <span class="address-preview-title">Địa chỉ nhận hàng:</span>
+                                    <span class="address-preview-text" id="addressPreviewText"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Ghi chú đơn hàng</label><textarea id="cusNote" rows="2" placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao 15 phút..."></textarea></div>
                         
                         <div class="payment-section-wrapper">
                             <h3 class="checkout-title" style="margin-top: 30px;">PHƯƠNG THỨC THANH TOÁN</h3>
@@ -113,8 +167,8 @@
         <div class="container"><p>&copy; 2026 Moon Light. All rights reserved.</p></div>
     </footer>
 
-    <script src="./js/api.js?v=2.9"></script>
-    <script src="./js/shop.js?v=2.9"></script>
+    <script src="./js/api.js?v=3.0"></script>
+    <script src="./js/shop.js?v=3.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => { renderCheckoutPage(); });
         function selectPayment(type) {
