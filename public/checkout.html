@@ -134,72 +134,6 @@
                                 <div class="radio-mark"><input type="radio" name="payment" id="payment_banking" value="banking"><span class="custom-radio"></span></div>
                                 <div class="card-content"><div class="card-icon"><i class="fas fa-university"></i></div><div class="card-text"><h4>Chuyển khoản ngân hàng</h4><p>Quét mã QR hoặc chuyển khoản 24/7</p></div></div>
                             </label>
-                            <div id="bankingInfo" class="banking-info-box" style="display: none;">
-                                <div class="banking-top-header">
-                                    <div class="bank-pill-badge">
-                                        <i class="fas fa-university bank-icon-badge"></i>
-                                        <div class="bank-title-group">
-                                            <div class="bank-pill-title">TPBANK</div>
-                                            <div class="bank-pill-sub">Ngân hàng TMCP Tiên Phong</div>
-                                        </div>
-                                    </div>
-                                    <div class="napas-vietqr-badge">
-                                        <i class="fas fa-bolt"></i> VietQR &bull; Napas 247
-                                    </div>
-                                </div>
-
-                                <div class="banking-grid-content">
-                                    <div class="banking-details-col">
-                                        <div class="banking-field-item">
-                                            <span class="bf-label">Ngân hàng:</span>
-                                            <span class="bf-val highlight-bold">TPBank (Tiên Phong)</span>
-                                        </div>
-                                        <div class="banking-field-item">
-                                            <span class="bf-label">Số tài khoản:</span>
-                                            <div class="bf-val-group">
-                                                <span class="bf-val highlight-stk" id="checkoutStk">0393203037</span>
-                                                <button type="button" class="btn-copy-tag" onclick="copyText('0393203037', 'Đã chép số tài khoản TPBank!')" title="Sao chép STK">
-                                                    <i class="far fa-copy"></i> Sao chép
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="banking-field-item">
-                                            <span class="bf-label">Chủ tài khoản:</span>
-                                            <span class="bf-val highlight-owner">VU PHAM LUAN</span>
-                                        </div>
-                                        <div class="banking-field-item">
-                                            <span class="bf-label">Số tiền:</span>
-                                            <div class="bf-val-group">
-                                                <span class="bf-val highlight-amount" id="checkoutBankingAmount">0₫</span>
-                                                <button type="button" class="btn-copy-tag" onclick="copyTransferAmount()" title="Sao chép số tiền">
-                                                    <i class="far fa-copy"></i> Sao chép
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="banking-field-item">
-                                            <span class="bf-label">Nội dung CK:</span>
-                                            <div class="bf-val-group">
-                                                <span class="bf-val highlight-memo" id="checkoutBankingMemo">MOONLIGHT</span>
-                                                <button type="button" class="btn-copy-tag" onclick="copyTransferMemo()" title="Sao chép nội dung">
-                                                    <i class="far fa-copy"></i> Sao chép
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="banking-quick-tip">
-                                            <i class="fas fa-bolt"></i> Mở ứng dụng ngân hàng bất kỳ (TPBank, MB, VCB, MoMo...) quét mã QR để chuyển khoản tự động tức thì.
-                                        </div>
-                                    </div>
-
-                                    <div class="banking-qr-col">
-                                        <div class="vietqr-frame">
-                                            <img id="checkoutVietQrImg" src="" alt="Mã VietQR Chuyển Khoản TPBank" class="vietqr-img">
-                                            <div class="vietqr-scan-label">
-                                                <i class="fas fa-qrcode"></i> Quét mã VietQR 24/7
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                         <button type="submit" class="btn-place-order">ĐẶT HÀNG NGAY</button>
                         <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Tiếp tục mua sắm</a>
@@ -314,16 +248,12 @@
         document.addEventListener('DOMContentLoaded', () => { renderCheckoutPage(); });
         function selectPayment(type) {
             document.querySelectorAll('.payment-card').forEach(el => el.classList.remove('selected'));
-            const bankBox = document.getElementById('bankingInfo');
             if (type === 'banking') {
                 document.getElementById('payment_banking').closest('.payment-card').classList.add('selected');
                 document.getElementById('payment_banking').checked = true;
-                if (bankBox) bankBox.style.display = 'block';
-                if (typeof updateVietQrPreview === 'function') updateVietQrPreview();
             } else {
                 document.getElementById('payment_cod').closest('.payment-card').classList.add('selected');
                 document.getElementById('payment_cod').checked = true;
-                if (bankBox) bankBox.style.display = 'none';
             }
         }
     </script>
