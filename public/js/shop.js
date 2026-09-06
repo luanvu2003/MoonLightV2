@@ -2312,7 +2312,7 @@ function renderCheckoutPage() {
   initCheckoutPhoneListener();
 }
 
-// --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR MB BANK ---
+// --- TIỆN ÍCH CHUYỂN KHOẢN VIETQR AGRIBANK ---
 function updateVietQrPreview(forcedTotal) {
   const qrImg = document.getElementById('checkoutVietQrImg');
   const amountEl = document.getElementById('checkoutBankingAmount');
@@ -2338,7 +2338,7 @@ function updateVietQrPreview(forcedTotal) {
   }
 
   if (qrImg) {
-    const qrUrl = `https://img.vietqr.io/image/MB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=VU%20PHAM%20LUAN`;
+    const qrUrl = `https://img.vietqr.io/image/Agribank-5490205425168-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=VU%20PHAM%20LUAN`;
     if (qrImg.src !== qrUrl) {
       qrImg.src = qrUrl;
     }
@@ -2448,7 +2448,7 @@ async function handleConfirmTransfer(customCode) {
 
     showToast({
       title: 'Xác nhận thành công! 🎉',
-      message: `Cảm ơn bạn! Đơn hàng ${code} đã được ghi nhận thanh toán MB Bank.`,
+      message: `Cảm ơn bạn! Đơn hàng ${code} đã được ghi nhận thanh toán Agribank.`,
       type: 'success',
       duration: 6000
     });
@@ -2665,7 +2665,7 @@ async function handleCheckout(e) {
       if (modalTransferAmount) modalTransferAmount.textContent = `${total.toLocaleString('vi-VN')}₫`;
       if (modalTransferMemo) modalTransferMemo.textContent = orderCode;
       if (modalVietQrImg) {
-        modalVietQrImg.src = `https://img.vietqr.io/image/MB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
+        modalVietQrImg.src = `https://img.vietqr.io/image/Agribank-5490205425168-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
       }
       if (btnConfirmTransfer) {
         btnConfirmTransfer.style.display = 'inline-flex';

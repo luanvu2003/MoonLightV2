@@ -350,7 +350,7 @@ export class OrderController {
       order.isPaid = true;
       order.customerTransferConfirmed = true;
       const nowStr = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
-      const transferNote = `[Khách xác nhận đã chuyển khoản MB Bank lúc ${nowStr}]`;
+      const transferNote = `[Khách xác nhận đã chuyển khoản Agribank lúc ${nowStr}]`;
       if (order.customer) {
         order.customer.note = order.customer.note ? `${order.customer.note} | ${transferNote}` : transferNote;
       }
