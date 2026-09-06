@@ -11,4 +11,7 @@ router.get('/health', authenticate, requireRole(Role.Admin), SystemController.ge
 // 1-Click Cập nhật Git & Reload PM2 (Chỉ Admin)
 router.post('/deploy', authenticate, requireRole(Role.Admin), SystemController.deploy);
 
+// Xem nhật ký PM2 (Chỉ Admin)
+router.get('/logs', authenticate, requireRole(Role.Admin), SystemController.getLogs);
+
 export default router;

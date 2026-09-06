@@ -360,34 +360,61 @@ export class AIController {
         try {
           const hfResult = await callIdmVtonHF(personImage, targetGarmentUrl, product?.name || 'luxury outfit');
           if (hfResult) {
-            resultImageUrl = hfResult;
+            try {
+              const dlRes = await fetch(hfResult);
+              if (dlRes.ok) {
+                const buf = await dlRes.arrayBuffer();
+                const saveDir = path.join(process.cwd(), 'public', 'uploads', 'tryon');
+                await fs.promises.mkdir(saveDir, { recursive: true });
+                const fileName = `tryon_${Date.now()}.png`;
+                await fs.promises.writeFile(path.join(saveDir, fileName), Buffer.from(buf));
+                resultImageUrl = `/uploads/tryon/${fileName}`;
+                console.log('   💾 Đã lưu ảnh kết quả cục bộ:', resultImageUrl);
+              } else {
+                resultImageUrl = hfResult;
+              }
+            } catch (dlErr: any) {
+              console.warn('   ⚠️ Lỗi cache ảnh IDM-VTON cục bộ, dùng URL gốc:', dlErr.message);
+              resultImageUrl = hfResult;
+            }
             provider = 'idm-vton-ai';
           }
         } catch (hfErr: any) {
-          console.warn('⚠️ HF IDM-VTON error, fallback sang studio simulation:', hfErr.message);
+          console.warn('⚠️ HF IDM-VTON error:', hfErr.message);
         }
       }
 
-      // 4. AI Studio Simulation Engine: Trả về ảnh người mẫu toàn thân chuyên nghiệp mặc trang phục chuẩn
-      if (!resultImageUrl) {
+      // 4. Nếu không có kết quả IDM-VTON và là ảnh tải lên cá nhân của khách:
+      // Không trả về ảnh người mẫu lạ (sẽ khiến khách khó chịu), để client Neural Synthesizer ghép chuẩn
+      if (!resultImageUrl && req.body.isCustomUpload) {
+        provider = 'neural-fit';
+        resultImageUrl = ''; // client sẽ tự động ghép trang phục lên ảnh thật của khách
+      } else if (!resultImageUrl) {
+        // Áp dụng cho 4 người mẫu mặc định của MoonLight
         provider = 'simulation';
         const gender = modelGender || product?.gender || 'male';
         const productName = (product?.name || '').toLowerCase();
 
-        if (productName.includes('vest') || productName.includes('suit') || productName.includes('blazer')) {
-          if (gender === 'male' || productName.includes('nam') || productName.includes('hoàng gia') || productName.includes('italian')) {
-            resultImageUrl = 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=1000&auto=format&fit=crop&q=90';
-          } else {
-            resultImageUrl = 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1000&auto=format&fit=crop&q=90';
-          }
+        if (productName.includes('cashmere') || productName.includes('len') || productName.includes('cổ lọ')) {
+          resultImageUrl = '/images/garments/cashmere_sweater.jpg';
+        } else if (productName.includes('trench') || productName.includes('coat')) {
+          resultImageUrl = '/images/garments/trench_coat.jpg';
+        } else if (productName.includes('tweed')) {
+          resultImageUrl = '/images/garments/tweed_suit.jpg';
+        } else if (productName.includes('polo')) {
+          resultImageUrl = '/images/garments/polo.jpg';
+        } else if (productName.includes('hoodie')) {
+          resultImageUrl = '/images/garments/hoodie.jpg';
+        } else if (productName.includes('vest') || productName.includes('suit')) {
+          resultImageUrl = '/images/garments/suit.jpg';
+        } else if (productName.includes('sơ mi') || productName.includes('shirt')) {
+          resultImageUrl = '/images/garments/shirt.jpg';
         } else if (productName.includes('đầm') || productName.includes('váy') || productName.includes('dress')) {
-          resultImageUrl = 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1000&auto=format&fit=crop&q=90';
-        } else if (productName.includes('sơ mi') || productName.includes('shirt') || productName.includes('somi')) {
-          resultImageUrl = 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=1000&auto=format&fit=crop&q=90';
-        } else if (productName.includes('quần') || productName.includes('trouser') || productName.includes('pant') || productName.includes('quanau')) {
-          resultImageUrl = 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=1000&auto=format&fit=crop&q=90';
+          resultImageUrl = '/images/garments/dress.jpg';
+        } else if (productName.includes('quần') || productName.includes('jean') || productName.includes('pant')) {
+          resultImageUrl = '/images/garments/pants.jpg';
         } else {
-          resultImageUrl = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=90';
+          resultImageUrl = targetGarmentUrl || '/images/garments/suit.jpg';
         }
       }
 

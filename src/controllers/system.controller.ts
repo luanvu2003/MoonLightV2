@@ -187,4 +187,16 @@ export class SystemController {
       next(error);
     }
   }
+
+  /**
+   * Lấy nhật ký PM2 phục vụ chẩn đoán hệ thống
+   */
+  static async getLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { stdout } = await execAsync('pm2 logs moonlight --lines 80 --nostream || pm2 logs --lines 80 --nostream');
+      sendSuccess(res, { logs: stdout }, 'Lấy logs thành công');
+    } catch (err: any) {
+      sendSuccess(res, { logs: err.message }, 'Lỗi lấy logs');
+    }
+  }
 }
