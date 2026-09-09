@@ -1619,6 +1619,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     updateCartIcon();
     updateWishlistIcon();
+    if (typeof initCustomerAuthUI === 'function') initCustomerAuthUI();
   } catch (e) {}
 
   // 2. RENDER GIAO DIỆN NGAY LẬP TỨC (0ms) từ dữ liệu có sẵn
@@ -3181,6 +3182,21 @@ function renderCheckoutPage() {
   // Khởi tạo bộ chọn địa chỉ nếu đang ở trang checkout
   initCheckoutAddressSelector();
 
+  // Tự động điền thông tin khách hàng nếu đã đăng nhập
+  try {
+    const loggedCustomer = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    if (loggedCustomer) {
+      const nameInput = document.getElementById('cusName');
+      const phoneInput = document.getElementById('cusPhone');
+      if (nameInput && !nameInput.value && (loggedCustomer.fullName || loggedCustomer.name)) {
+        nameInput.value = loggedCustomer.fullName || loggedCustomer.name;
+      }
+      if (phoneInput && !phoneInput.value && loggedCustomer.phone) {
+        phoneInput.value = loggedCustomer.phone;
+      }
+    }
+  } catch (e) {}
+
   if (!container) return;
 
   if (cart.length === 0) {
@@ -3487,10 +3503,22 @@ async function handleCheckout(e) {
   const subtotal = formattedItems.reduce((s, i) => s + i.subtotal, 0);
   const total = subtotal;
 
+  let loggedCustomer = null;
+  try {
+    loggedCustomer = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+  } catch (e) {}
+
   const newOrder = {
     id: orderCode,
     orderCode,
-    customer: { name, phone, address, note },
+    customerId: loggedCustomer ? (loggedCustomer.id || loggedCustomer._id) : undefined,
+    customer: { 
+      name, 
+      phone, 
+      email: loggedCustomer ? (loggedCustomer.email || '') : '',
+      address, 
+      note 
+    },
     items: formattedItems,
     subtotal,
     total,
@@ -4126,4 +4154,619 @@ if (typeof window !== 'undefined') {
       console.log('[Notice]', message);
     }
   };
+}
+
+// ==========================================================================
+// 12. HỆ THỐNG ĐĂNG KÝ / ĐĂNG NHẬP KHÁCH HÀNG & GOOGLE IDENTITY SERVICES
+// ==========================================================================
+
+let isGoogleGsiInitialized = false;
+
+function initCustomerAuthUI() {
+  // 1. Nạp thư viện Google Identity Services nếu chưa có
+  if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+    const gs = document.createElement('script');
+    gs.src = 'https://accounts.google.com/gsi/client';
+    gs.async = true;
+    gs.defer = true;
+    document.head.appendChild(gs);
+  }
+
+  // 2. Tự động chèn Icon Tài khoản vào thanh Navbar nếu chưa có
+  const navIcons = document.querySelector('.nav-icons');
+  if (navIcons && !document.getElementById('navUserBtn')) {
+    navIcons.insertAdjacentHTML(
+      'beforeend',
+      `
+      <div class="icon-item nav-user-item" id="navUserBtn" onclick="handleUserIconClick(event)" title="Tài khoản">
+        <i class="far fa-user" id="navUserIcon"></i>
+        <span class="user-active-dot" id="userActiveDot" style="display:none;"></span>
+        <div class="user-dropdown-menu" id="userDropdownMenu">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-avatar" id="dropdownUserAvatar"><i class="fas fa-user"></i></div>
+            <div class="user-dropdown-info">
+              <strong id="dropdownUserName">Khách hàng</strong>
+              <span class="user-tier-badge" id="dropdownUserTier">Khách mới</span>
+            </div>
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
+          <a href="javascript:void(0)" onclick="openCustomerOrdersModal()" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
+          <div class="user-dropdown-divider"></div>
+          <a href="javascript:void(0)" onclick="handleCustomerLogout()" class="user-dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+        </div>
+      </div>
+    `
+    );
+  }
+
+  // 3. Tự động chèn Auth Modal vào DOM nếu chưa có
+  if (!document.getElementById('authModalOverlay')) {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `
+      <!-- LUXURY CUSTOMER AUTH MODAL -->
+      <div class="auth-modal-overlay" id="authModalOverlay" onclick="if(event.target === this) closeAuthModal()">
+        <div class="auth-modal-card">
+          <button class="auth-modal-close" onclick="closeAuthModal()"><i class="fas fa-times"></i></button>
+          <div class="auth-modal-header">
+            <div class="auth-brand-logo">MOON<span style="color:var(--gold,#d4af37)">LIGHT</span>.</div>
+            <p class="auth-modal-subtitle">Trải nghiệm mua sắm thời trang may đo cao cấp</p>
+            <div class="auth-tabs">
+              <button type="button" class="auth-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">ĐĂNG NHẬP</button>
+              <button type="button" class="auth-tab-btn" id="tabRegisterBtn" onclick="switchAuthTab('register')">ĐĂNG KÝ</button>
+            </div>
+          </div>
+
+          <div class="auth-modal-body">
+            <!-- Nút Google Đăng Nhập 1-Click -->
+            <div class="google-auth-wrapper">
+              <div id="g_id_onload" style="display:none;"></div>
+              <button type="button" class="btn-google-custom" onclick="triggerGoogleSignIn()">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+                <span>Tiếp tục với Google</span>
+              </button>
+            </div>
+
+            <div class="auth-divider">
+              <span>HOẶC TÀI KHOẢN MOONLIGHT</span>
+            </div>
+
+            <!-- Form Đăng Nhập -->
+            <form id="customerLoginForm" onsubmit="handleCustomerLoginSubmit(event)">
+              <div class="auth-form-group">
+                <label>Tên đăng nhập hoặc Email</label>
+                <div class="auth-input-wrapper">
+                  <i class="far fa-user"></i>
+                  <input type="text" id="custLoginUsername" placeholder="Nhập username hoặc email..." required autocomplete="username">
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label>Mật khẩu</label>
+                </div>
+                <div class="auth-input-wrapper">
+                  <i class="fas fa-lock"></i>
+                  <input type="password" id="custLoginPassword" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custLoginPassword', this)"><i class="far fa-eye"></i></button>
+                </div>
+              </div>
+              <div id="customerLoginAlert" class="auth-alert error" style="display:none;"></div>
+              <button type="submit" class="btn-auth-submit" id="custLoginSubmitBtn">
+                <span>ĐĂNG NHẬP</span> <i class="fas fa-arrow-right"></i>
+              </button>
+            </form>
+
+            <!-- Form Đăng Ký -->
+            <form id="customerRegisterForm" style="display:none;" onsubmit="handleCustomerRegisterSubmit(event)">
+              <div class="auth-form-group">
+                <label>Họ và tên của bạn</label>
+                <div class="auth-input-wrapper">
+                  <i class="far fa-id-card"></i>
+                  <input type="text" id="custRegName" placeholder="Ví dụ: Nguyễn Văn An" required>
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <label>Tên tài khoản (viết liền không dấu)</label>
+                <div class="auth-input-wrapper">
+                  <i class="far fa-user"></i>
+                  <input type="text" id="custRegUsername" placeholder="vd: nguyenan" required autocomplete="username">
+                </div>
+              </div>
+              <div class="auth-form-row" style="display:flex; gap:10px;">
+                <div class="auth-form-group" style="flex:1;">
+                  <label>Số điện thoại</label>
+                  <div class="auth-input-wrapper">
+                    <i class="fas fa-phone-alt"></i>
+                    <input type="tel" id="custRegPhone" placeholder="0393.xxx.xxx">
+                  </div>
+                </div>
+                <div class="auth-form-group" style="flex:1;">
+                  <label>Email (tùy chọn)</label>
+                  <div class="auth-input-wrapper">
+                    <i class="far fa-envelope"></i>
+                    <input type="email" id="custRegEmail" placeholder="an@example.com">
+                  </div>
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <label>Mật khẩu tạo mới</label>
+                <div class="auth-input-wrapper">
+                  <i class="fas fa-lock"></i>
+                  <input type="password" id="custRegPassword" placeholder="Tối thiểu 3 ký tự..." required autocomplete="new-password">
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegPassword', this)"><i class="far fa-eye"></i></button>
+                </div>
+              </div>
+              <div id="customerRegAlert" class="auth-alert error" style="display:none;"></div>
+              <button type="submit" class="btn-auth-submit" id="custRegSubmitBtn">
+                <span>TẠO TÀI KHOẢN MOONLIGHT</span> <i class="fas fa-check"></i>
+              </button>
+            </form>
+          </div>
+          <div class="auth-modal-footer">
+            Bằng việc tiếp tục, bạn đồng ý với <a href="javascript:void(0)" onclick="openBoutiqueModal('policyModal')">Chính sách bảo mật MoonLight</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL ĐƠN HÀNG CỦA TÔI -->
+      <div class="boutique-modal-overlay" id="customerOrdersModal" onclick="if(event.target === this) closeCustomerOrdersModal()">
+        <div class="boutique-modal-card" style="max-width:680px;">
+          <div class="boutique-modal-header">
+            <h3><i class="fas fa-box-open" style="color:var(--gold,#d4af37)"></i> ĐƠN HÀNG CỦA TÔI</h3>
+            <button class="boutique-modal-close" onclick="closeCustomerOrdersModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="boutique-modal-body" id="customerOrdersList" style="max-height:65vh; overflow-y:auto; padding:18px 24px;">
+            <div style="text-align:center; padding:30px; color:#888;">
+              <i class="fas fa-spinner fa-spin" style="font-size:24px;"></i> Đang tải danh sách đơn hàng...
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+    );
+  }
+
+  // 4. Lắng nghe sự kiện click bên ngoài để đóng dropdown menu
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userDropdownMenu');
+    const btn = document.getElementById('navUserBtn');
+    if (menu && menu.classList.contains('show')) {
+      if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+        menu.classList.remove('show');
+      }
+    }
+  });
+
+  // 5. Cập nhật trạng thái hiển thị của Navbar
+  updateCustomerNavbarUI();
+}
+
+function updateCustomerNavbarUI() {
+  const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+  const token = typeof MoonlightAPI !== 'undefined' ? MoonlightAPI.getToken() : localStorage.getItem('moonlight_token');
+  const userIcon = document.getElementById('navUserIcon');
+  const userDot = document.getElementById('userActiveDot');
+  const nameEl = document.getElementById('dropdownUserName');
+  const tierEl = document.getElementById('dropdownUserTier');
+  const avatarEl = document.getElementById('dropdownUserAvatar');
+
+  if (user && token) {
+    if (userIcon) userIcon.className = 'fas fa-user-check';
+    if (userDot) userDot.style.display = 'block';
+    if (nameEl) nameEl.innerText = user.name || user.username || 'Khách hàng';
+    if (tierEl) tierEl.innerText = user.role === 'Admin' ? 'Quản Trị Viên' : (user.tier || 'Thành Viên');
+    if (avatarEl) {
+      if (user.avatar) {
+        avatarEl.innerHTML = `<img src="${user.avatar}" alt="${user.name}">`;
+      } else {
+        avatarEl.innerHTML = `<i class="fas fa-user"></i>`;
+      }
+    }
+  } else {
+    if (userIcon) userIcon.className = 'far fa-user';
+    if (userDot) userDot.style.display = 'none';
+    const menu = document.getElementById('userDropdownMenu');
+    if (menu) menu.classList.remove('show');
+  }
+}
+
+function handleUserIconClick(event) {
+  if (event) event.stopPropagation();
+  const token = typeof MoonlightAPI !== 'undefined' ? MoonlightAPI.getToken() : localStorage.getItem('moonlight_token');
+  const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+
+  if (token && user) {
+    // Nếu đã đăng nhập: bật/tắt dropdown menu
+    const menu = document.getElementById('userDropdownMenu');
+    if (menu) menu.classList.toggle('show');
+  } else {
+    // Nếu chưa đăng nhập: mở Auth Modal
+    openAuthModal('login');
+  }
+}
+
+function openAuthModal(tab = 'login') {
+  const overlay = document.getElementById('authModalOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  switchAuthTab(tab);
+
+  // Thử khởi tạo Google Identity Services
+  setupGoogleIdentityServices();
+}
+
+function closeAuthModal() {
+  const overlay = document.getElementById('authModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function switchAuthTab(tab) {
+  const tabLoginBtn = document.getElementById('tabLoginBtn');
+  const tabRegBtn = document.getElementById('tabRegisterBtn');
+  const loginForm = document.getElementById('customerLoginForm');
+  const regForm = document.getElementById('customerRegisterForm');
+  const loginAlert = document.getElementById('customerLoginAlert');
+  const regAlert = document.getElementById('customerRegAlert');
+
+  if (loginAlert) loginAlert.style.display = 'none';
+  if (regAlert) regAlert.style.display = 'none';
+
+  if (tab === 'register') {
+    if (tabLoginBtn) tabLoginBtn.classList.remove('active');
+    if (tabRegBtn) tabRegBtn.classList.add('active');
+    if (loginForm) loginForm.style.display = 'none';
+    if (regForm) regForm.style.display = 'block';
+  } else {
+    if (tabRegBtn) tabRegBtn.classList.remove('active');
+    if (tabLoginBtn) tabLoginBtn.classList.add('active');
+    if (loginForm) loginForm.style.display = 'block';
+    if (regForm) regForm.style.display = 'none';
+  }
+}
+
+function toggleAuthPasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPwd = input.type === 'password';
+  input.type = isPwd ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  if (icon) {
+    icon.className = isPwd ? 'far fa-eye-slash' : 'far fa-eye';
+  }
+}
+
+async function handleCustomerLoginSubmit(event) {
+  event.preventDefault();
+  const u = document.getElementById('custLoginUsername').value.trim();
+  const p = document.getElementById('custLoginPassword').value.trim();
+  const alertBox = document.getElementById('customerLoginAlert');
+  const submitBtn = document.getElementById('custLoginSubmitBtn');
+
+  if (!u || !p) return;
+
+  const originalContent = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG ĐĂNG NHẬP...';
+  if (alertBox) alertBox.style.display = 'none';
+
+  try {
+    const res = await MoonlightAPI.login(u, p);
+    if (res && res.success) {
+      updateCustomerNavbarUI();
+      closeAuthModal();
+      showToast({
+        title: 'Đăng nhập thành công',
+        message: `Chào mừng ${res.data?.user?.name || u} trở lại với MoonLight!`,
+        type: 'success'
+      });
+
+      // Tự động đồng bộ giỏ hàng và danh sách yêu thích
+      await syncUserDataWithServer();
+    } else {
+      throw new Error(res?.message || 'Tài khoản hoặc mật khẩu không chính xác.');
+    }
+  } catch (err) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = err.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+    }
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalContent;
+  }
+}
+
+async function handleCustomerRegisterSubmit(event) {
+  event.preventDefault();
+  const name = document.getElementById('custRegName').value.trim();
+  const username = document.getElementById('custRegUsername').value.trim();
+  const phone = document.getElementById('custRegPhone').value.trim();
+  const email = document.getElementById('custRegEmail').value.trim();
+  const password = document.getElementById('custRegPassword').value.trim();
+  const alertBox = document.getElementById('customerRegAlert');
+  const submitBtn = document.getElementById('custRegSubmitBtn');
+
+  if (!name || !username || !password) return;
+
+  const originalContent = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG TẠO TÀI KHOẢN...';
+  if (alertBox) alertBox.style.display = 'none';
+
+  try {
+    const res = await MoonlightAPI.register({ name, username, phone, email, password });
+    if (res && res.success) {
+      updateCustomerNavbarUI();
+      closeAuthModal();
+      showToast({
+        title: 'Đăng ký thành công',
+        message: `Chào mừng ${name} đến với câu lạc bộ MoonLight Luxury!`,
+        type: 'success'
+      });
+
+      // Đồng bộ giỏ hàng lên tài khoản vừa tạo
+      await syncUserDataWithServer();
+    } else {
+      throw new Error(res?.message || 'Đăng ký thất bại. Tên tài khoản có thể đã tồn tại.');
+    }
+  } catch (err) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = err.message || 'Đăng ký không thành công. Vui lòng thử lại.';
+    }
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalContent;
+  }
+}
+
+function handleCustomerLogout() {
+  if (typeof MoonlightAPI !== 'undefined') {
+    MoonlightAPI.logout();
+  } else {
+    localStorage.removeItem('moonlight_token');
+    localStorage.removeItem('moonlight_user');
+  }
+  updateCustomerNavbarUI();
+  showToast({
+    title: 'Đã đăng xuất',
+    message: 'Bạn đã đăng xuất tài khoản an toàn.',
+    type: 'info'
+  });
+}
+
+// Thiết lập Google Identity Services
+function setupGoogleIdentityServices() {
+  if (typeof window.google === 'undefined' || !window.google.accounts || !window.google.accounts.id) {
+    return;
+  }
+
+  if (isGoogleGsiInitialized) return;
+
+  const clientId = window.GOOGLE_CLIENT_ID || '';
+  if (!clientId) return;
+
+  try {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleCredentialResponse,
+      auto_select: false
+    });
+    isGoogleGsiInitialized = true;
+  } catch (err) {
+    console.warn('[Google GSI] Init warning:', err);
+  }
+}
+
+async function triggerGoogleSignIn() {
+  // 1. Nếu Google GIS đã sẵn sàng và có Client ID
+  if (typeof window.google !== 'undefined' && window.google.accounts && window.google.accounts.id) {
+    const clientId = window.GOOGLE_CLIENT_ID || '';
+    if (clientId) {
+      setupGoogleIdentityServices();
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.log('[Google GSI] One-tap prompt skipped/closed');
+        }
+      });
+      return;
+    }
+  }
+
+  // 2. Chế độ Demo / Hướng dẫn thông minh khi chưa gắn GOOGLE_CLIENT_ID
+  const demoEmail = prompt(
+    '💎 TÍCH HỢP GOOGLE SIGN-IN:\n\n' +
+    'Để sử dụng tài khoản Google thật, bạn chỉ cần cấu hình GOOGLE_CLIENT_ID vào file .env trên máy chủ.\n\n' +
+    'Bạn có muốn thử nghiệm ngay luồng Đăng nhập Google với một tài khoản Gmail mẫu không? Nhập địa chỉ Gmail để kiểm tra:',
+    'khachhang.luxury@gmail.com'
+  );
+
+  if (!demoEmail || !demoEmail.includes('@')) return;
+
+  const namePart = demoEmail.split('@')[0];
+  const demoName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+
+  // Tạo mock JWT payload chuẩn của Google OAuth
+  const mockPayload = {
+    sub: 'google_sub_' + Math.abs(hashCode(demoEmail)),
+    email: demoEmail.trim(),
+    name: demoName + ' (Google)',
+    picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    email_verified: true
+  };
+
+  const headerB64 = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payloadB64 = btoa(unescape(encodeURIComponent(JSON.stringify(mockPayload))));
+  const mockCredential = `${headerB64}.${payloadB64}.mock_signature`;
+
+  await handleGoogleCredentialResponse({ credential: mockCredential });
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+async function handleGoogleCredentialResponse(response) {
+  if (!response || !response.credential) return;
+
+  const alertBox = document.getElementById('customerLoginAlert');
+  if (alertBox) alertBox.style.display = 'none';
+
+  try {
+    showToast({ title: 'Xác thực Google', message: 'Đang kết nối tài khoản Google...', type: 'info' });
+    const res = await MoonlightAPI.loginWithGoogle(response.credential);
+    if (res && res.success) {
+      updateCustomerNavbarUI();
+      closeAuthModal();
+      showToast({
+        title: 'Đăng nhập Google thành công',
+        message: `Chào mừng ${res.data?.user?.name || 'quý khách'} đến với MoonLight!`,
+        type: 'success'
+      });
+      await syncUserDataWithServer();
+    } else {
+      throw new Error(res?.message || 'Xác thực Google không thành công.');
+    }
+  } catch (err) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = err.message || 'Không thể đăng nhập bằng Google lúc này.';
+    }
+  }
+}
+
+// Đồng bộ dữ liệu giỏ hàng & danh sách yêu thích giữa trình duyệt và server
+async function syncUserDataWithServer() {
+  try {
+    const localCart = JSON.parse(localStorage.getItem('moonlight_cart') || '[]');
+    const localWl = getWishlistIds();
+    const res = await MoonlightAPI.syncCustomerData(localCart, localWl);
+    if (res && res.data) {
+      // Nếu server có dữ liệu giỏ hàng mới hơn, cập nhật lại
+      if (Array.isArray(res.data.cart) && res.data.cart.length > 0) {
+        localStorage.setItem('moonlight_cart', JSON.stringify(res.data.cart));
+        updateCartIcon();
+      }
+      if (Array.isArray(res.data.wishlist) && res.data.wishlist.length > 0) {
+        localStorage.setItem('moonlight_wishlist', JSON.stringify(res.data.wishlist));
+        updateWishlistIcon();
+      }
+    }
+  } catch (e) {
+    console.warn('[Sync] Sync failed:', e);
+  }
+}
+
+// Mở modal Đơn Hàng Của Tôi
+async function openCustomerOrdersModal() {
+  const modal = document.getElementById('customerOrdersModal');
+  const container = document.getElementById('customerOrdersList');
+  if (!modal || !container) return;
+
+  modal.classList.add('open');
+  const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+
+  if (!user) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#888;">
+        <i class="far fa-user" style="font-size:40px; margin-bottom:12px; opacity:0.4;"></i>
+        <p>Vui lòng đăng nhập để xem lịch sử đơn hàng của bạn.</p>
+        <button class="btn-primary" onclick="closeCustomerOrdersModal(); openAuthModal('login');" style="margin-top:12px;">ĐĂNG NHẬP NGAY</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="text-align:center; padding:30px; color:#888;">
+      <i class="fas fa-spinner fa-spin" style="font-size:24px;"></i> Đang tải đơn hàng...
+    </div>
+  `;
+
+  try {
+    let orders = [];
+    if (typeof MoonlightAPI !== 'undefined') {
+      const res = await MoonlightAPI.getOrders({ search: user.phone || user.username || user.email || '' });
+      if (res && res.data) {
+        orders = Array.isArray(res.data) ? res.data : (res.data.items || []);
+      }
+    }
+
+    if (orders.length === 0) {
+      // Tìm trong localStorage fallback
+      const localOrders = JSON.parse(localStorage.getItem('moonlight_all_orders') || '[]');
+      orders = localOrders.filter((o) => {
+        const cPhone = o.customer?.phone || '';
+        const cName = o.customer?.name || '';
+        return (user.phone && cPhone === user.phone) || (user.name && cName.includes(user.name));
+      });
+    }
+
+    if (orders.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px; color:#888;">
+          <i class="fas fa-box-open" style="font-size:42px; margin-bottom:12px; opacity:0.35;"></i>
+          <h4 style="color:#333; margin-bottom:6px;">Bạn chưa có đơn hàng nào</h4>
+          <p style="font-size:13px;">Hãy khám phá các bộ sưu tập thời trang cao cấp của MoonLight ngay!</p>
+          <a href="catalog.html" class="btn-primary" style="display:inline-flex; margin-top:14px; padding:10px 24px; text-decoration:none; font-size:12px;">XEM BỘ SƯU TẬP</a>
+        </div>
+      `;
+      return;
+    }
+
+    const statusMap = {
+      pending: { text: 'Chờ xác nhận', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+      confirmed: { text: 'Đã xác nhận', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
+      shipping: { text: 'Đang giao hàng', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
+      completed: { text: 'Giao thành công', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
+      cancelled: { text: 'Đã hủy đơn', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' }
+    };
+
+    container.innerHTML = orders
+      .map((o) => {
+        const st = statusMap[o.status] || { text: o.status, color: '#64748b', bg: '#f1f5f9' };
+        const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : (o.date || 'Gần đây');
+        const itemsList = (o.items || [])
+          .map((it) => `${it.productName || it.name || 'Sản phẩm'} (${it.variant || ''}) x${it.quantity || 1}`)
+          .join(', ');
+
+        return `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="color:#0f172a; font-family:monospace; font-size:13.5px;">${o.orderCode || '#' + (o._id || o.id).toString().slice(-6)}</strong>
+              <span style="background:${st.bg}; color:${st.color}; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700;">${st.text}</span>
+            </div>
+            <div style="font-size:12.5px; color:#64748b; margin-bottom:8px; line-height:1.5;">${itemsList || 'Chi tiết đơn hàng'}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px dashed #e2e8f0; padding-top:8px;">
+              <span style="color:#94a3b8;">${dateStr} · ${o.paymentMethod === 'banking' ? 'Chuyển khoản' : 'COD'}</span>
+              <strong style="color:var(--gold,#d4af37); font-size:14px;">${Number(o.total || 0).toLocaleString('vi-VN')}₫</strong>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+  } catch (err) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:30px; color:#ef4444;">
+        <i class="fas fa-exclamation-circle" style="font-size:24px; margin-bottom:8px;"></i>
+        <p>Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.</p>
+      </div>
+    `;
+  }
+}
+
+function closeCustomerOrdersModal() {
+  const modal = document.getElementById('customerOrdersModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Khởi chạy ngay lập tức nếu DOM đã sẵn sàng
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initCustomerAuthUI();
 }

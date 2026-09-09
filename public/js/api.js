@@ -92,6 +92,46 @@ const MoonlightAPI = {
     return res;
   },
 
+  async register(data) {
+    const res = await this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    if (res?.data?.tokens?.accessToken) {
+      this.setToken(res.data.tokens.accessToken);
+    }
+    if (res?.data?.user) {
+      localStorage.setItem('moonlight_user', JSON.stringify(res.data.user));
+    }
+    return res;
+  },
+
+  async loginWithGoogle(credential) {
+    const res = await this.request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential })
+    });
+    if (res?.data?.tokens?.accessToken) {
+      this.setToken(res.data.tokens.accessToken);
+    }
+    if (res?.data?.user) {
+      localStorage.setItem('moonlight_user', JSON.stringify(res.data.user));
+    }
+    return res;
+  },
+
+  async syncCustomerData(cart = [], wishlist = []) {
+    if (!this.getToken()) return null;
+    try {
+      return await this.request('/auth/sync', {
+        method: 'POST',
+        body: JSON.stringify({ cart, wishlist })
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
   async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });

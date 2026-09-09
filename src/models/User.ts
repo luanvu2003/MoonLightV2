@@ -26,14 +26,40 @@ const UserSchema = new Schema<IUser, UserModel, IUserMethods>(
     },
     password: {
       type: String,
-      required: [true, 'Mật khẩu không được để trống'],
+      required: function (this: any) {
+        return !this.googleId;
+      },
       minlength: [3, 'Mật khẩu tối thiểu 3 ký tự']
     },
     role: {
       type: String,
       enum: Object.values(Role),
-      default: Role.Staff,
+      default: Role.Customer,
       index: true
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: ''
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      index: true
+    },
+    cart: {
+      type: Array,
+      default: []
+    },
+    wishlist: {
+      type: [String],
+      default: []
     },
     avatar: {
       type: String,

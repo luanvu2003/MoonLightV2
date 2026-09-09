@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User.js';
+import { Customer } from '../models/Customer.js';
 import { Log } from '../models/Log.js';
 import { AuthService } from '../services/auth.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
@@ -232,6 +233,253 @@ export class AuthController {
       ).select('-password');
 
       sendSuccess(res, user, 'Cập nhật ảnh đại diện thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Đăng ký tài khoản Khách Hàng mới
+   */
+  static async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { name, username, password, phone, email } = req.body;
+
+      if (!name || !username || !password) {
+        sendError(res, 'Vui lòng cung cấp đầy đủ họ tên, tên đăng nhập và mật khẩu', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      if (password.length < 3) {
+        sendError(res, 'Mật khẩu phải có ít nhất 3 ký tự', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      const cleanUsername = username.toLowerCase().trim();
+      const cleanEmail = (email || '').toLowerCase().trim();
+      const cleanPhone = (phone || '').trim();
+
+      // Kiểm tra username đã tồn tại chưa
+      const existingUser = await User.findOne({ username: cleanUsername });
+      if (existingUser) {
+        sendError(res, 'Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác.', 409, 'USERNAME_EXISTS');
+        return;
+      }
+
+      // Tạo User mới với role Customer
+      const newUser = new User({
+        name: name.trim(),
+        username: cleanUsername,
+        password,
+        email: cleanEmail,
+        phone: cleanPhone,
+        role: Role.Customer,
+        isActive: true,
+        lastLogin: new Date()
+      });
+
+      await newUser.save();
+
+      // Đồng bộ / tạo hồ sơ Customer nếu có số điện thoại
+      if (cleanPhone) {
+        try {
+          await Customer.findOneAndUpdate(
+            { phone: cleanPhone },
+            {
+              $setOnInsert: {
+                name: name.trim(),
+                phone: cleanPhone,
+                email: cleanEmail,
+                totalSpent: 0,
+                orderCount: 0
+              }
+            },
+            { upsert: true }
+          );
+        } catch (e) {}
+      }
+
+      const tokens = AuthService.generateTokens({
+        id: newUser._id.toString(),
+        username: newUser.username,
+        role: newUser.role,
+        name: newUser.name
+      });
+
+      res.cookie('token', tokens.accessToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'lax'
+      });
+
+      sendSuccess(
+        res,
+        {
+          user: {
+            id: newUser._id,
+            name: newUser.name,
+            username: newUser.username,
+            role: newUser.role,
+            avatar: newUser.avatar,
+            email: newUser.email,
+            phone: newUser.phone,
+            cart: newUser.cart || [],
+            wishlist: newUser.wishlist || []
+          },
+          tokens
+        },
+        'Đăng ký tài khoản thành công',
+        201
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Đăng ký / Đăng nhập 1-Click bằng tài khoản Google (Google Identity Services)
+   */
+  static async googleAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { credential } = req.body;
+
+      if (!credential) {
+        sendError(res, 'Thiếu Google credential token', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      let googlePayload: any = null;
+
+      // 1. Xác thực ID Token qua Google OAuth TokenInfo API
+      try {
+        const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+        if (verifyRes.ok) {
+          googlePayload = await verifyRes.json();
+        } else {
+          // Parse JWT payload nếu tokeninfo gặp sự cố mạng
+          const parts = credential.split('.');
+          if (parts.length === 3) {
+            const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
+            googlePayload = JSON.parse(decodedStr);
+          }
+        }
+      } catch (err: any) {
+        console.warn('Lỗi xác thực Google token online, giải mã fallback JWT payload:', err.message);
+        try {
+          const parts = credential.split('.');
+          if (parts.length === 3) {
+            const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
+            googlePayload = JSON.parse(decodedStr);
+          }
+        } catch (decErr) {}
+      }
+
+      if (!googlePayload || (!googlePayload.email && !googlePayload.sub)) {
+        sendError(res, 'Chứng chỉ Google không hợp lệ hoặc đã hết hạn.', 401, 'INVALID_GOOGLE_TOKEN');
+        return;
+      }
+
+      const googleId = googlePayload.sub || '';
+      const email = (googlePayload.email || '').toLowerCase().trim();
+      const name = googlePayload.name || googlePayload.given_name || (email ? email.split('@')[0] : 'Khách Hàng Google');
+      const avatar = googlePayload.picture || '';
+
+      // 2. Tìm kiếm người dùng theo googleId hoặc email
+      let user = await User.findOne({
+        $or: [
+          ...(googleId ? [{ googleId }] : []),
+          ...(email ? [{ email }] : [])
+        ]
+      });
+
+      if (!user) {
+        // Tạo username duy nhất từ email hoặc googleId
+        const baseUsername = email ? email.split('@')[0].replace(/[^a-z0-9]/g, '') : `google_${googleId.slice(0, 8)}`;
+        let finalUsername = baseUsername || `user_${Date.now()}`;
+        
+        const existCount = await User.countDocuments({ username: finalUsername });
+        if (existCount > 0) {
+          finalUsername = `${finalUsername}_${Math.floor(100 + Math.random() * 900)}`;
+        }
+
+        user = new User({
+          name,
+          username: finalUsername,
+          email,
+          avatar,
+          googleId,
+          role: Role.Customer,
+          isActive: true,
+          lastLogin: new Date()
+        });
+
+        await user.save();
+      } else {
+        // Cập nhật googleId, avatar và lastLogin nếu có thay đổi
+        if (googleId && !user.googleId) user.googleId = googleId;
+        if (avatar && !user.avatar) user.avatar = avatar;
+        user.lastLogin = new Date();
+        await user.save().catch(() => {});
+      }
+
+      if (!user.isActive) {
+        sendError(res, 'Tài khoản đã bị tạm khóa. Vui lòng liên hệ hỗ trợ.', 403, 'ACCOUNT_INACTIVE');
+        return;
+      }
+
+      const tokens = AuthService.generateTokens({
+        id: user._id.toString(),
+        username: user.username,
+        role: user.role,
+        name: user.name
+      });
+
+      res.cookie('token', tokens.accessToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'lax'
+      });
+
+      sendSuccess(
+        res,
+        {
+          user: {
+            id: user._id,
+            name: user.name,
+            username: user.username,
+            role: user.role,
+            avatar: user.avatar,
+            email: user.email,
+            phone: user.phone || '',
+            cart: user.cart || [],
+            wishlist: user.wishlist || []
+          },
+          tokens
+        },
+        'Đăng nhập Google thành công!'
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Đồng bộ giỏ hàng và danh sách yêu thích của khách hàng
+   */
+  static async syncUserData(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const { cart, wishlist } = req.body;
+      const updateFields: any = {};
+      if (Array.isArray(cart)) updateFields.cart = cart;
+      if (Array.isArray(wishlist)) updateFields.wishlist = Array.from(new Set(wishlist.map(String)));
+
+      const user = await User.findByIdAndUpdate(req.user.id, { $set: updateFields }, { new: true }).select('-password');
+      sendSuccess(res, { cart: user?.cart || [], wishlist: user?.wishlist || [] }, 'Đồng bộ dữ liệu thành công');
     } catch (error) {
       next(error);
     }

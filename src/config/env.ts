@@ -10,5 +10,6 @@ export const ENV = {
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   EMAIL_USER: process.env.EMAIL_USER || '',
   EMAIL_PASS: process.env.EMAIL_PASS || '',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   NODE_ENV: process.env.NODE_ENV || 'development'
 };

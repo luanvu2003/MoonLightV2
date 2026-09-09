@@ -4,9 +4,14 @@ export interface IUser {
   _id?: any;
   name: string;
   username: string;
+  email?: string;
+  phone?: string;
+  googleId?: string;
   password?: string;
   role: Role;
   avatar?: string;
+  cart?: any[];
+  wishlist?: string[];
   isActive: boolean;
   lastLogin?: Date;
   createdAt?: Date;

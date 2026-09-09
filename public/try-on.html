@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css?v=4.5">
+    <link rel="stylesheet" href="./css/style.css?v=10.0">
     <link rel="stylesheet" href="./css/try-on.css?v=4.5">
 </head>
 
@@ -78,6 +78,24 @@
                 <div class="icon-item" onclick="toggleCart()" title="Giỏ hàng">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="badge" id="cartBadge">0</span>
+                </div>
+                <div class="icon-item nav-user-item" id="navUserBtn" onclick="handleUserIconClick(event)" title="Tài khoản">
+                    <i class="far fa-user" id="navUserIcon"></i>
+                    <span class="user-active-dot" id="userActiveDot" style="display:none;"></span>
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="user-dropdown-header">
+                            <div class="user-dropdown-avatar" id="dropdownUserAvatar"><i class="fas fa-user"></i></div>
+                            <div class="user-dropdown-info">
+                                <strong id="dropdownUserName">Khách hàng</strong>
+                                <span class="user-tier-badge" id="dropdownUserTier">Khách mới</span>
+                            </div>
+                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
+                        <a href="javascript:void(0)" onclick="openCustomerOrdersModal()" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="javascript:void(0)" onclick="handleCustomerLogout()" class="user-dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                    </div>
                 </div>
             </div>
             <div class="mobile-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
@@ -391,8 +409,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
-    <script src="./js/api.js?v=9.5"></script>
-    <script src="./js/shop.js?v=9.5"></script>
-    <script src="./js/try-on.js?v=9.5"></script>
+    <script src="./js/api.js?v=10.0"></script>
+    <script src="./js/shop.js?v=10.0"></script>
+    <script src="./js/try-on.js?v=10.0"></script>
 </body>
 </html>
