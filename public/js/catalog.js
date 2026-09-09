@@ -1714,9 +1714,9 @@ function applyFiltersAndRender(resetLimit = true) {
 // 5. RENDER LƯỚI SẢN PHẨM & CARD CHI TIẾT (VỚI HIỆU ỨNG LUXURY MƯỢT MÀ)
 // ==========================================================================
 function createCatalogCardHTML(p, idx, isNewAppend = false) {
-  const prodId = p._id || p.id;
+  const prodId = String(p._id || p.id || '');
   const wishlist = getWishlistIds();
-  const isLiked = wishlist.includes(String(prodId));
+  const isLiked = wishlist.some((x) => String(x) === prodId || (p._id && String(x) === String(p._id)) || (p.id && String(x) === String(p.id)));
   const firstVariant = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
   const priceNum = (firstVariant && firstVariant.price) ? firstVariant.price : (p.price || 0);
   const displayPrice = priceNum ? Number(priceNum).toLocaleString('vi-VN') + '₫' : 'Liên hệ';
@@ -2315,7 +2315,11 @@ function quickAddToCart(productId) {
 
 function getWishlistIds() {
   try {
-    return JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
+    const raw = localStorage.getItem('moonlight_wishlist');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(new Set(parsed.map((x) => String(x).trim()))).filter(Boolean);
   } catch (e) {
     return [];
   }
@@ -2347,26 +2351,33 @@ function toggleWishlist(arg1, arg2) {
   }
 
   if (!productId) return;
-  const idStr = String(productId);
+  const strId = String(productId).trim();
   let wishlist = getWishlistIds();
-  const exists = wishlist.includes(idStr);
+  const exists = wishlist.some((x) => String(x) === strId);
 
   if (exists) {
-    wishlist = wishlist.filter(id => id !== idStr);
+    wishlist = wishlist.filter((id) => String(id) !== strId);
     if (typeof showToast === 'function') showToast("Yêu Thích", "Đã xóa sản phẩm khỏi danh sách yêu thích", "info");
   } else {
-    wishlist.push(idStr);
+    wishlist.push(strId);
     if (typeof showToast === 'function') showToast("Yêu Thích", "Đã thêm sản phẩm vào danh sách yêu thích!", "success");
   }
 
   localStorage.setItem('moonlight_wishlist', JSON.stringify(wishlist));
-  if (window.wishlist) window.wishlist = wishlist;
+  window.wishlist = wishlist;
   if (typeof renderWishlistSidebar === 'function') renderWishlistSidebar();
   if (typeof updateWishlistIcon === 'function') updateWishlistIcon();
   
-  // Cập nhật icon trái tim trên product-card
-  const allCardBtns = document.querySelectorAll(`.product-card[data-id="${productId}"] .wishlist-btn, .catalog-card[data-id="${productId}"] .btn-card-wishlist`);
-  allCardBtns.forEach(cardBtn => {
+  // Cập nhật icon trái tim trên tất cả các loại card và nút chi tiết
+  const targetSelectors = [
+    `.product-card[data-id="${strId}"] .wishlist-btn`,
+    `.catalog-card[data-id="${strId}"] .btn-card-wishlist`,
+    `.catalog-card[data-id="${strId}"] .wishlist-btn`,
+    `.main-img-wrapper .wishlist-btn`
+  ];
+
+  const allCardBtns = document.querySelectorAll(targetSelectors.join(', '));
+  allCardBtns.forEach((cardBtn) => {
     cardBtn.classList.toggle('active', !exists);
     const icon = cardBtn.querySelector('i');
     if (icon) icon.className = !exists ? 'fas fa-heart' : 'far fa-heart';

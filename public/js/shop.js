@@ -1550,14 +1550,21 @@ try {
   }
 } catch (e) {}
 
-let wishlist = [];
-try {
-  const rawWl = localStorage.getItem('moonlight_wishlist');
-  if (rawWl) {
-    const parsed = JSON.parse(rawWl);
-    if (Array.isArray(parsed)) wishlist = parsed;
+function getWishlistIds() {
+  try {
+    const raw = localStorage.getItem('moonlight_wishlist');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(new Set(parsed.map((x) => String(x).trim()))).filter(Boolean);
+  } catch (e) {
+    return [];
   }
-} catch (e) {}
+}
+
+let wishlist = getWishlistIds();
+window.wishlist = wishlist;
+window.getWishlistIds = getWishlistIds;
 
 // Biến dùng cho trang chi tiết
 let currentProduct = null;
@@ -1803,7 +1810,7 @@ function renderProductGrid(data, elementId) {
     .map((p, idx) => {
       const v = (p.variants && p.variants.length > 0) ? p.variants[0] : { img: p.image || '', price: p.price || 0 };
       const percent = p.salePercent || 0;
-      const isLiked = wishlist.includes(p.id) || wishlist.includes(p._id);
+      const isLiked = wishlist.some((x) => String(x) === String(p.id) || String(x) === String(p._id));
       const iconClass = isLiked ? 'fas' : 'far';
       const prodId = p.id || p._id;
       const priceNum = v.price || p.price || 0;
@@ -2083,7 +2090,7 @@ function renderDetailHTML() {
 
   const oldPriceVal = selectedColor.oldPrice || (percent > 0 ? Math.round(selectedColor.price / (1 - percent / 100)) : 0);
   const currentId = currentProduct.id || currentProduct._id;
-  const isLiked = wishlist.includes(currentId);
+  const isLiked = wishlist.some((x) => String(x) === String(currentId));
   const iconClass = isLiked ? 'fas' : 'far';
 
   const variants = (currentProduct.variants && currentProduct.variants.length > 0)
@@ -2734,9 +2741,8 @@ function goToCheckout() {
 // --- 6. LOGIC YÊU THÍCH (WISHLIST SIDEBAR) ---
 
 function updateWishlistIcon() {
-  try {
-    wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
-  } catch (e) {}
+  wishlist = getWishlistIds();
+  window.wishlist = wishlist;
   const badge = document.getElementById('wishlistBadge');
   if (badge) {
     badge.innerText = wishlist.length;
@@ -2759,15 +2765,16 @@ function renderWishlistSidebar() {
   const container = document.getElementById('wishlistItems');
   if (!container) return;
 
-  try {
-    wishlist = JSON.parse(localStorage.getItem('moonlight_wishlist')) || [];
-  } catch (e) {}
+  wishlist = getWishlistIds();
+  window.wishlist = wishlist;
 
   const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
     ? catalogState.allProducts
     : products;
 
-  const likedProducts = allProds.filter((p) => wishlist.some((x) => String(x) === String(p.id) || String(x) === String(p._id)));
+  const likedProducts = allProds.filter((p) =>
+    wishlist.some((x) => String(x) === String(p.id) || String(x) === String(p._id))
+  );
 
   if (likedProducts.length === 0) {
     container.innerHTML = `
@@ -2783,7 +2790,7 @@ function renderWishlistSidebar() {
   container.innerHTML = likedProducts
     .map((p) => {
       const v = (p.variants && p.variants.length > 0) ? p.variants[0] : { img: p.image || '', price: p.price || 0 };
-      const prodId = p.id || p._id;
+      const prodId = String(p.id || p._id || '');
       const imgSrc = v.img || p.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800';
       return `
       <div class="cart-item-row" style="display:flex; gap:12px; padding:14px 0; border-bottom:1px solid #f1f5f9; align-items:center;">
@@ -2806,37 +2813,76 @@ function renderWishlistSidebar() {
 }
 
 function toggleWishlist(btn, id) {
-  const strId = String(id);
-  const exists = wishlist.some((x) => String(x) === strId);
+  let productId = null;
+  let clickedBtn = null;
 
-  if (exists) {
-    wishlist = wishlist.filter((i) => String(i) !== strId);
-    showToast({ title: 'Đã bỏ thích', message: 'Đã xóa sản phẩm khỏi danh sách yêu thích.', type: 'info' });
+  if (typeof btn === 'object' && btn !== null) {
+    if (btn.nodeType) {
+      clickedBtn = btn;
+      productId = id;
+    } else if (btn.stopPropagation) {
+      btn.stopPropagation();
+      productId = id;
+    }
+  } else if (btn === null && id) {
+    productId = id;
   } else {
-    wishlist.push(id);
-    showToast({ title: 'Đã yêu thích', message: 'Đã lưu sản phẩm vào danh sách yêu thích.', type: 'success' });
-  }
-
-  localStorage.setItem('moonlight_wishlist', JSON.stringify(wishlist));
-  updateWishlistIcon();
-
-  // Cập nhật icon trên card
-  if (btn) {
-    const icon = btn.querySelector('i');
-    if (icon) {
-      if (exists) {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        btn.classList.remove('active');
-      } else {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        btn.classList.add('active');
-      }
+    productId = btn;
+    if (id && typeof id.stopPropagation === 'function') {
+      id.stopPropagation();
     }
   }
 
-  // Cập nhật lại sidebar nếu đang mở
+  if (!productId) return;
+  const strId = String(productId).trim();
+  wishlist = getWishlistIds();
+  const exists = wishlist.some((x) => String(x) === strId);
+
+  if (exists) {
+    wishlist = wishlist.filter((x) => String(x) !== strId);
+    if (typeof showToast === 'function') {
+      showToast({ title: 'Đã bỏ thích', message: 'Đã xóa sản phẩm khỏi danh sách yêu thích.', type: 'info' });
+    }
+  } else {
+    wishlist.push(strId);
+    if (typeof showToast === 'function') {
+      showToast({ title: 'Đã yêu thích', message: 'Đã lưu sản phẩm vào danh sách yêu thích.', type: 'success' });
+    }
+  }
+
+  localStorage.setItem('moonlight_wishlist', JSON.stringify(wishlist));
+  window.wishlist = wishlist;
+  updateWishlistIcon();
+
+  // 1. Cập nhật tất cả các nút tim của sản phẩm này trên toàn bộ giao diện
+  const targetSelectors = [
+    `.product-card[data-id="${strId}"] .wishlist-btn`,
+    `.catalog-card[data-id="${strId}"] .btn-card-wishlist`,
+    `.catalog-card[data-id="${strId}"] .wishlist-btn`
+  ];
+
+  if (typeof currentProduct !== 'undefined' && currentProduct && (String(currentProduct.id) === strId || String(currentProduct._id) === strId)) {
+    targetSelectors.push('.main-img-wrapper .wishlist-btn');
+  }
+
+  const allBtns = document.querySelectorAll(targetSelectors.join(', '));
+  allBtns.forEach((b) => {
+    b.classList.toggle('active', !exists);
+    const ic = b.querySelector('i');
+    if (ic) {
+      ic.className = !exists ? 'fas fa-heart' : 'far fa-heart';
+    }
+  });
+
+  if (clickedBtn) {
+    clickedBtn.classList.toggle('active', !exists);
+    const ic = clickedBtn.querySelector('i');
+    if (ic) {
+      ic.className = !exists ? 'fas fa-heart' : 'far fa-heart';
+    }
+  }
+
+  // 2. Cập nhật lại sidebar yêu thích nếu đang mở
   const sidebar = document.getElementById('wishlistSidebar');
   if (sidebar && sidebar.classList.contains('open')) {
     renderWishlistSidebar();

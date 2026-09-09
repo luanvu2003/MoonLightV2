@@ -154,26 +154,38 @@ export class SystemController {
         latestCommit = 'Đã cập nhật phiên bản mới nhất';
       }
 
-      // 3. Biên dịch TypeScript
+      // 3. Biên dịch TypeScript với giới hạn bộ nhớ chống tràn RAM trên VPS
+      let buildSuccess = true;
       try {
-        const { stdout: bOut, stderr: bErr } = await execAsync('npm run build');
+        const { stdout: bOut, stderr: bErr } = await execAsync('NODE_OPTIONS="--max-old-space-size=512" npm run build');
         buildOutput = (bOut || '') + (bErr || '');
       } catch (err: any) {
-        buildOutput = `⚠️ Cảnh báo Build: ${err.message}`;
+        buildSuccess = false;
+        buildOutput = `❌ Lỗi Build TypeScript: ${err.message}`;
+      }
+
+      // NGUY CƠ SẬP SERVER: Nếu build TypeScript thất bại, tuyệt đối KHÔNG reload PM2 để bảo vệ server đang chạy
+      if (!buildSuccess) {
+        sendError(
+          res,
+          `Biên dịch TypeScript thất bại! Hệ thống đã hủy lệnh reload PM2 để ngăn ngừa sập máy chủ. Vui lòng kiểm tra mã nguồn.\nChi tiết:\n${buildOutput}`,
+          500
+        );
+        return;
       }
 
       const durationMs = Date.now() - startTime;
 
-      // 4. Lên lịch reload PM2 sau 1.2 giây để kịp trả response JSON về cho trình duyệt
+      // 4. Lên lịch reload PM2 sau 2 giây để kịp flush toàn bộ response JSON về cho trình duyệt
       setTimeout(() => {
-        exec('pm2 reload moonlight || pm2 restart moonlight', (err, stdout, stderr) => {
+        exec('pm2 reload moonlight || pm2 restart moonlight || pm2 reload all || pm2 restart all', (err, stdout, stderr) => {
           if (err) {
             console.error('Lỗi PM2 reload:', err);
           } else {
             console.log('✅ Đã PM2 reload moonlight thành công!');
           }
         });
-      }, 1200);
+      }, 2000);
 
       sendSuccess(res, {
         durationMs,
