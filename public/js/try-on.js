@@ -1471,8 +1471,9 @@
       localStorage.setItem('moonlight_cart', JSON.stringify(cart));
 
       if (typeof updateCartIcon === 'function') updateCartIcon();
+      if (typeof updateCartBadge === 'function') updateCartBadge();
       if (typeof renderCartSidebar === 'function') renderCartSidebar();
-      if (typeof toggleCart === 'function') toggleCart();
+      // Không mở container giỏ hàng khi thêm từ phòng thử đồ
 
       if (typeof showToast === 'function') {
         showToast(`Đã thêm "${prod.name}" vào giỏ hàng thành công!`);

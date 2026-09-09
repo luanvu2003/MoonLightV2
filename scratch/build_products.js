@@ -1,6 +1,6 @@
-import { GenderCategory } from '../types/enums.js';
+import fs from 'fs';
 
-export const LUXURY_PRODUCTS = [
+const products = [
   {
     "_id": "67c3db00d57e603b70b50001",
     "id": 1,
@@ -8,7 +8,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Chất liệu len Ý dệt thủ công cao cấp, form dáng Slimfit tôn vẻ lịch lãm và quý phái.",
     "category": "vest",
     "type": "vest",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Slimfit",
     "price": 2450000,
     "originalPrice": 2800000,
@@ -37,21 +37,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2450000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 15
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 20
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 10
-          }
+          { "name": "M", "size": "M", "stock": 15 },
+          { "name": "L", "size": "L", "stock": 20 },
+          { "name": "XL", "size": "XL", "stock": 10 }
         ]
       },
       {
@@ -67,16 +55,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2450000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 12
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 18
-          }
+          { "name": "M", "size": "M", "stock": 12 },
+          { "name": "L", "size": "L", "stock": 18 }
         ]
       }
     ],
@@ -89,7 +69,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Vải lụa tơ tằm Mulberry 100%, bóng nhẹ tinh tế, mềm mượt thoáng khí tối đa.",
     "category": "somi",
     "type": "somi",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Regular fit",
     "price": 890000,
     "originalPrice": 990000,
@@ -118,26 +98,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 890000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 25
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 35
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 30
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 15
-          }
+          { "name": "S", "size": "S", "stock": 25 },
+          { "name": "M", "size": "M", "stock": 35 },
+          { "name": "L", "size": "L", "stock": 30 },
+          { "name": "XL", "size": "XL", "stock": 15 }
         ]
       },
       {
@@ -153,16 +117,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 890000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 20
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 25
-          }
+          { "name": "M", "size": "M", "stock": 20 },
+          { "name": "L", "size": "L", "stock": 25 }
         ]
       }
     ],
@@ -175,7 +131,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Dệt kim sợi cotton Pima cao cấp, họa tiết kim cương dập chìm sang trọng.",
     "category": "polo",
     "type": "polo",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Slimfit",
     "price": 650000,
     "originalPrice": 760000,
@@ -204,21 +160,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 650000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 40
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 50
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 20
-          }
+          { "name": "M", "size": "M", "stock": 40 },
+          { "name": "L", "size": "L", "stock": 50 },
+          { "name": "XL", "size": "XL", "stock": 20 }
         ]
       },
       {
@@ -234,21 +178,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 650000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 20
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 30
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 25
-          }
+          { "name": "S", "size": "S", "stock": 20 },
+          { "name": "M", "size": "M", "stock": 30 },
+          { "name": "L", "size": "L", "stock": 25 }
         ]
       }
     ],
@@ -261,7 +193,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Vải dệt chéo chống nhăn, cạp đai Gurkha mang đậm phong cách quý ông cổ điển.",
     "category": "quanau",
     "type": "quanau",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "May đo cao cấp",
     "price": 950000,
     "originalPrice": 1100000,
@@ -290,21 +222,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 950000,
         "sizes": [
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 20
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 25
-          },
-          {
-            "name": "32",
-            "size": "32",
-            "stock": 22
-          }
+          { "name": "30", "size": "30", "stock": 20 },
+          { "name": "31", "size": "31", "stock": 25 },
+          { "name": "32", "size": "32", "stock": 22 }
         ]
       },
       {
@@ -320,26 +240,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 950000,
         "sizes": [
-          {
-            "name": "29",
-            "size": "29",
-            "stock": 15
-          },
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 25
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 30
-          },
-          {
-            "name": "32",
-            "size": "32",
-            "stock": 18
-          }
+          { "name": "29", "size": "29", "stock": 15 },
+          { "name": "30", "size": "30", "stock": 25 },
+          { "name": "31", "size": "31", "stock": 30 },
+          { "name": "32", "size": "32", "stock": 18 }
         ]
       }
     ],
@@ -352,7 +256,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Cotton Pima định lượng 280gsm dày dặn, đứng form chuẩn streetwear sang trọng.",
     "category": "aothun",
     "type": "aothun",
-    gender: GenderCategory.Unisex,
+    "gender": "Unisex",
     "style": "Oversize",
     "price": 490000,
     "originalPrice": 550000,
@@ -381,26 +285,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 490000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 30
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 45
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 50
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 25
-          }
+          { "name": "S", "size": "S", "stock": 30 },
+          { "name": "M", "size": "M", "stock": 45 },
+          { "name": "L", "size": "L", "stock": 50 },
+          { "name": "XL", "size": "XL", "stock": 25 }
         ]
       },
       {
@@ -416,21 +304,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 490000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 40
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 40
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 30
-          }
+          { "name": "M", "size": "M", "stock": 40 },
+          { "name": "L", "size": "L", "stock": 40 },
+          { "name": "XL", "size": "XL", "stock": 30 }
         ]
       }
     ],
@@ -443,7 +319,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Thiết kế tôn eo thon, vai đệm nhẹ thanh thoát chuẩn phong cách quý cô Pháp.",
     "category": "vest",
     "type": "vest",
-    gender: GenderCategory.Nu,
+    "gender": "Nu",
     "style": "Slimfit",
     "price": 1890000,
     "originalPrice": 2200000,
@@ -472,21 +348,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1890000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 20
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 25
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 15
-          }
+          { "name": "S", "size": "S", "stock": 20 },
+          { "name": "M", "size": "M", "stock": 25 },
+          { "name": "L", "size": "L", "stock": 15 }
         ]
       },
       {
@@ -502,16 +366,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1890000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 15
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 20
-          }
+          { "name": "S", "size": "S", "stock": 15 },
+          { "name": "M", "size": "M", "stock": 20 }
         ]
       }
     ],
@@ -524,7 +380,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Lụa satin cao cấp óng ả mềm rủ, xẻ tà tinh tế quyến rũ cho đêm tiệc thượng lưu.",
     "category": "dam",
     "type": "dam",
-    gender: GenderCategory.Nu,
+    "gender": "Nu",
     "style": "Dạ hội",
     "price": 2150000,
     "originalPrice": 2500000,
@@ -553,21 +409,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2150000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 15
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 20
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 10
-          }
+          { "name": "S", "size": "S", "stock": 15 },
+          { "name": "M", "size": "M", "stock": 20 },
+          { "name": "L", "size": "L", "stock": 10 }
         ]
       },
       {
@@ -583,16 +427,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2150000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 12
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 18
-          }
+          { "name": "S", "size": "S", "stock": 12 },
+          { "name": "M", "size": "M", "stock": 18 }
         ]
       }
     ],
@@ -605,7 +441,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Vải denim dệt biên Nhật Bản 14oz bền bỉ vượt thời gian, phai màu tự nhiên theo năm tháng.",
     "category": "quanjeans",
     "type": "quanjeans",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Regular fit",
     "price": 1150000,
     "originalPrice": 1350000,
@@ -634,26 +470,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1150000,
         "sizes": [
-          {
-            "name": "29",
-            "size": "29",
-            "stock": 18
-          },
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 25
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 22
-          },
-          {
-            "name": "32",
-            "size": "32",
-            "stock": 15
-          }
+          { "name": "29", "size": "29", "stock": 18 },
+          { "name": "30", "size": "30", "stock": 25 },
+          { "name": "31", "size": "31", "stock": 22 },
+          { "name": "32", "size": "32", "stock": 15 }
         ]
       },
       {
@@ -669,21 +489,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1150000,
         "sizes": [
-          {
-            "name": "29",
-            "size": "29",
-            "stock": 15
-          },
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 20
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 25
-          }
+          { "name": "29", "size": "29", "stock": 15 },
+          { "name": "30", "size": "30", "stock": 20 },
+          { "name": "31", "size": "31", "stock": 25 }
         ]
       }
     ],
@@ -696,7 +504,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Xếp ly tỉ mỉ bằng công nghệ nhiệt cao áp, vải dập hạt kim sa nhẹ nhàng nữ tính.",
     "category": "vay",
     "type": "vay",
-    gender: GenderCategory.Nu,
+    "gender": "Nu",
     "style": "Xòe tự nhiên",
     "price": 780000,
     "originalPrice": 890000,
@@ -725,16 +533,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 780000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 20
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 30
-          }
+          { "name": "S", "size": "S", "stock": 20 },
+          { "name": "M", "size": "M", "stock": 30 }
         ]
       },
       {
@@ -750,16 +550,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 780000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 15
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 20
-          }
+          { "name": "S", "size": "S", "stock": 15 },
+          { "name": "M", "size": "M", "stock": 20 }
         ]
       }
     ],
@@ -772,7 +564,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Chi tiết nơ cổ thanh lịch, cúc bọc vải cùng tông sang trọng cho quý cô công sở.",
     "category": "somi",
     "type": "somi",
-    gender: GenderCategory.Nu,
+    "gender": "Nu",
     "style": "Regular fit",
     "price": 920000,
     "originalPrice": 1050000,
@@ -801,21 +593,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 920000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 25
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 30
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 20
-          }
+          { "name": "S", "size": "S", "stock": 25 },
+          { "name": "M", "size": "M", "stock": 30 },
+          { "name": "L", "size": "L", "stock": 20 }
         ]
       },
       {
@@ -831,16 +611,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 920000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 20
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 25
-          }
+          { "name": "S", "size": "S", "stock": 20 },
+          { "name": "M", "size": "M", "stock": 25 }
         ]
       }
     ],
@@ -853,7 +625,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Da bò full-grain nhập khẩu Ý, mặt khóa hợp kim mạ vàng 18K khắc laser tinh xảo.",
     "category": "phukien",
     "type": "phukien",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Freesize",
     "price": 850000,
     "originalPrice": 950000,
@@ -880,11 +652,7 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 850000,
         "sizes": [
-          {
-            "name": "Freesize",
-            "size": "Freesize",
-            "stock": 45
-          }
+          { "name": "Freesize", "size": "Freesize", "stock": 45 }
         ]
       },
       {
@@ -899,11 +667,7 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 850000,
         "sizes": [
-          {
-            "name": "Freesize",
-            "size": "Freesize",
-            "stock": 35
-          }
+          { "name": "Freesize", "size": "Freesize", "stock": 35 }
         ]
       }
     ],
@@ -916,7 +680,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Chất nỉ bông 380gsm siêu ấm, mũ 2 lớp đứng form in logo dạ quang MoonLight.",
     "category": "aothun",
     "type": "aothun",
-    gender: GenderCategory.Unisex,
+    "gender": "Unisex",
     "style": "Oversize",
     "price": 620000,
     "originalPrice": 700000,
@@ -945,26 +709,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 620000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 25
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 35
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 30
-          },
-          {
-            "name": "XXL",
-            "size": "XXL",
-            "stock": 15
-          }
+          { "name": "M", "size": "M", "stock": 25 },
+          { "name": "L", "size": "L", "stock": 35 },
+          { "name": "XL", "size": "XL", "stock": 30 },
+          { "name": "XXL", "size": "XXL", "stock": 15 }
         ]
       },
       {
@@ -980,21 +728,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 620000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 20
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 25
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 20
-          }
+          { "name": "M", "size": "M", "stock": 20 },
+          { "name": "L", "size": "L", "stock": 25 },
+          { "name": "XL", "size": "XL", "stock": 20 }
         ]
       }
     ],
@@ -1007,7 +743,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Vải Gabardine chống thấm nước cao cấp, đai lưng thắt tôn dáng mang đậm phong cách London.",
     "category": "vest",
     "type": "vest",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Regular fit",
     "price": 3200000,
     "originalPrice": 3600000,
@@ -1036,21 +772,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 3200000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 10
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 15
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 8
-          }
+          { "name": "M", "size": "M", "stock": 10 },
+          { "name": "L", "size": "L", "stock": 15 },
+          { "name": "XL", "size": "XL", "stock": 8 }
         ]
       },
       {
@@ -1066,16 +790,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 3200000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 8
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 12
-          }
+          { "name": "M", "size": "M", "stock": 8 },
+          { "name": "L", "size": "L", "stock": 12 }
         ]
       }
     ],
@@ -1088,7 +804,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Cotton Twill co giãn thoải mái, cạp quần lót viền lụa chống tuột khi sơ vin.",
     "category": "quanau",
     "type": "quanau",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Slimfit",
     "price": 680000,
     "originalPrice": 750000,
@@ -1117,26 +833,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 680000,
         "sizes": [
-          {
-            "name": "29",
-            "size": "29",
-            "stock": 20
-          },
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 25
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 30
-          },
-          {
-            "name": "32",
-            "size": "32",
-            "stock": 20
-          }
+          { "name": "29", "size": "29", "stock": 20 },
+          { "name": "30", "size": "30", "stock": 25 },
+          { "name": "31", "size": "31", "stock": 30 },
+          { "name": "32", "size": "32", "stock": 20 }
         ]
       },
       {
@@ -1152,21 +852,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 680000,
         "sizes": [
-          {
-            "name": "29",
-            "size": "29",
-            "stock": 15
-          },
-          {
-            "name": "30",
-            "size": "30",
-            "stock": 20
-          },
-          {
-            "name": "31",
-            "size": "31",
-            "stock": 20
-          }
+          { "name": "29", "size": "29", "stock": 15 },
+          { "name": "30", "size": "30", "stock": 20 },
+          { "name": "31", "size": "31", "stock": 20 }
         ]
       }
     ],
@@ -1179,7 +867,7 @@ export const LUXURY_PRODUCTS = [
     "description": "100% sợi lông dê Cashmere Himalaya siêu mềm nhẹ, giữ ấm đỉnh cao mà không hề bí bách.",
     "category": "aothun",
     "type": "aothun",
-    gender: GenderCategory.Unisex,
+    "gender": "Unisex",
     "style": "Regular fit",
     "price": 1450000,
     "originalPrice": 1700000,
@@ -1208,26 +896,10 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1450000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 15
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 25
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 20
-          },
-          {
-            "name": "XL",
-            "size": "XL",
-            "stock": 10
-          }
+          { "name": "S", "size": "S", "stock": 15 },
+          { "name": "M", "size": "M", "stock": 25 },
+          { "name": "L", "size": "L", "stock": 20 },
+          { "name": "XL", "size": "XL", "stock": 10 }
         ]
       },
       {
@@ -1243,16 +915,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1450000,
         "sizes": [
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 15
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 20
-          }
+          { "name": "M", "size": "M", "stock": 15 },
+          { "name": "L", "size": "L", "stock": 20 }
         ]
       }
     ],
@@ -1265,7 +929,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Dạ Tweed dệt kim tuyến ánh ngọc, form crop trẻ trung kết hợp chân váy chữ A quý tộc.",
     "category": "vest",
     "type": "vest",
-    gender: GenderCategory.Nu,
+    "gender": "Nu",
     "style": "Slimfit",
     "price": 2650000,
     "originalPrice": 3000000,
@@ -1294,21 +958,9 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2650000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 12
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 18
-          },
-          {
-            "name": "L",
-            "size": "L",
-            "stock": 10
-          }
+          { "name": "S", "size": "S", "stock": 12 },
+          { "name": "M", "size": "M", "stock": 18 },
+          { "name": "L", "size": "L", "stock": 10 }
         ]
       },
       {
@@ -1324,16 +976,8 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2650000,
         "sizes": [
-          {
-            "name": "S",
-            "size": "S",
-            "stock": 10
-          },
-          {
-            "name": "M",
-            "size": "M",
-            "stock": 15
-          }
+          { "name": "S", "size": "S", "stock": 10 },
+          { "name": "M", "size": "M", "stock": 15 }
         ]
       }
     ],
@@ -1346,7 +990,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Da cá sấu sông Nile nguyên tấm tuyển chọn, khâu chỉ sáp thủ công từng đường kim mũi chỉ.",
     "category": "phukien",
     "type": "phukien",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Freesize",
     "price": 1250000,
     "originalPrice": 1450000,
@@ -1373,11 +1017,7 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1250000,
         "sizes": [
-          {
-            "name": "Freesize",
-            "size": "Freesize",
-            "stock": 50
-          }
+          { "name": "Freesize", "size": "Freesize", "stock": 50 }
         ]
       },
       {
@@ -1392,11 +1032,7 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 1250000,
         "sizes": [
-          {
-            "name": "Freesize",
-            "size": "Freesize",
-            "stock": 40
-          }
+          { "name": "Freesize", "size": "Freesize", "stock": 40 }
         ]
       }
     ],
@@ -1409,7 +1045,7 @@ export const LUXURY_PRODUCTS = [
     "description": "Da bê Pháp thuộc thảo mộc bóng loáng, cấu trúc may đế Goodyear siêu êm ái và bền chắc.",
     "category": "phukien",
     "type": "phukien",
-    gender: GenderCategory.Nam,
+    "gender": "Nam",
     "style": "Freesize",
     "price": 2850000,
     "originalPrice": 3200000,
@@ -1436,31 +1072,11 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2850000,
         "sizes": [
-          {
-            "name": "39",
-            "size": "39",
-            "stock": 10
-          },
-          {
-            "name": "40",
-            "size": "40",
-            "stock": 15
-          },
-          {
-            "name": "41",
-            "size": "41",
-            "stock": 20
-          },
-          {
-            "name": "42",
-            "size": "42",
-            "stock": 12
-          },
-          {
-            "name": "43",
-            "size": "43",
-            "stock": 8
-          }
+          { "name": "39", "size": "39", "stock": 10 },
+          { "name": "40", "size": "40", "stock": 15 },
+          { "name": "41", "size": "41", "stock": 20 },
+          { "name": "42", "size": "42", "stock": 12 },
+          { "name": "43", "size": "43", "stock": 8 }
         ]
       },
       {
@@ -1475,29 +1091,24 @@ export const LUXURY_PRODUCTS = [
         ],
         "price": 2850000,
         "sizes": [
-          {
-            "name": "39",
-            "size": "39",
-            "stock": 8
-          },
-          {
-            "name": "40",
-            "size": "40",
-            "stock": 12
-          },
-          {
-            "name": "41",
-            "size": "41",
-            "stock": 15
-          },
-          {
-            "name": "42",
-            "size": "42",
-            "stock": 10
-          }
+          { "name": "39", "size": "39", "stock": 8 },
+          { "name": "40", "size": "40", "stock": 12 },
+          { "name": "41", "size": "41", "stock": 15 },
+          { "name": "42", "size": "42", "stock": 10 }
         ]
       }
     ],
     "isActive": true
   }
 ];
+
+// Write to src/config/defaultProducts.ts
+const tsContent = `import { GenderCategory } from '../types/enums.js';
+
+export const LUXURY_PRODUCTS = ${JSON.stringify(products, null, 2).replace(/"gender": "Nam"/g, 'gender: GenderCategory.Nam').replace(/"gender": "Nu"/g, 'gender: GenderCategory.Nu').replace(/"gender": "Unisex"/g, 'gender: GenderCategory.Unisex')};\n`;
+
+fs.writeFileSync('src/config/defaultProducts.ts', tsContent, 'utf-8');
+console.log('✅ Generated src/config/defaultProducts.ts successfully!');
+
+fs.writeFileSync('scratch/products.json', JSON.stringify(products, null, 2), 'utf-8');
+console.log('✅ Generated scratch/products.json successfully!');

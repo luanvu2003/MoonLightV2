@@ -38,8 +38,8 @@ connectDB().then(async () => {
     for (const p of LUXURY_PRODUCTS) {
       await Product.findOneAndUpdate(
         { name: p.name },
-        { $set: { image: p.image, variants: p.variants } },
-        { upsert: true, new: true }
+        { $set: { image: p.image, images: (p as any).images || [], variants: p.variants } },
+        { upsert: true, returnDocument: 'after' }
       );
     }
     const updatedCount = await Product.countDocuments();

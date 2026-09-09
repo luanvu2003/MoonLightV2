@@ -42,6 +42,7 @@ const VariantSchema = new Schema<IVariant>(
     color: { type: String, required: true },
     colorCode: { type: String, default: '#000000' },
     img: { type: String, default: '' },
+    images: { type: [String], default: [] },
     price: { type: Number, required: true, min: 0 },
     sizes: [VariantSizeSchema]
   },
@@ -77,6 +78,10 @@ const ProductSchema = new Schema<IProduct>(
     image: {
       type: String,
       default: ''
+    },
+    images: {
+      type: [String],
+      default: []
     },
     type: {
       type: String,

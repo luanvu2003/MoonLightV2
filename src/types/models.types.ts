@@ -23,6 +23,7 @@ export interface IVariant {
   color: string;
   colorCode: string;
   img: string;
+  images?: string[];
   price: number;
   sizes: IVariantSize[];
 }
@@ -35,6 +36,7 @@ export interface IProduct {
   gender: GenderCategory | string;
   price?: number; // legacy fallback
   image?: string; // legacy fallback
+  images?: string[];
   type?: string;  // legacy fallback
   variants: IVariant[];
   rating: number;

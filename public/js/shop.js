@@ -19,6 +19,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 2450000,
     "originalPrice": 2800000,
     "image": "/images/garments/suit.jpg",
+    "images": [
+      "/images/garments/suit.jpg",
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/suit_cutout.png"
+    ],
     "rating": 5,
     "sold": 48,
     "salePercent": 12,
@@ -29,6 +35,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#000000",
         "hex": "#000000",
         "img": "/images/garments/suit.jpg",
+        "images": [
+          "/images/garments/suit.jpg",
+          "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/suit_cutout.png"
+        ],
         "price": 2450000,
         "sizes": [
           {
@@ -52,7 +64,13 @@ const SHOP_FALLBACK_PRODUCTS = [
         "color": "Xanh Navy Đêm",
         "colorCode": "#1a2a3a",
         "hex": "#1a2a3a",
-        "img": "/images/garments/suit.jpg",
+        "img": "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1598808503746-f34c53b9323e?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/suit.jpg"
+        ],
         "price": 2450000,
         "sizes": [
           {
@@ -82,6 +100,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 890000,
     "originalPrice": 990000,
     "image": "/images/garments/shirt.jpg",
+    "images": [
+      "/images/garments/shirt.jpg",
+      "https://images.unsplash.com/photo-1620012253295-c15c429fbb41?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/shirt_cutout.png"
+    ],
     "rating": 4.9,
     "sold": 125,
     "salePercent": 0,
@@ -92,6 +116,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#f8fafc",
         "hex": "#f8fafc",
         "img": "/images/garments/shirt.jpg",
+        "images": [
+          "/images/garments/shirt.jpg",
+          "https://images.unsplash.com/photo-1620012253295-c15c429fbb41?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/shirt_cutout.png"
+        ],
         "price": 890000,
         "sizes": [
           {
@@ -115,6 +145,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 15
           }
         ]
+      },
+      {
+        "color": "Xanh Sky Thanh Lịch",
+        "colorCode": "#b8d5e5",
+        "hex": "#b8d5e5",
+        "img": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/shirt.jpg"
+        ],
+        "price": 890000,
+        "sizes": [
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 20
+          },
+          {
+            "name": "L",
+            "size": "L",
+            "stock": 25
+          }
+        ]
       }
     ],
     "isActive": true
@@ -131,6 +186,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 650000,
     "originalPrice": 760000,
     "image": "/images/garments/polo.jpg",
+    "images": [
+      "/images/garments/polo.jpg",
+      "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1625910513413-7e189c445610?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/polo_cutout.png"
+    ],
     "rating": 4.8,
     "sold": 210,
     "salePercent": 15,
@@ -141,6 +202,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#d2b48c",
         "hex": "#d2b48c",
         "img": "/images/garments/polo.jpg",
+        "images": [
+          "/images/garments/polo.jpg",
+          "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1625910513413-7e189c445610?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/polo_cutout.png"
+        ],
         "price": 650000,
         "sizes": [
           {
@@ -164,7 +231,13 @@ const SHOP_FALLBACK_PRODUCTS = [
         "color": "Đen Obsidian",
         "colorCode": "#111827",
         "hex": "#111827",
-        "img": "/images/garments/polo.jpg",
+        "img": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/polo.jpg"
+        ],
         "price": 650000,
         "sizes": [
           {
@@ -199,6 +272,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 950000,
     "originalPrice": 1100000,
     "image": "/images/garments/pants.jpg",
+    "images": [
+      "/images/garments/pants.jpg",
+      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/pants_cutout.png"
+    ],
     "rating": 4.9,
     "sold": 95,
     "salePercent": 0,
@@ -209,6 +288,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#708090",
         "hex": "#708090",
         "img": "/images/garments/pants.jpg",
+        "images": [
+          "/images/garments/pants.jpg",
+          "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pants_cutout.png"
+        ],
         "price": 950000,
         "sizes": [
           {
@@ -232,7 +317,13 @@ const SHOP_FALLBACK_PRODUCTS = [
         "color": "Đen Tuyển Chọn",
         "colorCode": "#1a1a1a",
         "hex": "#1a1a1a",
-        "img": "/images/garments/pants.jpg",
+        "img": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pants.jpg"
+        ],
         "price": 950000,
         "sizes": [
           {
@@ -272,6 +363,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 490000,
     "originalPrice": 550000,
     "image": "/images/garments/pima_tee.jpg",
+    "images": [
+      "/images/garments/pima_tee.jpg",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/pima_tee_cutout.png"
+    ],
     "rating": 4.7,
     "sold": 340,
     "salePercent": 11,
@@ -282,6 +379,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#fdfbf7",
         "hex": "#fdfbf7",
         "img": "/images/garments/pima_tee.jpg",
+        "images": [
+          "/images/garments/pima_tee.jpg",
+          "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pima_tee_cutout.png"
+        ],
         "price": 490000,
         "sizes": [
           {
@@ -310,7 +413,13 @@ const SHOP_FALLBACK_PRODUCTS = [
         "color": "Đen Mờ Charcoal",
         "colorCode": "#222222",
         "hex": "#222222",
-        "img": "/images/garments/pima_tee.jpg",
+        "img": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1527719327859-c6ce80353573?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1618354691229-88d47f285158?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pima_tee.jpg"
+        ],
         "price": 490000,
         "sizes": [
           {
@@ -345,6 +454,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 1890000,
     "originalPrice": 2200000,
     "image": "/images/garments/women_blazer.jpg",
+    "images": [
+      "/images/garments/women_blazer.jpg",
+      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/women_blazer_cutout.png"
+    ],
     "rating": 5,
     "sold": 62,
     "salePercent": 14,
@@ -355,6 +470,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#c5a880",
         "hex": "#c5a880",
         "img": "/images/garments/women_blazer.jpg",
+        "images": [
+          "/images/garments/women_blazer.jpg",
+          "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/women_blazer_cutout.png"
+        ],
         "price": 1890000,
         "sizes": [
           {
@@ -373,6 +494,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 15
           }
         ]
+      },
+      {
+        "color": "Đen Quý Phái",
+        "colorCode": "#111111",
+        "hex": "#111111",
+        "img": "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/women_blazer.jpg"
+        ],
+        "price": 1890000,
+        "sizes": [
+          {
+            "name": "S",
+            "size": "S",
+            "stock": 15
+          },
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 20
+          }
+        ]
       }
     ],
     "isActive": true
@@ -389,6 +535,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 2150000,
     "originalPrice": 2500000,
     "image": "/images/garments/dress.jpg",
+    "images": [
+      "/images/garments/dress.jpg",
+      "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/dress_cutout.png"
+    ],
     "rating": 4.9,
     "sold": 38,
     "salePercent": 0,
@@ -399,6 +551,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#6b1426",
         "hex": "#6b1426",
         "img": "/images/garments/dress.jpg",
+        "images": [
+          "/images/garments/dress.jpg",
+          "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/dress_cutout.png"
+        ],
         "price": 2150000,
         "sizes": [
           {
@@ -417,6 +575,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 10
           }
         ]
+      },
+      {
+        "color": "Đen Huyền Bí",
+        "colorCode": "#0d0d0d",
+        "hex": "#0d0d0d",
+        "img": "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/dress.jpg"
+        ],
+        "price": 2150000,
+        "sizes": [
+          {
+            "name": "S",
+            "size": "S",
+            "stock": 12
+          },
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 18
+          }
+        ]
       }
     ],
     "isActive": true
@@ -433,6 +616,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 1150000,
     "originalPrice": 1350000,
     "image": "/images/garments/denim_jeans.jpg",
+    "images": [
+      "/images/garments/denim_jeans.jpg",
+      "https://images.unsplash.com/photo-1542272604-787c3835535d?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/denim_jeans_cutout.png"
+    ],
     "rating": 4.8,
     "sold": 145,
     "salePercent": 15,
@@ -443,6 +632,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#1c2841",
         "hex": "#1c2841",
         "img": "/images/garments/denim_jeans.jpg",
+        "images": [
+          "/images/garments/denim_jeans.jpg",
+          "https://images.unsplash.com/photo-1542272604-787c3835535d?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/denim_jeans_cutout.png"
+        ],
         "price": 1150000,
         "sizes": [
           {
@@ -466,6 +661,36 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 15
           }
         ]
+      },
+      {
+        "color": "Xanh Vintage Wash",
+        "colorCode": "#3c5b82",
+        "hex": "#3c5b82",
+        "img": "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1511196044526-7875bca61201?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/denim_jeans.jpg"
+        ],
+        "price": 1150000,
+        "sizes": [
+          {
+            "name": "29",
+            "size": "29",
+            "stock": 15
+          },
+          {
+            "name": "30",
+            "size": "30",
+            "stock": 20
+          },
+          {
+            "name": "31",
+            "size": "31",
+            "stock": 25
+          }
+        ]
       }
     ],
     "isActive": true
@@ -482,6 +707,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 780000,
     "originalPrice": 890000,
     "image": "/images/garments/pleated_skirt.jpg",
+    "images": [
+      "/images/garments/pleated_skirt.jpg",
+      "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/pleated_skirt_cutout.png"
+    ],
     "rating": 4.8,
     "sold": 88,
     "salePercent": 12,
@@ -492,6 +723,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#e8d8b8",
         "hex": "#e8d8b8",
         "img": "/images/garments/pleated_skirt.jpg",
+        "images": [
+          "/images/garments/pleated_skirt.jpg",
+          "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pleated_skirt_cutout.png"
+        ],
         "price": 780000,
         "sizes": [
           {
@@ -503,6 +740,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "name": "M",
             "size": "M",
             "stock": 30
+          }
+        ]
+      },
+      {
+        "color": "Đen Ánh Kim Sa",
+        "colorCode": "#1e1e1e",
+        "hex": "#1e1e1e",
+        "img": "https://images.unsplash.com/photo-1577900232427-18219b9166a0?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1577900232427-18219b9166a0?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/pleated_skirt.jpg"
+        ],
+        "price": 780000,
+        "sizes": [
+          {
+            "name": "S",
+            "size": "S",
+            "stock": 15
+          },
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 20
           }
         ]
       }
@@ -521,6 +783,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 920000,
     "originalPrice": 1050000,
     "image": "/images/garments/silk_blouse.jpg",
+    "images": [
+      "/images/garments/silk_blouse.jpg",
+      "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/silk_blouse_cutout.png"
+    ],
     "rating": 4.9,
     "sold": 110,
     "salePercent": 0,
@@ -531,6 +799,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#f4dcd6",
         "hex": "#f4dcd6",
         "img": "/images/garments/silk_blouse.jpg",
+        "images": [
+          "/images/garments/silk_blouse.jpg",
+          "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/silk_blouse_cutout.png"
+        ],
         "price": 920000,
         "sizes": [
           {
@@ -549,6 +823,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 20
           }
         ]
+      },
+      {
+        "color": "Trắng Ngà Tinh Khôi",
+        "colorCode": "#faf8f5",
+        "hex": "#faf8f5",
+        "img": "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/silk_blouse.jpg"
+        ],
+        "price": 920000,
+        "sizes": [
+          {
+            "name": "S",
+            "size": "S",
+            "stock": 20
+          },
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 25
+          }
+        ]
       }
     ],
     "isActive": true
@@ -565,6 +864,11 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 850000,
     "originalPrice": 950000,
     "image": "/images/garments/belt.jpg",
+    "images": [
+      "/images/garments/belt.jpg",
+      "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80"
+    ],
     "rating": 5,
     "sold": 190,
     "salePercent": 10,
@@ -575,12 +879,36 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#3d2314",
         "hex": "#3d2314",
         "img": "/images/garments/belt.jpg",
+        "images": [
+          "/images/garments/belt.jpg",
+          "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80"
+        ],
         "price": 850000,
         "sizes": [
           {
             "name": "Freesize",
             "size": "Freesize",
             "stock": 45
+          }
+        ]
+      },
+      {
+        "color": "Đen Tuyệt Đối",
+        "colorCode": "#0f0f0f",
+        "hex": "#0f0f0f",
+        "img": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/belt.jpg"
+        ],
+        "price": 850000,
+        "sizes": [
+          {
+            "name": "Freesize",
+            "size": "Freesize",
+            "stock": 35
           }
         ]
       }
@@ -599,6 +927,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 620000,
     "originalPrice": 700000,
     "image": "/images/garments/hoodie.jpg",
+    "images": [
+      "/images/garments/hoodie.jpg",
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/hoodie_cutout.png"
+    ],
     "rating": 4.9,
     "sold": 145,
     "salePercent": 11,
@@ -609,6 +943,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#94a3b8",
         "hex": "#94a3b8",
         "img": "/images/garments/hoodie.jpg",
+        "images": [
+          "/images/garments/hoodie.jpg",
+          "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/hoodie_cutout.png"
+        ],
         "price": 620000,
         "sizes": [
           {
@@ -632,6 +972,36 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 15
           }
         ]
+      },
+      {
+        "color": "Đen Jet Black",
+        "colorCode": "#121212",
+        "hex": "#121212",
+        "img": "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/hoodie.jpg"
+        ],
+        "price": 620000,
+        "sizes": [
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 20
+          },
+          {
+            "name": "L",
+            "size": "L",
+            "stock": 25
+          },
+          {
+            "name": "XL",
+            "size": "XL",
+            "stock": 20
+          }
+        ]
       }
     ],
     "isActive": true
@@ -648,6 +1018,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 3200000,
     "originalPrice": 3600000,
     "image": "/images/garments/trench_coat.jpg",
+    "images": [
+      "/images/garments/trench_coat.jpg",
+      "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/trench_coat_cutout.png"
+    ],
     "rating": 5,
     "sold": 35,
     "salePercent": 0,
@@ -658,6 +1034,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#c2a649",
         "hex": "#c2a649",
         "img": "/images/garments/trench_coat.jpg",
+        "images": [
+          "/images/garments/trench_coat.jpg",
+          "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/trench_coat_cutout.png"
+        ],
         "price": 3200000,
         "sizes": [
           {
@@ -676,12 +1058,37 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 8
           }
         ]
+      },
+      {
+        "color": "Xanh Rêu Quý Phái",
+        "colorCode": "#3a483a",
+        "hex": "#3a483a",
+        "img": "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/trench_coat.jpg"
+        ],
+        "price": 3200000,
+        "sizes": [
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 8
+          },
+          {
+            "name": "L",
+            "size": "L",
+            "stock": 12
+          }
+        ]
       }
     ],
     "isActive": true
   },
   {
-    "_id": "67c3db00d57e603b70b50014",
+    "_id": "67c3db00d57e603b70b500014",
     "id": 14,
     "name": "Quần Chino Khaki Slimfit Co Giãn 4 Chiều",
     "description": "Cotton Twill co giãn thoải mái, cạp quần lót viền lụa chống tuột khi sơ vin.",
@@ -692,6 +1099,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 680000,
     "originalPrice": 750000,
     "image": "/images/garments/khaki_chino.jpg",
+    "images": [
+      "/images/garments/khaki_chino.jpg",
+      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/khaki_chino_cutout.png"
+    ],
     "rating": 4.8,
     "sold": 160,
     "salePercent": 10,
@@ -702,6 +1115,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#e0d5c1",
         "hex": "#e0d5c1",
         "img": "/images/garments/khaki_chino.jpg",
+        "images": [
+          "/images/garments/khaki_chino.jpg",
+          "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/khaki_chino_cutout.png"
+        ],
         "price": 680000,
         "sizes": [
           {
@@ -725,6 +1144,36 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 20
           }
         ]
+      },
+      {
+        "color": "Xanh Navy Đậm",
+        "colorCode": "#17253b",
+        "hex": "#17253b",
+        "img": "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/khaki_chino.jpg"
+        ],
+        "price": 680000,
+        "sizes": [
+          {
+            "name": "29",
+            "size": "29",
+            "stock": 15
+          },
+          {
+            "name": "30",
+            "size": "30",
+            "stock": 20
+          },
+          {
+            "name": "31",
+            "size": "31",
+            "stock": 20
+          }
+        ]
       }
     ],
     "isActive": true
@@ -741,6 +1190,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 1450000,
     "originalPrice": 1700000,
     "image": "/images/garments/cashmere_sweater.jpg",
+    "images": [
+      "/images/garments/cashmere_sweater.jpg",
+      "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/cashmere_sweater_cutout.png"
+    ],
     "rating": 5,
     "sold": 52,
     "salePercent": 0,
@@ -751,6 +1206,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#fdfbf7",
         "hex": "#fdfbf7",
         "img": "/images/garments/cashmere_sweater.jpg",
+        "images": [
+          "/images/garments/cashmere_sweater.jpg",
+          "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/cashmere_sweater_cutout.png"
+        ],
         "price": 1450000,
         "sizes": [
           {
@@ -774,6 +1235,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 10
           }
         ]
+      },
+      {
+        "color": "Đen Midnight",
+        "colorCode": "#151515",
+        "hex": "#151515",
+        "img": "https://images.unsplash.com/photo-1614975058789-41316d0e2e9c?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1614975058789-41316d0e2e9c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/cashmere_sweater.jpg"
+        ],
+        "price": 1450000,
+        "sizes": [
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 15
+          },
+          {
+            "name": "L",
+            "size": "L",
+            "stock": 20
+          }
+        ]
       }
     ],
     "isActive": true
@@ -790,6 +1276,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 2650000,
     "originalPrice": 3000000,
     "image": "/images/garments/tweed_suit.jpg",
+    "images": [
+      "/images/garments/tweed_suit.jpg",
+      "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&auto=format&fit=crop&q=80",
+      "/images/garments/tweed_suit_cutout.png"
+    ],
     "rating": 5,
     "sold": 28,
     "salePercent": 0,
@@ -800,6 +1292,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#262626",
         "hex": "#262626",
         "img": "/images/garments/tweed_suit.jpg",
+        "images": [
+          "/images/garments/tweed_suit.jpg",
+          "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/tweed_suit_cutout.png"
+        ],
         "price": 2650000,
         "sizes": [
           {
@@ -818,6 +1316,31 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 10
           }
         ]
+      },
+      {
+        "color": "Hồng Pastel Tiểu Thư",
+        "colorCode": "#f5d5db",
+        "hex": "#f5d5db",
+        "img": "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/tweed_suit.jpg"
+        ],
+        "price": 2650000,
+        "sizes": [
+          {
+            "name": "S",
+            "size": "S",
+            "stock": 10
+          },
+          {
+            "name": "M",
+            "size": "M",
+            "stock": 15
+          }
+        ]
       }
     ],
     "isActive": true
@@ -834,6 +1357,11 @@ const SHOP_FALLBACK_PRODUCTS = [
     "price": 1250000,
     "originalPrice": 1450000,
     "image": "/images/garments/wallet.jpg",
+    "images": [
+      "/images/garments/wallet.jpg",
+      "https://images.unsplash.com/photo-1627123424574-724758594e93?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80"
+    ],
     "rating": 4.9,
     "sold": 76,
     "salePercent": 0,
@@ -844,12 +1372,36 @@ const SHOP_FALLBACK_PRODUCTS = [
         "colorCode": "#0a0a0a",
         "hex": "#0a0a0a",
         "img": "/images/garments/wallet.jpg",
+        "images": [
+          "/images/garments/wallet.jpg",
+          "https://images.unsplash.com/photo-1627123424574-724758594e93?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80"
+        ],
         "price": 1250000,
         "sizes": [
           {
             "name": "Freesize",
             "size": "Freesize",
             "stock": 50
+          }
+        ]
+      },
+      {
+        "color": "Nâu Cigar Cổ Điển",
+        "colorCode": "#45220c",
+        "hex": "#45220c",
+        "img": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1627123424574-724758594e93?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/wallet.jpg"
+        ],
+        "price": 1250000,
+        "sizes": [
+          {
+            "name": "Freesize",
+            "size": "Freesize",
+            "stock": 40
           }
         ]
       }
@@ -867,7 +1419,12 @@ const SHOP_FALLBACK_PRODUCTS = [
     "style": "Freesize",
     "price": 2850000,
     "originalPrice": 3200000,
-    "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80",
+    "image": "/images/garments/loafer.jpg",
+    "images": [
+      "/images/garments/loafer.jpg",
+      "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80"
+    ],
     "rating": 5,
     "sold": 45,
     "salePercent": 0,
@@ -877,7 +1434,12 @@ const SHOP_FALLBACK_PRODUCTS = [
         "color": "Nâu Da Bò Rượu Vang",
         "colorCode": "#582900",
         "hex": "#582900",
-        "img": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80",
+        "img": "/images/garments/loafer.jpg",
+        "images": [
+          "/images/garments/loafer.jpg",
+          "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80"
+        ],
         "price": 2850000,
         "sizes": [
           {
@@ -906,17 +1468,53 @@ const SHOP_FALLBACK_PRODUCTS = [
             "stock": 8
           }
         ]
+      },
+      {
+        "color": "Đen Tuyệt Hảo Black Tie",
+        "colorCode": "#111111",
+        "hex": "#111111",
+        "img": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
+        "images": [
+          "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&auto=format&fit=crop&q=80",
+          "/images/garments/loafer.jpg"
+        ],
+        "price": 2850000,
+        "sizes": [
+          {
+            "name": "39",
+            "size": "39",
+            "stock": 8
+          },
+          {
+            "name": "40",
+            "size": "40",
+            "stock": 12
+          },
+          {
+            "name": "41",
+            "size": "41",
+            "stock": 15
+          },
+          {
+            "name": "42",
+            "size": "42",
+            "stock": 10
+          }
+        ]
       }
     ],
     "isActive": true
   }
 ];
 
-// --- 1. KHỞI TẠO DỮ LIỆU AN TOÀN ---
+// --- 1. KHỞI TẠO DỮ LIỆU AN TOÀN & ĐỒNG BỘ ẢNH MỚI (v3.5) ---
+const MOONLIGHT_DATA_VERSION = 'v3.5';
 let products = [];
 try {
+  const savedVersion = localStorage.getItem('moonlight_data_version');
   const rawProducts = localStorage.getItem('moonlight_products');
-  if (rawProducts) {
+  if (rawProducts && savedVersion === MOONLIGHT_DATA_VERSION) {
     const parsed = JSON.parse(rawProducts);
     if (Array.isArray(parsed) && parsed.length > 0) {
       products = parsed;
@@ -928,6 +1526,7 @@ if (!Array.isArray(products) || products.length === 0) {
   products = [...SHOP_FALLBACK_PRODUCTS];
   try {
     localStorage.setItem('moonlight_products', JSON.stringify(products));
+    localStorage.setItem('moonlight_data_version', MOONLIGHT_DATA_VERSION);
   } catch (e) {}
 } else if (products.length < SHOP_FALLBACK_PRODUCTS.length) {
   const existingIds = new Set(products.map((p) => String(p._id || p.id)));
@@ -938,6 +1537,7 @@ if (!Array.isArray(products) || products.length === 0) {
   });
   try {
     localStorage.setItem('moonlight_products', JSON.stringify(products));
+    localStorage.setItem('moonlight_data_version', MOONLIGHT_DATA_VERSION);
   } catch (e) {}
 }
 
@@ -1410,16 +2010,67 @@ async function loadProductDetail() {
         color: 'Tiêu chuẩn',
         hex: '#000000',
         img: currentProduct.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800',
+        images: currentProduct.images || [currentProduct.image],
         price: currentProduct.price || 500000,
         sizes: [{ name: 'M', size: 'M', stock: 20 }, { name: 'L', size: 'L', stock: 20 }]
       };
 
+  currentGalleryIndex = 0;
   selectedSizeName = null;
   quantity = 1;
 
   renderDetailHTML();
   renderRelatedProducts();
   renderProductReviews(id || currentProduct.id || currentProduct._id);
+}
+
+let currentGalleryIndex = 0;
+
+function getSelectedColorImages() {
+  if (!selectedColor) return [];
+  if (Array.isArray(selectedColor.images) && selectedColor.images.length > 0) {
+    return selectedColor.images;
+  }
+  if (currentProduct && Array.isArray(currentProduct.images) && currentProduct.images.length > 0) {
+    return currentProduct.images;
+  }
+  return [selectedColor.img || (currentProduct ? currentProduct.image : '')].filter(Boolean);
+}
+
+function switchDetailGalleryImage(index) {
+  const currentImages = getSelectedColorImages();
+  if (!currentImages || !currentImages[index]) return;
+  currentGalleryIndex = index;
+
+  const mainImg = document.getElementById('mainDetailImg');
+  if (mainImg) {
+    mainImg.style.opacity = '0.35';
+    mainImg.style.transform = 'scale(0.98)';
+    setTimeout(() => {
+      mainImg.src = currentImages[index];
+      mainImg.style.opacity = '1';
+      mainImg.style.transform = 'scale(1)';
+    }, 120);
+  }
+
+  // Cập nhật trạng thái active cho thumbnail
+  const thumbItems = document.querySelectorAll('#galleryThumbsSlider .thumb-item');
+  thumbItems.forEach((item, idx) => {
+    item.classList.toggle('active', idx === index);
+  });
+
+  // Cập nhật số đếm ảnh
+  const counterEl = document.getElementById('galleryCurrentIdx');
+  if (counterEl) counterEl.innerText = index + 1;
+}
+
+function navDetailGallery(direction) {
+  const currentImages = getSelectedColorImages();
+  if (!currentImages || currentImages.length <= 1) return;
+  let newIdx = currentGalleryIndex + direction;
+  if (newIdx < 0) newIdx = currentImages.length - 1;
+  if (newIdx >= currentImages.length) newIdx = 0;
+  switchDetailGalleryImage(newIdx);
 }
 
 function renderDetailHTML() {
@@ -1439,24 +2090,74 @@ function renderDetailHTML() {
     ? currentProduct.variants
     : [selectedColor];
 
+  const currentGalleryImages = getSelectedColorImages();
+  if (currentGalleryIndex >= currentGalleryImages.length) {
+    currentGalleryIndex = 0;
+  }
+  const currentMainImgUrl = currentGalleryImages[currentGalleryIndex] || selectedColor.img || currentProduct.image;
+
   container.innerHTML = `
     <div class="pd-image-col">
       <div class="main-img-wrapper">
         <button class="wishlist-btn ${isLiked ? 'active' : ''}" 
-                style="opacity:1; transform:none; top:20px; right:20px; width:45px; height:45px; font-size:20px; z-index:10; background:rgba(255,255,255,0.9); box-shadow:0 4px 12px rgba(0,0,0,0.1);" 
+                style="opacity:1; transform:none; top:18px; right:18px; width:45px; height:45px; font-size:20px; z-index:10; background:rgba(255,255,255,0.92); box-shadow:0 4px 12px rgba(0,0,0,0.1);" 
                 onclick="toggleWishlist(this, '${currentId}')" 
                 title="Yêu thích">
           <i class="${iconClass} fa-heart"></i>
         </button>
-        <img src="${selectedColor.img || currentProduct.image}" id="mainDetailImg" alt="${currentProduct.name}">
+        ${percent > 0 ? `<span class="badge-sale" style="top:18px; left:18px; border-radius:4px; padding:6px 12px; font-size:12px; z-index:7;">GIẢM ${percent}%</span>` : (currentProduct.badge ? `<span class="badge-sale" style="top:18px; left:18px; border-radius:4px; padding:6px 12px; font-size:12px; z-index:7; background:var(--gold, #dfba73); color:#000;">${currentProduct.badge}</span>` : '')}
+        
+        <img src="${currentMainImgUrl}" id="mainDetailImg" alt="${currentProduct.name}">
+
+        ${currentGalleryImages.length > 1 ? `
+          <button type="button" class="gallery-nav-btn prev" onclick="navDetailGallery(-1)" title="Ảnh trước"><i class="fas fa-chevron-left"></i></button>
+          <button type="button" class="gallery-nav-btn next" onclick="navDetailGallery(1)" title="Ảnh tiếp theo"><i class="fas fa-chevron-right"></i></button>
+        ` : ''}
+
+        <div class="gallery-counter-badge" id="galleryCounter">
+          <i class="fas fa-camera"></i> <span id="galleryCurrentIdx">${currentGalleryIndex + 1}</span> / <span id="galleryTotal">${currentGalleryImages.length}</span>
+        </div>
+
+        <div class="gallery-color-badge">
+          <span class="color-dot" style="background:${selectedColor.hex || selectedColor.colorCode || '#dfba73'}"></span>
+          <span>${selectedColor.color}</span>
+        </div>
       </div>
+
+      <!-- Dải ảnh phụ theo màu sắc (Thumbnails Gallery) -->
+      ${currentGalleryImages.length > 1 ? `
+        <div class="detail-gallery-thumbnails">
+          <div class="gallery-thumbs-header">
+            <span><i class="fas fa-images" style="color:var(--gold, #dfba73); margin-right:4px;"></i> Ảnh chi tiết màu <strong>${selectedColor.color}</strong>:</span>
+          </div>
+          <div class="gallery-thumbs-slider" id="galleryThumbsSlider">
+            ${currentGalleryImages.map((imgUrl, idx) => `
+              <div class="thumb-item ${idx === currentGalleryIndex ? 'active' : ''}" 
+                   onclick="switchDetailGalleryImage(${idx})" 
+                   title="Xem góc chụp ${idx + 1}">
+                <img src="${imgUrl}" alt="${currentProduct.name} - góc ${idx + 1}">
+                <span class="thumb-number">${idx + 1}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Chọn nhanh theo phân loại màu sắc -->
       ${variants.length > 1 ? `
-        <div style="display:flex; gap:10px; margin-top:14px; overflow-x:auto; padding-bottom:6px;">
-          ${variants.map((v, idx) => `
-            <img src="${v.img}" onclick="selectColor(${idx}, this)" 
-                 style="width:68px; height:68px; object-fit:cover; border-radius:6px; cursor:pointer; border:2.5px solid ${v.color === selectedColor.color ? 'var(--gold, #dfba73)' : '#e2e8f0'}; transition:0.2s; box-shadow:0 2px 6px rgba(0,0,0,0.05);"
-                 alt="${v.color}" title="${v.color}">
-          `).join('')}
+        <div class="variant-swatch-row">
+          <span class="swatch-row-label">Đổi màu xem toàn bộ ảnh:</span>
+          <div class="variant-swatches">
+            ${variants.map((v, idx) => `
+              <div class="swatch-card ${v.color === selectedColor.color ? 'active' : ''}" onclick="selectColor(${idx}, this)" title="Xem bộ ảnh màu ${v.color}">
+                <img src="${v.img || (v.images && v.images[0])}" alt="${v.color}">
+                <div class="swatch-info">
+                  <span class="swatch-dot" style="background:${v.hex || v.colorCode || '#000'}"></span>
+                  <span class="swatch-name">${v.color}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       ` : ''}
     </div>
@@ -1698,9 +2399,10 @@ function addToCart(newItem) {
   }
 
   saveCart();
+  renderCartSidebar();
   updateCartIcon();
-  toggleCart();
-  showToast({ title: 'Thành công', message: `Đã thêm "${newItem.name}" vào giỏ hàng.`, type: 'success' });
+  // Chỉ thêm số ở giỏ hàng, KHÔNG mở container giỏ hàng
+  showToast({ title: 'Thêm vào giỏ thành công', message: `+${newItem.quantity} "${newItem.name}" (${newItem.color || ''} · ${newItem.size || ''})`, type: 'success' });
 }
 
 function quickAdd(id) {
@@ -1739,12 +2441,18 @@ function updateCartIcon() {
   try {
     cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
   } catch (e) {}
-  const badge = document.getElementById('cartBadge') || document.querySelector('.badge');
-  if (badge) {
-    const totalQty = cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+  // CHỈ chọn #cartBadge và .cart-badge, TUYỆT ĐỐI không chọn .badge vì sẽ bị trùng sang #wishlistBadge
+  const badges = document.querySelectorAll('#cartBadge, .cart-badge');
+  const totalQty = cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+  badges.forEach((badge) => {
     badge.innerText = totalQty;
     badge.style.display = totalQty > 0 ? 'flex' : 'none';
-  }
+    badge.classList.remove('badge-pop');
+    void badge.offsetWidth;
+    badge.classList.add('badge-pop');
+  });
+  // Đồng bộ lại icon yêu thích chính xác độc lập
+  updateWishlistIcon();
 }
 
 function renderCartSidebar() {
@@ -1767,19 +2475,80 @@ function renderCartSidebar() {
     return;
   }
 
+  const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
+    ? catalogState.allProducts
+    : (typeof products !== 'undefined' && products.length > 0 ? products : SHOP_FALLBACK_PRODUCTS);
+
   let total = 0;
   list.innerHTML = cart
     .map((item, idx) => {
       total += (item.price || 0) * (item.quantity || 1);
-      const imgSrc = item.img || item.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800';
+      const p = allProds.find((x) => String(x.id || x._id) === String(item.id || item._id));
+      const variants = (p && p.variants && p.variants.length > 0) ? p.variants : [];
+      const currentVariant = variants.find((v) => v.color === item.color) || variants[0];
+      const availableSizes = (currentVariant && currentVariant.sizes && currentVariant.sizes.length > 0)
+        ? currentVariant.sizes
+        : ['S', 'M', 'L', 'XL'];
+      const imgSrc = item.img || item.image || (currentVariant ? currentVariant.img : (p ? p.image : 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800'));
+
+      // 1. Selector màu sắc trực tiếp trong giỏ
+      let colorSelectorHTML = '';
+      if (variants.length > 1) {
+        colorSelectorHTML = `
+          <div class="cart-opt-box" style="position:relative; flex:1; min-width:100px;">
+            <label style="display:block; font-size:9.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:2px; letter-spacing:0.3px;">Màu</label>
+            <div style="position:relative;">
+              <select class="cart-inline-select" onchange="changeCartItemColor(${idx}, this.value)" style="width:100%; font-size:11px; font-weight:600; font-family:var(--font); border:1px solid #cbd5e1; border-radius:4px; padding:3px 18px 3px 6px; background:#f8fafc; color:#0f172a; cursor:pointer; outline:none; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+                ${variants.map(v => `<option value="${v.color}" ${v.color === item.color ? 'selected' : ''}>${v.color}</option>`).join('')}
+              </select>
+              <i class="fas fa-chevron-down" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; color:#94a3b8; pointer-events:none;"></i>
+            </div>
+          </div>
+        `;
+      } else {
+        colorSelectorHTML = `
+          <div class="cart-opt-box" style="flex:1; min-width:75px;">
+            <label style="display:block; font-size:9.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:2px; letter-spacing:0.3px;">Màu</label>
+            <div style="font-size:11px; font-weight:600; color:#334155; padding:3px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${item.color || 'Tiêu chuẩn'}
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Selector size kích thước trực tiếp trong giỏ
+      const sizeSelectorHTML = `
+        <div class="cart-opt-box" style="position:relative; width:80px;">
+          <label style="display:block; font-size:9.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:2px; letter-spacing:0.3px;">Size</label>
+          <div style="position:relative;">
+            <select class="cart-inline-select" onchange="changeCartItemSize(${idx}, this.value)" style="width:100%; font-size:11px; font-weight:700; font-family:var(--font); border:1px solid #cbd5e1; border-radius:4px; padding:3px 18px 3px 6px; background:#f8fafc; color:#0f172a; cursor:pointer; outline:none;">
+              ${availableSizes.map(s => {
+                const sName = typeof s === 'string' ? s : (s.size || s.name);
+                const sStock = typeof s === 'object' && s !== null ? (s.stock ?? 10) : 10;
+                const disabled = sStock <= 0 ? 'disabled' : '';
+                const note = sStock <= 0 ? ' (Hết)' : '';
+                return `<option value="${sName}" ${sName === item.size ? 'selected' : ''} ${disabled}>${sName}${note}</option>`;
+              }).join('')}
+            </select>
+            <i class="fas fa-chevron-down" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:8px; color:#94a3b8; pointer-events:none;"></i>
+          </div>
+        </div>
+      `;
+
       return `
-      <div class="cart-item-row" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f1f5f9; align-items:center;">
-          <img src="${imgSrc}" style="width:50px; height:60px; object-fit:cover; border-radius:4px;" alt="${item.name}">
-          <div class="cart-item-info" style="flex:1;">
-              <h4 style="font-size:13px; margin:0 0 4px 0; color:#0f172a;">${item.name}</h4>
-              <p style="font-size:11px; color:#64748b; margin:2px 0;">${item.color || 'Tiêu chuẩn'} / Size: ${item.size || 'M'}</p>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                  <strong style="font-size:13px; color:var(--gold);">${((item.price || 0) * (item.quantity || 1)).toLocaleString('vi-VN')}₫</strong>
+      <div class="cart-item-row" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f1f5f9; align-items:flex-start;">
+          <img src="${imgSrc}" style="width:55px; height:68px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; flex-shrink:0;" alt="${item.name}">
+          <div class="cart-item-info" style="flex:1; min-width:0;">
+              <h4 style="font-size:13px; margin:0 0 3px 0; color:#0f172a; font-weight:600; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.name}">${item.name}</h4>
+              
+              <!-- Tùy chọn Màu & Size trực tiếp trong giỏ hàng -->
+              <div class="cart-item-variants-edit" style="display:flex; gap:6px; margin:4px 0 6px 0; align-items:center;">
+                  ${colorSelectorHTML}
+                  ${sizeSelectorHTML}
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <strong style="font-size:13px; color:var(--gold); font-weight:700;">${((item.price || 0) * (item.quantity || 1)).toLocaleString('vi-VN')}₫</strong>
                   <div style="background:#f1f5f9; display:flex; align-items:center; border-radius:4px; padding:2px;">
                       <button onclick="changeCartQty(${idx}, -1)" style="border:none; background:none; padding:2px 8px; cursor:pointer; font-weight:700;">-</button>
                       <span style="font-size:12px; padding:0 6px; font-weight:600;">${item.quantity || 1}</span>
@@ -1787,13 +2556,112 @@ function renderCartSidebar() {
                   </div>
               </div>
           </div>
-          <div onclick="removeCartItem(${idx})" style="cursor:pointer; color:#ef4444; padding:6px;" title="Xóa món"><i class="fas fa-trash"></i></div>
+          <div onclick="removeCartItem(${idx})" style="cursor:pointer; color:#ef4444; padding:6px; margin-top:2px;" title="Xóa món"><i class="fas fa-trash"></i></div>
       </div>`;
     })
     .join('');
 
   if (totalEl) totalEl.innerText = `${total.toLocaleString('vi-VN')}₫`;
 }
+
+// Thay đổi màu sắc trực tiếp trong giỏ hàng
+function changeCartItemColor(index, newColor) {
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
+  if (!cart[index]) return;
+
+  const item = cart[index];
+  const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
+    ? catalogState.allProducts
+    : (typeof products !== 'undefined' && products.length > 0 ? products : SHOP_FALLBACK_PRODUCTS);
+  const p = allProds.find((x) => String(x.id || x._id) === String(item.id || item._id));
+  if (!p || !p.variants) return;
+
+  const newV = p.variants.find((v) => v.color === newColor);
+  if (!newV) return;
+
+  item.color = newColor;
+  item.price = newV.price || p.price;
+  item.img = newV.img || p.image;
+  item.image = newV.img || p.image;
+
+  // Kiểm tra size hiện tại có hợp lệ ở variant màu mới không
+  const hasSize = newV.sizes && newV.sizes.some((s) => (s.size || s.name || s) === item.size && (s.stock ?? 1) > 0);
+  if (!hasSize && newV.sizes && newV.sizes.length > 0) {
+    const firstAvail = newV.sizes.find((s) => (s.stock ?? 1) > 0) || newV.sizes[0];
+    item.size = typeof firstAvail === 'string' ? firstAvail : (firstAvail.size || firstAvail.name || 'M');
+  }
+
+  // Tự động gộp nếu trùng với một món khác đã có trong giỏ
+  const dupIdx = cart.findIndex((it, i) => i !== index && String(it.id || it._id) === String(item.id || item._id) && it.color === item.color && it.size === item.size);
+  if (dupIdx > -1) {
+    cart[dupIdx].quantity += (item.quantity || 1);
+    cart.splice(index, 1);
+  }
+
+  saveCart();
+  renderCartSidebar();
+  updateCartIcon();
+  if (typeof renderCheckoutPage === 'function') renderCheckoutPage();
+  if (typeof showToast === 'function') {
+    showToast({ title: 'Đã đổi màu', message: `Đã đổi sang màu "${newColor}"`, type: 'success' });
+  }
+}
+window.changeCartItemColor = changeCartItemColor;
+
+// Thay đổi size trực tiếp trong giỏ hàng
+function changeCartItemSize(index, newSize) {
+  try {
+    cart = JSON.parse(localStorage.getItem('moonlight_cart')) || [];
+  } catch (e) {}
+  if (!cart[index]) return;
+
+  const item = cart[index];
+  const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
+    ? catalogState.allProducts
+    : (typeof products !== 'undefined' && products.length > 0 ? products : SHOP_FALLBACK_PRODUCTS);
+  const p = allProds.find((x) => String(x.id || x._id) === String(item.id || item._id));
+
+  if (p && p.variants) {
+    const v = p.variants.find((va) => va.color === item.color);
+    if (v && v.sizes) {
+      const s = v.sizes.find((sz) => (sz.size || sz.name || sz) === newSize);
+      const maxStock = s ? (typeof s === 'object' ? (s.stock ?? 999) : 999) : 999;
+      if (maxStock <= 0) {
+        if (typeof showToast === 'function') {
+          showToast({ title: 'Hết hàng', message: `Size ${newSize} của màu "${item.color}" hiện đã hết hàng!`, type: 'warning' });
+        }
+        renderCartSidebar();
+        return;
+      }
+      if ((item.quantity || 1) > maxStock) {
+        item.quantity = maxStock;
+        if (typeof showToast === 'function') {
+          showToast({ title: 'Tồn kho giới hạn', message: `Size ${newSize} chỉ còn ${maxStock} cái trong kho. Đã tự động điều chỉnh số lượng.`, type: 'info' });
+        }
+      }
+    }
+  }
+
+  item.size = newSize;
+
+  // Tự động gộp nếu trùng với một món khác đã có trong giỏ
+  const dupIdx = cart.findIndex((it, i) => i !== index && String(it.id || it._id) === String(item.id || item._id) && it.color === item.color && it.size === item.size);
+  if (dupIdx > -1) {
+    cart[dupIdx].quantity += (item.quantity || 1);
+    cart.splice(index, 1);
+  }
+
+  saveCart();
+  renderCartSidebar();
+  updateCartIcon();
+  if (typeof renderCheckoutPage === 'function') renderCheckoutPage();
+  if (typeof showToast === 'function') {
+    showToast({ title: 'Đã đổi size', message: `Đã đổi sang Size ${newSize}`, type: 'success' });
+  }
+}
+window.changeCartItemSize = changeCartItemSize;
 
 function changeCartQty(index, change) {
   try {
@@ -2780,11 +3648,17 @@ function setupSearch() {
     input.addEventListener('keyup', (e) => {
       if (e.key === 'Enter') {
         const keyword = e.target.value.toLowerCase().trim();
-        const filtered = products.filter((p) => p.name.toLowerCase().includes(keyword));
-        renderProductGrid(filtered, 'product-grid');
-        toggleSearch();
-        const shopSec = document.getElementById('shop');
-        if (shopSec) shopSec.scrollIntoView({ behavior: 'smooth' });
+        if (!keyword) return;
+        const grid = document.getElementById('product-grid');
+        if (grid) {
+          const filtered = products.filter((p) => p.name.toLowerCase().includes(keyword));
+          renderProductGrid(filtered, 'product-grid');
+          toggleSearch();
+          const shopSec = document.getElementById('shop');
+          if (shopSec) shopSec.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.location.href = `catalog.html?search=${encodeURIComponent(keyword)}`;
+        }
       }
     });
   }
@@ -2796,6 +3670,15 @@ function toggleSearch() {
   const input = document.getElementById('searchInput');
   if (input && overlay.classList.contains('open')) input.focus();
 }
+
+function toggleMobileMenu() {
+  const menu = document.querySelector('.menu') || document.querySelector('#navbar .menu');
+  const overlay = document.getElementById('mobileMenuOverlay');
+  if (menu) menu.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('open');
+}
+window.toggleMobileMenu = toggleMobileMenu;
+window.toggleSearch = toggleSearch;
 
 // Scroll Effects (Navbar đổi màu, Nút lên đầu trang, Reveal Animation)
 function setupScrollEffects() {

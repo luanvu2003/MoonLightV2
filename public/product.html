@@ -6,9 +6,9 @@
     <title>Chi tiết sản phẩm - Moon Light</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/style.css?v=5.0">
 </head>
-<body>
+<body class="product-page">
 
     <!-- Luxury Page Preloader -->
     <div class="moonlight-preloader" id="pagePreloader">
@@ -41,24 +41,42 @@
         })();
     </script>
 
-    <header id="navbar" style="background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-content">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm (ví dụ: Vest, Sơ mi, Quần âu)...">
+            <button class="close-search" onclick="toggleSearch()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- Header Navigation (Đồng bộ 100% chuẩn MoonLight Luxury) -->
+    <header id="navbar" class="navbar-solid">
         <div class="container nav-container">
             <div class="logo">
-                <h1><a href="index.html" style="text-decoration:none; color:#000;">MOON<span class="highlight">LIGHT</span>.</a></h1>
+                <h1><a href="index.html">MOON<span class="highlight">LIGHT</span>.</a></h1>
             </div>
+
             <nav class="menu">
-                <a href="index.html" style="color:#000">Trang chủ</a>
-                <a href="catalog.html" style="color:#000">Bộ Sưu Tập</a>
-                <a href="catalog.html?gender=Nam" style="color:#000">Thời Trang Nam</a>
-                <a href="catalog.html?gender=Nu" style="color:#000">Thời Trang Nữ</a>
-                <a href="index.html#footer" style="color:#000">Liên hệ</a>
+                <a href="index.html">Trang chủ</a>
+                <a href="catalog.html">Bộ Sưu Tập</a>
+                <a href="try-on.html" class="nav-tryon"><i class="fas fa-wand-magic-sparkles" style="color: var(--gold);"></i> Thử Đồ AI <span class="ai-badge">NEW</span></a>
+                <a href="catalog.html?gender=Nam">Thời Trang Nam</a>
+                <a href="catalog.html?gender=Nu">Thời Trang Nữ</a>
+                <a href="index.html#footer">Liên hệ</a>
             </nav>
-            <div class="nav-icons" style="color:#000;">
-                <div class="icon-item" onclick="toggleCart()">
+
+            <div class="nav-icons">
+                <div class="icon-item" onclick="toggleSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></div>
+                <div class="icon-item" onclick="toggleWishlistSidebar()" title="Danh sách yêu thích">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlistBadge">0</span>
+                </div>
+                <div class="icon-item" onclick="toggleCart()" title="Giỏ hàng">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="badge" id="cartBadge">0</span>
                 </div>
             </div>
+            <div class="mobile-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
         </div>
     </header>
 
@@ -185,9 +203,20 @@
                 <p>&copy; 2026 Moon Light. Designed by <strong>Vũ Phạm Luân</strong>.</p>
             </div>
         </div>
-    </footer>
+    <!-- Wishlist Sidebar Drawer -->
+    <div class="wishlist-overlay" id="wishlistOverlay" onclick="toggleWishlistSidebar()"></div>
+    <div class="wishlist-sidebar" id="wishlistSidebar">
+        <div class="cart-header">
+            <h3>SẢN PHẨM YÊU THÍCH</h3>
+            <button class="close-cart" onclick="toggleWishlistSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="wishlistItems"></div>
+    </div>
 
-    <script src="./js/api.js?v=2.9"></script>
-    <script src="./js/shop.js?v=2.9"></script>
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
+
+    <script src="./js/api.js?v=6.5"></script>
+    <script src="./js/shop.js?v=6.5"></script>
 </body>
 </html>

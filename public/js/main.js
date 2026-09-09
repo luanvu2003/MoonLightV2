@@ -239,7 +239,7 @@ function pushToCart(newItem) {
 
     saveCart();
     updateCartUI();
-    toggleCart(); // Mở sidebar giỏ hàng để khách thấy
+    // Chỉ cập nhật số lượng giỏ hàng, không mở sidebar giỏ hàng khi thêm
     showToast({ title: 'Thành công!', message: `Đã thêm ${newItem.name} vào giỏ.`, type: 'success', duration: 3000 });
 }
 
@@ -249,7 +249,7 @@ function saveCart() {
 }
 
 function updateCartIcon() {
-    const badge = document.querySelector('.badge');
+    const badge = document.querySelector('#cartBadge');
     if (badge) {
         const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
         badge.innerText = totalQty;
