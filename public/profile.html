@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hồ Sơ & Đơn Hàng Của Tôi | MoonLight Haute Couture</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=12.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -38,36 +38,59 @@
             align-items: center;
             gap: 10px;
         }
+        .profile-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .profile-breadcrumb a {
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .profile-breadcrumb a:hover {
+            color: var(--gold, #b48518);
+        }
     </style>
 </head>
 
 <body class="profile-body">
-    <!-- Navbar (Đồng bộ MoonLight Luxury) -->
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-content">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm (ví dụ: Vest, Sơ mi, Quần âu)...">
+            <button class="close-search" onclick="toggleSearch()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- Header Navigation (Đồng bộ 100% chuẩn MoonLight Luxury) -->
     <header id="navbar" class="navbar-solid">
         <div class="container nav-container">
             <div class="logo">
                 <h1><a href="index.html">MOON<span class="highlight">LIGHT</span>.</a></h1>
             </div>
+
             <nav class="menu">
-                <a href="index.html">Trang Chủ</a>
+                <a href="index.html">Trang chủ</a>
                 <a href="catalog.html">Bộ Sưu Tập</a>
-                <a href="try-on.html" class="nav-tryon">
-                    <span>Thử Đồ AI</span>
-                    <span class="ai-badge">NEW</span>
-                </a>
-                <a href="index.html#contact">Liên Hệ</a>
+                <a href="try-on.html" class="nav-tryon"><i class="fas fa-wand-magic-sparkles" style="color: var(--gold);"></i> Thử Đồ AI <span class="ai-badge">NEW</span></a>
+                <a href="catalog.html?gender=Nam">Thời Trang Nam</a>
+                <a href="catalog.html?gender=Nu">Thời Trang Nữ</a>
+                <a href="index.html#footer">Liên hệ</a>
             </nav>
+
             <div class="nav-icons">
-                <div class="icon-item" onclick="openSearchModal()" title="Tìm kiếm">
-                    <i class="far fa-search"></i>
-                </div>
-                <div class="icon-item" onclick="openWishlistModal()" title="Yêu thích">
-                    <i class="far fa-heart"></i>
-                    <span class="badge" id="wishlistCount">0</span>
+                <div class="icon-item" onclick="toggleSearch()" title="Tìm kiếm"><i class="fas fa-search"></i></div>
+                <div class="icon-item" onclick="toggleWishlistSidebar()" title="Danh sách yêu thích">
+                    <i class="fas fa-heart"></i>
+                    <span class="badge" id="wishlistBadge">0</span>
                 </div>
                 <div class="icon-item" onclick="toggleCart()" title="Giỏ hàng">
-                    <i class="far fa-shopping-bag"></i>
-                    <span class="badge" id="cartCount">0</span>
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge" id="cartBadge">0</span>
                 </div>
                 <div class="icon-item nav-user-item" id="navUserBtn" onclick="handleUserIconClick(event)" title="Tài khoản">
                     <i class="far fa-user" id="navUserIcon"></i>
@@ -96,6 +119,13 @@
     <!-- Nội dung chính -->
     <main class="profile-page-wrapper">
         <div class="container">
+            <!-- Breadcrumb Navigation -->
+            <div class="profile-breadcrumb">
+                <a href="index.html"><i class="fas fa-house"></i> Trang chủ</a>
+                <span>/</span>
+                <span style="color: var(--gold, #b48518); font-weight: 600;">Thông tin cá nhân & Đơn mua</span>
+            </div>
+
             <!-- Thẻ Tóm Tắt Khách Hàng (Hero Card) -->
             <div class="profile-hero-card">
                 <div class="profile-hero-inner">
@@ -337,6 +367,88 @@
             <button onclick="document.getElementById('profileQrModal').style.display='none'" class="btn-primary" style="width:100%; margin-top:16px; padding:11px; border-radius:6px; font-weight:700;">
                 ĐÃ HOÀN TẤT CHUYỂN KHOẢN
             </button>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
+
+    <!-- Wishlist Sidebar Drawer (Đồng bộ với Trang Chủ) -->
+    <div class="wishlist-overlay" id="wishlistOverlay" onclick="toggleWishlistSidebar()"></div>
+    <div class="wishlist-sidebar" id="wishlistSidebar">
+        <div class="cart-header">
+            <h3>SẢN PHẨM YÊU THÍCH</h3>
+            <button class="close-cart" onclick="toggleWishlistSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="wishlistItems"></div>
+    </div>
+
+    <!-- Cart Sidebar Drawer (Đồng bộ với Trang Chủ) -->
+    <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>GIỎ HÀNG</h3>
+            <button class="close-cart" onclick="toggleCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total-box"><span class="total-label">TỔNG CỘNG:</span><span class="total-amount" id="cartTotal">0₫</span></div>
+            <button class="checkout-btn" onclick="goToCheckout()">THANH TOÁN</button>
+        </div>
+    </div>
+
+    <!-- FOOTER (Chuẩn MoonLight giống hệt Trang Chủ) -->
+    <footer id="footer">
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>MOON<span class="highlight">LIGHT</span>.</h3>
+                    <p class="footer-desc">Nâng tầm phong cách quý ông Việt. Sự lựa chọn hoàn hảo cho những ai yêu thích sự tối giản và tinh tế.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-tiktok"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>HỖ TRỢ KHÁCH HÀNG</h3>
+                    <ul class="footer-links">
+                        <li><a href="catalog.html">Hướng dẫn chọn size</a></li>
+                        <li><a href="catalog.html">Chính sách đổi trả</a></li>
+                        <li><a href="catalog.html">Chính sách bảo mật</a></li>
+                        <li><a href="profile.html?tab=orders">Tra cứu đơn hàng</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>LIÊN HỆ</h3>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-map-marker-alt"></i> 127 Tăng Bạt Hổ, Bảo Lộc</li>
+                        <li><i class="fas fa-phone"></i> 0393.203.037</li>
+                        <li><i class="fas fa-envelope"></i> luanvutk123@gmail.com</li>
+                        <li><i class="fas fa-clock"></i> 8:00 - 22:00 (Hàng ngày)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Moon Light. Designed by <strong style="cursor: default;">Vũ Phạm Luân</strong><a href="login.html" style="color: inherit; opacity: 0; cursor: default;">.</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Overlay menu mobile -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Floating Contact Widget & Scroll Top (Đồng bộ với Trang Chủ) -->
+    <div class="floating-container">
+        <button id="scrollTopBtn" title="Lên đầu trang" onclick="window.scrollTo({top:0, behavior:'smooth'})"><i class="fas fa-arrow-up"></i></button>
+        <div class="contact-wrapper">
+            <div class="contact-list">
+                <a href="https://zalo.me/0393203037" target="_blank" class="contact-item zalo" title="Zalo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/1200px-Icon_of_Zalo.svg.png"></a>
+                <a href="#" class="contact-item mess" title="Messenger"><i class="fab fa-facebook-messenger"></i></a>
+                <a href="tel:0393203037" class="contact-item phone" title="Gọi ngay"><i class="fas fa-phone-alt"></i></a>
+            </div>
+            <div class="contact-main-btn"><i class="fas fa-headset shake-anim"></i></div>
         </div>
     </div>
 
