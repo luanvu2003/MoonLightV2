@@ -2194,6 +2194,19 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
     color: #ef4444;
 }
 
+.user-dropdown-item.admin-only-link {
+    color: var(--gold, #d4af37);
+    font-weight: 700;
+    background: rgba(212, 175, 55, 0.08);
+    border-left: 3px solid var(--gold, #d4af37);
+}
+
+.user-dropdown-item.admin-only-link:hover {
+    background: rgba(212, 175, 55, 0.2);
+    color: #ffffff;
+    padding-left: 20px;
+}
+
 /* Auth Modal Backdrop & Card */
 .auth-modal-overlay {
     position: fixed;

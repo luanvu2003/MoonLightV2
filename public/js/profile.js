@@ -78,9 +78,27 @@ function updateHeroCard(user) {
 
   const fullName = user.name || user.username || 'Khách Hàng';
   if (heroName) heroName.textContent = fullName;
+  
+  const rLower = String(user.role || '').toLowerCase();
+  const isStaffOrAdmin = ['admin', 'owner', 'staff'].includes(rLower);
+
   if (heroTier) {
-    heroTier.textContent = user.role === 'admin' ? 'Quản Trị Viên' : (user.role === 'owner' ? 'Chủ Cửa Hàng' : 'Thành viên MoonLight');
+    if (rLower === 'admin') {
+      heroTier.textContent = 'Quản Trị Viên';
+    } else if (rLower === 'owner') {
+      heroTier.textContent = 'Chủ Cửa Hàng';
+    } else if (rLower === 'staff') {
+      heroTier.textContent = 'Nhân Viên Cửa Hàng';
+    } else {
+      heroTier.textContent = user.tier || 'Thành viên MoonLight';
+    }
   }
+
+  const sideNavAdminBtn = document.getElementById('sideNavAdminBtn');
+  if (sideNavAdminBtn) {
+    sideNavAdminBtn.style.display = isStaffOrAdmin ? 'flex' : 'none';
+  }
+
   if (heroEmail) heroEmail.textContent = user.email || 'Chưa liên kết email';
   if (heroPhone) heroPhone.textContent = user.phone ? `SĐT: ${user.phone}` : 'Chưa cập nhật SĐT';
 

@@ -4334,8 +4334,10 @@ function initCustomerAuthUI() {
             </div>
           </div>
           <div class="user-dropdown-divider"></div>
+          <a href="admin.html" class="user-dropdown-item admin-only-link" id="dropdownAdminLink" style="display:none;"><i class="fas fa-crown"></i> Trang quản trị Admin</a>
           <a href="profile.html?tab=profile" class="user-dropdown-item"><i class="fas fa-user-circle"></i> Thông tin cá nhân</a>
           <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
+          <a href="profile.html?tab=tickets" class="user-dropdown-item"><i class="fas fa-headset"></i> Yêu cầu hỗ trợ</a>
           <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
           <div class="user-dropdown-divider"></div>
           <a href="javascript:void(0)" onclick="handleCustomerLogout()" class="user-dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
@@ -4526,12 +4528,29 @@ function updateCustomerNavbarUI() {
   const nameEl = document.getElementById('dropdownUserName');
   const tierEl = document.getElementById('dropdownUserTier');
   const avatarEl = document.getElementById('dropdownUserAvatar');
+  const adminLinks = document.querySelectorAll('.admin-only-link, #dropdownAdminLink');
 
   if (user && token) {
     if (userIcon) userIcon.className = 'fas fa-user-check';
     if (userDot) userDot.style.display = 'block';
     if (nameEl) nameEl.innerText = user.name || user.username || 'Khách hàng';
-    if (tierEl) tierEl.innerText = user.role === 'Admin' ? 'Quản Trị Viên' : (user.tier || 'Thành Viên');
+
+    // Cập nhật huy hiệu vai trò
+    const roleLower = String(user.role || '').toLowerCase();
+    const isStaffOrAdmin = ['admin', 'owner', 'staff'].includes(roleLower);
+
+    if (tierEl) {
+      if (roleLower === 'admin') {
+        tierEl.innerText = 'Quản Trị Viên';
+      } else if (roleLower === 'owner') {
+        tierEl.innerText = 'Chủ Cửa Hàng';
+      } else if (roleLower === 'staff') {
+        tierEl.innerText = 'Nhân Viên Cửa Hàng';
+      } else {
+        tierEl.innerText = user.tier || 'Thành Viên';
+      }
+    }
+
     if (avatarEl) {
       if (user.avatar) {
         avatarEl.innerHTML = `<img src="${user.avatar}" alt="${user.name}">`;
@@ -4539,11 +4558,35 @@ function updateCustomerNavbarUI() {
         avatarEl.innerHTML = `<i class="fas fa-user"></i>`;
       }
     }
+
+    // Hiển thị nút vào trang Admin CHỈ DÀNH RIÊNG cho Admin, Chủ cửa hàng (Owner), và Nhân viên (Staff)
+    if (isStaffOrAdmin) {
+      if (adminLinks.length > 0) {
+        adminLinks.forEach(link => {
+          link.style.display = 'flex';
+        });
+      } else {
+        // Tự động chèn nếu trang chưa có sẵn
+        const menu = document.getElementById('userDropdownMenu');
+        const profileLink = menu?.querySelector('a[href*="profile.html?tab=profile"]');
+        if (menu && profileLink) {
+          const adminHtml = `<a href="admin.html" class="user-dropdown-item admin-only-link" id="dropdownAdminLink" style="display:flex;"><i class="fas fa-crown"></i> Trang quản trị Admin</a>`;
+          profileLink.insertAdjacentHTML('beforebegin', adminHtml);
+        }
+      }
+    } else {
+      adminLinks.forEach(link => {
+        link.style.display = 'none';
+      });
+    }
   } else {
     if (userIcon) userIcon.className = 'far fa-user';
     if (userDot) userDot.style.display = 'none';
     const menu = document.getElementById('userDropdownMenu');
     if (menu) menu.classList.remove('show');
+    adminLinks.forEach(link => {
+      link.style.display = 'none';
+    });
   }
 }
 
