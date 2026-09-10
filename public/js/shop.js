@@ -4536,9 +4536,29 @@ function handleCustomerLogout() {
   });
 }
 
+// Tải Google Client ID từ backend và thiết lập Google Sign-In
+async function initGoogleOAuthFromBackend() {
+  if (window.GOOGLE_CLIENT_ID) return window.GOOGLE_CLIENT_ID;
+  try {
+    const saved = localStorage.getItem('moonlight_google_client_id');
+    if (saved) window.GOOGLE_CLIENT_ID = saved;
+    if (window.MoonlightAPI && typeof window.MoonlightAPI.getGoogleConfig === 'function') {
+      const cfg = await window.MoonlightAPI.getGoogleConfig();
+      if (cfg && cfg.clientId) {
+        window.GOOGLE_CLIENT_ID = cfg.clientId;
+      }
+    }
+  } catch (e) {}
+
+  if (window.GOOGLE_CLIENT_ID) {
+    setupGoogleIdentityServices();
+  }
+  return window.GOOGLE_CLIENT_ID || '';
+}
+
 // Thiết lập Google Identity Services
 function setupGoogleIdentityServices() {
-  if (typeof window.google === 'undefined' || !window.google.accounts || !window.google.accounts.id) {
+  if (typeof window.google === 'undefined' || !window.google.accounts) {
     return;
   }
 
@@ -4548,58 +4568,154 @@ function setupGoogleIdentityServices() {
   if (!clientId) return;
 
   try {
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleGoogleCredentialResponse,
-      auto_select: false
-    });
-    isGoogleGsiInitialized = true;
+    if (window.google.accounts.id) {
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false
+      });
+      isGoogleGsiInitialized = true;
+    }
   } catch (err) {
     console.warn('[Google GSI] Init warning:', err);
   }
 }
 
 async function triggerGoogleSignIn() {
-  // 1. Nếu Google GIS đã sẵn sàng và có Client ID
-  if (typeof window.google !== 'undefined' && window.google.accounts && window.google.accounts.id) {
-    const clientId = window.GOOGLE_CLIENT_ID || '';
-    if (clientId) {
+  const alertBox = document.getElementById('customerLoginAlert');
+  if (alertBox) alertBox.style.display = 'none';
+
+  const clientId = await initGoogleOAuthFromBackend();
+
+  // 1. NẾU ĐÃ CÓ GOOGLE CLIENT ID: Mở trực tiếp cửa sổ chọn tài khoản Google thật
+  if (clientId && typeof window.google !== 'undefined' && window.google.accounts) {
+    // A. Mở popup OAuth2 chuẩn Google
+    if (window.google.accounts.oauth2) {
+      try {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'email profile openid',
+          callback: async (resp) => {
+            if (resp && resp.access_token) {
+              try {
+                showToast({ title: 'Google Sign-In', message: 'Đang xác thực tài khoản Google...', type: 'info' });
+                const res = await MoonlightAPI.loginWithGoogle(null, resp.access_token);
+                if (res && res.success) {
+                  updateCustomerNavbarUI();
+                  closeAuthModal();
+                  showToast({
+                    title: 'Đăng nhập Google thành công',
+                    message: `Chào mừng ${res.data?.user?.name || 'quý khách'} đến với MoonLight!`,
+                    type: 'success'
+                  });
+                  await syncUserDataWithServer();
+                } else {
+                  throw new Error(res?.message || 'Xác thực Google thất bại.');
+                }
+              } catch (err) {
+                if (alertBox) {
+                  alertBox.style.display = 'block';
+                  alertBox.innerText = err.message || 'Lỗi đăng nhập Google.';
+                }
+              }
+            }
+          }
+        });
+        tokenClient.requestAccessToken();
+        return;
+      } catch (err) {
+        console.warn('OAuth2 popup fallback:', err);
+      }
+    }
+
+    // B. Fallback qua GSI prompt
+    if (window.google.accounts.id) {
       setupGoogleIdentityServices();
-      google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          console.log('[Google GSI] One-tap prompt skipped/closed');
-        }
-      });
+      google.accounts.id.prompt();
       return;
     }
   }
 
-  // 2. Chế độ Demo / Hướng dẫn thông minh khi chưa gắn GOOGLE_CLIENT_ID
-  const demoEmail = prompt(
-    '💎 TÍCH HỢP GOOGLE SIGN-IN:\n\n' +
-    'Để sử dụng tài khoản Google thật, bạn chỉ cần cấu hình GOOGLE_CLIENT_ID vào file .env trên máy chủ.\n\n' +
-    'Bạn có muốn thử nghiệm ngay luồng Đăng nhập Google với một tài khoản Gmail mẫu không? Nhập địa chỉ Gmail để kiểm tra:',
-    'khachhang.luxury@gmail.com'
-  );
+  // 2. NẾU CHƯA CÓ CLIENT ID: Mở Modal Hướng dẫn kích hoạt sang trọng
+  openGoogleSetupGuideModal();
+}
 
-  if (!demoEmail || !demoEmail.includes('@')) return;
+function openGoogleSetupGuideModal() {
+  let overlay = document.getElementById('googleGuideOverlay');
+  if (!overlay) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="auth-modal-overlay open" id="googleGuideOverlay" style="z-index:100001;" onclick="if(event.target===this)closeGoogleGuideModal()">
+        <div class="auth-modal-card" style="max-width:480px;">
+          <div class="auth-modal-header" style="text-align:center; display:block; position:relative; padding-bottom:12px;">
+            <button class="btn-auth-close" onclick="closeGoogleGuideModal()" style="position:absolute; right:18px; top:18px;">&times;</button>
+            <div style="font-size:36px; color:#4285F4; margin-bottom:8px;"><i class="fab fa-google"></i></div>
+            <h3 style="margin:0 0 6px 0; font-size:17px; font-weight:700; color:#fff;">KÍCH HOẠT GOOGLE SIGN-IN</h3>
+            <p style="margin:0; font-size:12px; color:#94a3b8;">Đăng nhập 1-click bằng tài khoản Gmail thật</p>
+          </div>
+          <div class="auth-modal-body" style="padding:20px;">
+            <p style="font-size:13px; color:#cbd5e1; line-height:1.6; margin-bottom:14px;">
+              Để Google cho phép mở cửa sổ đăng nhập Gmail chính thức, website cần có <strong>Google Client ID</strong> (được Google cấp miễn phí trong 1 phút).
+            </p>
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(223,186,115,0.3); border-radius:8px; padding:14px; margin-bottom:16px;">
+              <label style="font-size:12px; font-weight:600; color:var(--gold); display:block; margin-bottom:6px;">
+                <i class="fas fa-key"></i> Dán Google Client ID của bạn vào đây:
+              </label>
+              <input type="text" id="manualGoogleClientIdInput" placeholder="Ví dụ: 123456789-xxx.apps.googleusercontent.com" style="width:100%; padding:10px 12px; background:#0b1120; border:1px solid #334155; border-radius:6px; color:#fff; font-size:12px; margin-bottom:10px; box-sizing:border-box;">
+              <button type="button" class="btn-primary" onclick="saveManualGoogleClientIdAndSignIn()" style="width:100%; padding:10px; font-size:12.5px; font-weight:700; justify-content:center; display:flex; align-items:center; gap:8px;">
+                <i class="fab fa-google"></i> LƯU & MỞ ĐĂNG NHẬP GOOGLE THẬT
+              </button>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-outline" onclick="runDemoGoogleSignIn()" style="flex:1; font-size:12px; padding:9px; justify-content:center; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-user-check"></i> Đăng nhập thử (Demo)
+              </button>
+              <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="btn-outline" style="flex:1; font-size:12px; padding:9px; justify-content:center; display:flex; align-items:center; gap:6px; text-decoration:none; text-align:center;">
+                <i class="fas fa-external-link-alt"></i> Lấy Client ID (Free)
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+  } else {
+    overlay.classList.add('open');
+  }
+}
 
-  const namePart = demoEmail.split('@')[0];
-  const demoName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+function closeGoogleGuideModal() {
+  const overlay = document.getElementById('googleGuideOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
 
-  // Tạo mock JWT payload chuẩn của Google OAuth
+async function saveManualGoogleClientIdAndSignIn() {
+  const input = document.getElementById('manualGoogleClientIdInput');
+  const val = input ? input.value.trim() : '';
+  if (!val) {
+    showToast({ title: 'Thiếu Client ID', message: 'Vui lòng dán chuỗi Google Client ID vào ô.', type: 'warning' });
+    return;
+  }
+  localStorage.setItem('moonlight_google_client_id', val);
+  window.GOOGLE_CLIENT_ID = val;
+  isGoogleGsiInitialized = false;
+  setupGoogleIdentityServices();
+  closeGoogleGuideModal();
+  showToast({ title: 'Đã lưu Google Client ID', message: 'Đang mở cửa sổ đăng nhập Google...', type: 'success' });
+  setTimeout(() => { triggerGoogleSignIn(); }, 400);
+}
+
+async function runDemoGoogleSignIn() {
+  closeGoogleGuideModal();
+  const demoEmail = 'khachhang.luxury@gmail.com';
   const mockPayload = {
     sub: 'google_sub_' + Math.abs(hashCode(demoEmail)),
-    email: demoEmail.trim(),
-    name: demoName + ' (Google)',
+    email: demoEmail,
+    name: 'Khách Hàng Google (Demo)',
     picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     email_verified: true
   };
-
   const headerB64 = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const payloadB64 = btoa(unescape(encodeURIComponent(JSON.stringify(mockPayload))));
   const mockCredential = `${headerB64}.${payloadB64}.mock_signature`;
-
   await handleGoogleCredentialResponse({ credential: mockCredential });
 }
 

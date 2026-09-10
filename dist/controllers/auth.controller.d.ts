@@ -17,4 +17,8 @@ export declare class AuthController {
      * Đồng bộ giỏ hàng và danh sách yêu thích của khách hàng
      */
     static syncUserData(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * Lấy cấu hình Client ID cho Google OAuth Frontend
+     */
+    static getGoogleConfig(_req: Request, res: Response): Promise<void>;
 }

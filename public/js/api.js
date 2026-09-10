@@ -106,10 +106,10 @@ const MoonlightAPI = {
     return res;
   },
 
-  async loginWithGoogle(credential) {
+  async loginWithGoogle(credential, accessToken = null, userInfo = null) {
     const res = await this.request('/auth/google', {
       method: 'POST',
-      body: JSON.stringify({ credential })
+      body: JSON.stringify({ credential, accessToken, userInfo })
     });
     if (res?.data?.tokens?.accessToken) {
       this.setToken(res.data.tokens.accessToken);
@@ -118,6 +118,15 @@ const MoonlightAPI = {
       localStorage.setItem('moonlight_user', JSON.stringify(res.data.user));
     }
     return res;
+  },
+
+  async getGoogleConfig() {
+    try {
+      const res = await this.request('/auth/google/config');
+      return res?.data || null;
+    } catch (e) {
+      return null;
+    }
   },
 
   async syncCustomerData(cart = [], wishlist = []) {

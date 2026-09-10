@@ -277,37 +277,57 @@ export class AuthController {
      */
     static async googleAuth(req, res, next) {
         try {
-            const { credential } = req.body;
-            if (!credential) {
-                sendError(res, 'Thiếu Google credential token', 400, 'BAD_REQUEST');
+            const { credential, accessToken, userInfo } = req.body;
+            if (!credential && !accessToken && !userInfo) {
+                sendError(res, 'Thiếu Google credential hoặc accessToken', 400, 'BAD_REQUEST');
                 return;
             }
             let googlePayload = null;
-            // 1. Xác thực ID Token qua Google OAuth TokenInfo API
-            try {
-                const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
-                if (verifyRes.ok) {
-                    googlePayload = await verifyRes.json();
-                }
-                else {
-                    // Parse JWT payload nếu tokeninfo gặp sự cố mạng
-                    const parts = credential.split('.');
-                    if (parts.length === 3) {
-                        const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
-                        googlePayload = JSON.parse(decodedStr);
+            // 1. Nếu nhận được trực tiếp userInfo
+            if (userInfo && (userInfo.email || userInfo.sub)) {
+                googlePayload = userInfo;
+            }
+            // 2. Nếu có accessToken từ Google OAuth2 popup
+            if (!googlePayload && accessToken) {
+                try {
+                    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    if (userRes.ok) {
+                        googlePayload = await userRes.json();
                     }
+                }
+                catch (accErr) {
+                    console.warn('Lỗi xác thực Google access token:', accErr.message);
                 }
             }
-            catch (err) {
-                console.warn('Lỗi xác thực Google token online, giải mã fallback JWT payload:', err.message);
+            // 3. Xác thực ID Token qua Google OAuth TokenInfo API
+            if (!googlePayload && credential) {
                 try {
-                    const parts = credential.split('.');
-                    if (parts.length === 3) {
-                        const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
-                        googlePayload = JSON.parse(decodedStr);
+                    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+                    if (verifyRes.ok) {
+                        googlePayload = await verifyRes.json();
+                    }
+                    else {
+                        // Parse JWT payload nếu tokeninfo gặp sự cố mạng
+                        const parts = credential.split('.');
+                        if (parts.length === 3) {
+                            const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
+                            googlePayload = JSON.parse(decodedStr);
+                        }
                     }
                 }
-                catch (decErr) { }
+                catch (err) {
+                    console.warn('Lỗi xác thực Google token online, giải mã fallback JWT payload:', err.message);
+                    try {
+                        const parts = credential.split('.');
+                        if (parts.length === 3) {
+                            const decodedStr = Buffer.from(parts[1], 'base64').toString('utf-8');
+                            googlePayload = JSON.parse(decodedStr);
+                        }
+                    }
+                    catch (decErr) { }
+                }
             }
             if (!googlePayload || (!googlePayload.email && !googlePayload.sub)) {
                 sendError(res, 'Chứng chỉ Google không hợp lệ hoặc đã hết hạn.', 401, 'INVALID_GOOGLE_TOKEN');
@@ -408,6 +428,13 @@ export class AuthController {
         catch (error) {
             next(error);
         }
+    }
+    /**
+     * Lấy cấu hình Client ID cho Google OAuth Frontend
+     */
+    static async getGoogleConfig(_req, res) {
+        const clientId = process.env.GOOGLE_CLIENT_ID || '';
+        sendSuccess(res, { clientId, isConfigured: Boolean(clientId) }, 'Lấy cấu hình Google OAuth thành công');
     }
 }
 //# sourceMappingURL=auth.controller.js.map
