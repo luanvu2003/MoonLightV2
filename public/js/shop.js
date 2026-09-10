@@ -4334,7 +4334,7 @@ function initCustomerAuthUI() {
             </div>
           </div>
           <div class="user-dropdown-divider"></div>
-          <a href="profile.html?tab=profile" class="user-dropdown-item"><i class="fas fa-id-card"></i> Thông tin cá nhân</a>
+          <a href="profile.html?tab=profile" class="user-dropdown-item"><i class="fas fa-user-circle"></i> Thông tin cá nhân</a>
           <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
           <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
           <div class="user-dropdown-divider"></div>
