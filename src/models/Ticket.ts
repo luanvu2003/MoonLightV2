@@ -1,5 +1,14 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface ITicketMessage {
+  _id?: mongoose.Types.ObjectId;
+  senderId?: mongoose.Types.ObjectId;
+  senderRole: 'customer' | 'admin' | 'staff';
+  senderName: string;
+  message: string;
+  createdAt: Date;
+}
+
 export interface ITicketReply {
   message: string;
   repliedBy: string;
@@ -16,12 +25,24 @@ export interface ITicket extends Document {
   orderCode?: string;
   subject: string;
   message: string;
+  messages: ITicketMessage[];
   priority: 'normal' | 'urgent';
   status: 'pending' | 'processing' | 'replied' | 'resolved' | 'closed';
   reply?: ITicketReply;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const TicketMessageSchema = new Schema<ITicketMessage>(
+  {
+    senderId: { type: Schema.Types.ObjectId, ref: 'User' },
+    senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
+    senderName: { type: String, required: true, trim: true },
+    message: { type: String, required: true, trim: true },
+    createdAt: { type: Date, default: Date.now }
+  },
+  { _id: true }
+);
 
 const TicketReplySchema = new Schema<ITicketReply>(
   {
@@ -82,6 +103,10 @@ const TicketSchema = new Schema<ITicket>(
       type: String,
       required: [true, 'Nội dung chi tiết yêu cầu không được để trống'],
       trim: true
+    },
+    messages: {
+      type: [TicketMessageSchema],
+      default: []
     },
     priority: {
       type: String,

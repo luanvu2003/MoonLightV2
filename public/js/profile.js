@@ -960,28 +960,36 @@ function renderCustomerTickets(filterStatus = 'all') {
     const dateStr = t.createdAt ? new Date(t.createdAt).toLocaleString('vi-VN') : '';
     const isClosed = t.status === 'closed' || t.status === 'resolved';
 
-    let replySection = '';
-    if (t.reply && t.reply.message) {
-      const replyDate = t.reply.repliedAt ? new Date(t.reply.repliedAt).toLocaleString('vi-VN') : '';
-      replySection = `
-        <div class="ticket-reply-box">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-            <span style="font-size:12.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
-              <i class="fas fa-certificate" style="color:var(--gold,#d4af37);"></i>
-              Phản hồi từ ${escapeHtml(t.reply.repliedBy || 'Chuyên viên CSKH MoonLight')}:
-            </span>
-            <span style="font-size:11.5px; color:#94a3b8;"><i class="far fa-clock"></i> ${replyDate}</span>
-          </div>
-          <div style="font-size:13.5px; color:#1e293b; line-height:1.6; white-space:pre-wrap;">${escapeHtml(t.reply.message)}</div>
-        </div>
-      `;
+    // Tổng hợp danh sách tin nhắn trong cuộc hội thoại (hỗ trợ cả dữ liệu cũ)
+    let msgList = [];
+    if (Array.isArray(t.messages) && t.messages.length > 0) {
+      msgList = t.messages;
+    } else {
+      if (t.message) {
+        msgList.push({
+          senderRole: 'customer',
+          senderName: 'Bạn',
+          message: t.message,
+          createdAt: t.createdAt
+        });
+      }
+      if (t.reply && t.reply.message) {
+        msgList.push({
+          senderRole: 'admin',
+          senderName: t.reply.repliedBy || 'CSKH MoonLight',
+          message: t.reply.message,
+          createdAt: t.reply.repliedAt || t.updatedAt
+        });
+      }
     }
 
+    const hasAdminReplied = msgList.some(m => m.senderRole === 'admin' || m.senderRole === 'staff');
+
     return `
-      <div class="ticket-item-card" id="ticketCard-${t._id}">
-        <div class="ticket-header-row">
+      <div class="ticket-item-card" id="ticketCard-${t._id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+        <div class="ticket-header-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span class="ticket-code-tag"><i class="fas fa-ticket-alt"></i> ${t.ticketCode || 'TK-#'}</span>
+            <span class="ticket-code-tag" style="background:#0f172a; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px;"><i class="fas fa-ticket-alt" style="color:var(--gold,#d4af37);"></i> ${t.ticketCode || 'TK-#'}</span>
             <span style="font-size:12px; font-weight:600; color:#475569; background:#f1f5f9; padding:3px 10px; border-radius:4px;">
               ${catLabel}
             </span>
@@ -997,26 +1005,84 @@ function renderCustomerTickets(filterStatus = 'all') {
           </div>
         </div>
 
-        <div style="margin-bottom:12px;">
-          <h4 style="font-size:15px; font-weight:700; color:#0f172a; margin-bottom:6px;">${escapeHtml(t.subject)}</h4>
-          <p style="font-size:13.5px; color:#334155; line-height:1.6; margin:0; white-space:pre-wrap;">${escapeHtml(t.message)}</p>
+        <div style="margin-bottom:14px;">
+          <h4 style="font-size:15.5px; font-weight:700; color:#0f172a; margin-bottom:4px;">${escapeHtml(t.subject)}</h4>
+          <span style="font-size:11.5px; color:#94a3b8;"><i class="far fa-clock"></i> Khởi tạo lúc: ${dateStr}</span>
         </div>
 
-        ${replySection}
+        <!-- KHUNG TRAO ĐỔI TIN NHẮN (CHAT THREAD) -->
+        <div class="ticket-chat-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="fas fa-comments" style="color:var(--gold,#d4af37); margin-right:6px;"></i> Lịch sử trao đổi (${msgList.length} tin nhắn)</span>
+            <span style="font-size:11px; font-weight:normal; color:#64748b;"><i class="fas fa-circle" style="color:#10b981; font-size:8px; margin-right:4px;"></i>Hỗ trợ trực tuyến</span>
+          </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #f1f5f9; margin-top:14px; flex-wrap:wrap; gap:10px;">
-          <div style="font-size:12px; color:#94a3b8;">
-            <i class="far fa-calendar-alt"></i> Gửi lúc: ${dateStr}
+          <div class="ticket-messages-scroll" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+            ${msgList.map(m => {
+              const isCust = m.senderRole === 'customer';
+              const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+              if (isCust) {
+                return `
+                  <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+                      <span>${mTime}</span>
+                      <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
+                    </div>
+                    <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+                      ${escapeHtml(m.message)}
+                    </div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+                      <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
+                        <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
+                      </strong>
+                      <span>${mTime}</span>
+                    </div>
+                    <div style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                      ${escapeHtml(m.message)}
+                    </div>
+                  </div>
+                `;
+              }
+            }).join('')}
+
+            ${!hasAdminReplied && !isClosed ? `
+              <div style="text-align:center; padding:10px 14px; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:8px; font-size:12px; color:#0369a1; margin-top:4px;">
+                <i class="fas fa-hourglass-half fa-spin"></i> Chuyên viên CSKH MoonLight đang tiếp nhận yêu cầu và sẽ trả lời bạn ngay tại khung chat này.
+              </div>
+            ` : ''}
           </div>
-          <div>
-            ${!isClosed ? `
-              <button type="button" class="btn-order-action" onclick="handleCloseCustomerTicket('${t._id}')" style="font-size:12px; padding:6px 14px; border-color:#cbd5e1;">
-                <i class="fas fa-check"></i> Đánh dấu đã giải quyết / Đóng ticket
+
+          <!-- INPUT GỬI TIN NHẮN PHẢN HỒI TIẾP -->
+          ${!isClosed ? `
+            <form onsubmit="handleSendCustomerMessage(event, '${t._id}')" style="margin-top:14px; display:flex; gap:8px; align-items:center; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:24px; padding:3px 6px 3px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+              <input type="text" id="custTicketInput-${t._id}" placeholder="Nhập tin nhắn phản hồi tiếp cho nhân viên tư vấn..." required style="flex:1; border:none; outline:none; font-size:13px; background:transparent; padding:6px 0; color:#0f172a; font-family:inherit;">
+              <button type="submit" id="btnCustSend-${t._id}" style="width:34px; height:34px; border-radius:50%; background:var(--gold,#d4af37); color:#000; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px;" title="Gửi tin nhắn">
+                <i class="fas fa-paper-plane"></i>
               </button>
-            ` : `
-              <span style="font-size:12px; color:#94a3b8;"><i class="fas fa-lock"></i> Phiếu đã đóng</span>
-            `}
-          </div>
+            </form>
+          ` : `
+            <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 14px; font-size:12px; color:#64748b; flex-wrap:wrap; gap:8px;">
+              <span><i class="fas fa-lock"></i> Phiếu hỗ trợ này đã hoàn tất/đóng.</span>
+              <button type="button" class="btn-order-action" onclick="handleReopenCustomerTicket('${t._id}')" style="font-size:11.5px; padding:4px 12px; border-color:#cbd5e1; background:#f8fafc;">
+                <i class="fas fa-rotate-left"></i> Mở lại cuộc trò chuyện này
+              </button>
+            </div>
+          `}
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; align-items:center; padding-top:10px; border-top:1px solid #f1f5f9; gap:10px;">
+          ${!isClosed ? `
+            <button type="button" class="btn-order-action" onclick="handleCloseCustomerTicket('${t._id}')" style="font-size:12px; padding:6px 14px; border-color:#cbd5e1;">
+              <i class="fas fa-check"></i> Đã giải quyết xong / Đóng ticket
+            </button>
+          ` : `
+            <span style="font-size:12px; color:#94a3b8;"><i class="fas fa-lock"></i> Phiếu đã đóng</span>
+          `}
         </div>
       </div>
     `;
@@ -1094,3 +1160,55 @@ async function handleCloseCustomerTicket(ticketId) {
     showToast({ title: 'Lỗi', message: err.message || 'Có lỗi xảy ra khi đóng ticket.', type: 'danger' });
   }
 }
+
+async function handleSendCustomerMessage(event, ticketId) {
+  event.preventDefault();
+  const input = document.getElementById(`custTicketInput-${ticketId}`);
+  const btn = document.getElementById(`btnCustSend-${ticketId}`);
+  const text = input ? input.value.trim() : '';
+  if (!text) return;
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+    const res = await MoonlightAPI.sendTicketMessage(ticketId, text);
+    if (res && (res.success || res.data)) {
+      showToast({ title: 'Đã gửi', message: 'Đã gửi tin nhắn phản hồi đến CSKH!', type: 'success' });
+      if (input) input.value = '';
+      await loadCustomerTickets();
+    } else {
+      showToast({ title: 'Lỗi', message: res?.message || 'Không thể gửi tin nhắn.', type: 'danger' });
+    }
+  } catch (err) {
+    console.error('Lỗi khi gửi tin nhắn ticket:', err);
+    showToast({ title: 'Lỗi', message: err.message || 'Lỗi kết nối máy chủ.', type: 'danger' });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    }
+  }
+}
+
+async function handleReopenCustomerTicket(ticketId) {
+  try {
+    const res = await MoonlightAPI.reopenMyTicket(ticketId);
+    if (res && (res.success || res.data)) {
+      showToast({ title: 'Đã mở lại', message: 'Yêu cầu hỗ trợ đã được mở lại để trao đổi tiếp!', type: 'success' });
+      await loadCustomerTickets();
+    } else {
+      showToast({ title: 'Lỗi', message: res?.message || 'Không thể mở lại yêu cầu hỗ trợ.', type: 'danger' });
+    }
+  } catch (err) {
+    console.error('Lỗi khi mở lại ticket:', err);
+    showToast({ title: 'Lỗi', message: err.message || 'Lỗi kết nối máy chủ.', type: 'danger' });
+  }
+}
+
+// Gán hàm vào window để gọi được từ inline onclick
+window.handleSendCustomerMessage = handleSendCustomerMessage;
+window.handleReopenCustomerTicket = handleReopenCustomerTicket;
+window.handleCloseCustomerTicket = handleCloseCustomerTicket;
+

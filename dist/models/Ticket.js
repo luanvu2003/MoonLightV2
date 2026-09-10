@@ -1,4 +1,11 @@
 import mongoose, { Schema } from 'mongoose';
+const TicketMessageSchema = new Schema({
+    senderId: { type: Schema.Types.ObjectId, ref: 'User' },
+    senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
+    senderName: { type: String, required: true, trim: true },
+    message: { type: String, required: true, trim: true },
+    createdAt: { type: Date, default: Date.now }
+}, { _id: true });
 const TicketReplySchema = new Schema({
     message: { type: String, required: true, trim: true },
     repliedBy: { type: String, default: 'Chuyên viên MoonLight' },
@@ -53,6 +60,10 @@ const TicketSchema = new Schema({
         type: String,
         required: [true, 'Nội dung chi tiết yêu cầu không được để trống'],
         trim: true
+    },
+    messages: {
+        type: [TicketMessageSchema],
+        default: []
     },
     priority: {
         type: String,

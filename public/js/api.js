@@ -403,14 +403,31 @@ const MoonlightAPI = {
     });
   },
 
+  async reopenMyTicket(id) {
+    return this.request(`/tickets/${id}/reopen`, {
+      method: 'PUT'
+    });
+  },
+
+  async getTicketDetail(id) {
+    return this.request(`/tickets/${id}`);
+  },
+
+  async sendTicketMessage(id, message, status) {
+    return this.request(`/tickets/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message, status })
+    });
+  },
+
   async getAllTickets(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/tickets${qs ? '?' + qs : ''}`);
   },
 
   async replyTicket(id, data) {
-    return this.request(`/tickets/${id}/reply`, {
-      method: 'PUT',
+    return this.request(`/tickets/${id}/messages`, {
+      method: 'POST',
       body: JSON.stringify(data)
     });
   }

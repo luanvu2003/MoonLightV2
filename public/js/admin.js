@@ -4861,11 +4861,80 @@ function openReplyTicketModal(ticketId) {
     const subjEl = document.getElementById('admModalTicketSubject');
     if (subjEl) subjEl.innerText = ticket.subject || '';
 
-    const msgEl = document.getElementById('admModalTicketMessage');
-    if (msgEl) msgEl.innerText = ticket.message || '';
+    // Tổng hợp danh sách tin nhắn của ticket
+    let msgList = [];
+    if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
+        msgList = ticket.messages;
+    } else {
+        if (ticket.message) {
+            msgList.push({
+                senderRole: 'customer',
+                senderName: ticket.customerName || 'Khách hàng',
+                message: ticket.message,
+                createdAt: ticket.createdAt
+            });
+        }
+        if (ticket.reply && ticket.reply.message) {
+            msgList.push({
+                senderRole: 'admin',
+                senderName: ticket.reply.repliedBy || 'CSKH MoonLight',
+                message: ticket.reply.message,
+                createdAt: ticket.reply.repliedAt || ticket.updatedAt
+            });
+        }
+    }
 
+    const countEl = document.getElementById('admModalMsgCount');
+    if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
+
+    const threadEl = document.getElementById('admModalChatThread');
+    if (threadEl) {
+        threadEl.innerHTML = msgList.map(m => {
+            const isCust = m.senderRole === 'customer';
+            const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+            if (isCust) {
+                return `
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
+                            <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
+                            <span>${mTime}</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">
+                            ${escapeAdminHtml(m.message)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
+                            <span>${mTime}</span>
+                            <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
+                        </div>
+                        <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                            ${escapeAdminHtml(m.message)}
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        setTimeout(() => {
+            threadEl.scrollTop = threadEl.scrollHeight;
+        }, 50);
+    }
+
+    // Reset textarea
     const repEl = document.getElementById('admModalReplyMessage');
-    if (repEl) repEl.value = ticket.reply?.message || '';
+    if (repEl) {
+        repEl.value = '';
+        repEl.onkeydown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('adminReplyTicketForm')?.requestSubmit();
+            }
+        };
+    }
     
     // Select appropriate status
     const statusSelect = document.getElementById('admModalNewStatus');
@@ -4885,6 +4954,10 @@ function openReplyTicketModal(ticketId) {
     modal.onclick = (e) => {
         if (e.target === modal) closeReplyTicketModal();
     };
+
+    setTimeout(() => {
+        if (repEl) repEl.focus();
+    }, 100);
 }
 
 function closeReplyTicketModal() {
@@ -4904,14 +4977,14 @@ async function handleAdminSubmitReply(event) {
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
 
     if (!replyMessage) {
-        showToast("Thiếu nội dung", "Vui lòng nhập câu trả lời cho khách hàng!", "warning");
+        showToast("Thiếu nội dung", "Vui lòng nhập tin nhắn phản hồi cho khách hàng!", "warning");
         return;
     }
 
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi phản hồi...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi tin...';
         }
 
         const res = await MoonlightAPI.replyTicket(ticketId, {
@@ -4921,20 +4994,33 @@ async function handleAdminSubmitReply(event) {
         });
 
         if (res && (res.success || res.data)) {
-            showToast("Thành công", "Đã gửi phản hồi và cập nhật trạng thái phiếu hỗ trợ!", "success");
-            closeReplyTicketModal();
-            await fetchAdminTickets();
+            showToast("Thành công", "Đã gửi tin nhắn phản hồi cho khách hàng!", "success");
+            
+            const updatedTicket = res.data;
+            if (updatedTicket) {
+                const idx = allAdminTickets.findIndex(t => String(t._id || t.id) === String(ticketId));
+                if (idx !== -1) {
+                    allAdminTickets[idx] = updatedTicket;
+                }
+            } else {
+                await fetchAdminTickets();
+            }
+
+            // Tự động re-render lại modal để thấy tin nhắn mới nhất trong khung chat
+            openReplyTicketModal(ticketId);
+
+            // Cập nhật lại giao diện bảng ticket ngoài admin
             renderAdminTickets();
         } else {
-            showToast("Lỗi", res?.message || "Không thể gửi phản hồi lúc này.", "error");
+            showToast("Lỗi", res?.message || "Không thể gửi tin nhắn lúc này.", "error");
         }
     } catch (err) {
-        console.error('Lỗi khi phản hồi ticket:', err);
+        console.error('Lỗi khi gửi tin nhắn ticket:', err);
         showToast("Lỗi", err.message || "Không thể kết nối đến máy chủ.", "error");
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI PHẢN HỒI';
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI TIN NHẮN PHẢN HỒI';
         }
     }
 }

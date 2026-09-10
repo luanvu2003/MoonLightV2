@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import { createTicket, getMyTickets, closeCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
+import { createTicket, getMyTickets, getTicketById, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { Role } from '../types/enums.js';
 const router = Router();
 // Routes dành cho Khách hàng (yêu cầu đăng nhập)
 router.post('/', authenticate, createTicket);
 router.get('/my-tickets', authenticate, getMyTickets);
+router.get('/:id', authenticate, getTicketById);
+router.post('/:id/messages', authenticate, addTicketMessage);
 router.put('/:id/close', authenticate, closeCustomerTicket);
+router.put('/:id/reopen', authenticate, reopenCustomerTicket);
 // Routes dành cho Quản trị viên & Nhân viên CSKH
 router.get('/', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), getAllTickets);
 router.put('/:id/reply', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), replyTicket);
