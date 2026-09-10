@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
+import { User } from '../models/User.js';
 import { CustomerService } from '../services/customer.service.js';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js';
 import { OrderStatus, PaymentMethod } from '../types/enums.js';
@@ -245,6 +246,58 @@ export class OrderController {
 
       const newOrder = new Order(orderData);
       const savedOrder = await newOrder.save();
+
+      // Tự động lưu thông tin khách hàng (SĐT, Địa chỉ) vào tài khoản User nếu có liên kết
+      try {
+        const updateUserData: any = {};
+        if (savedOrder.customer.phone) updateUserData.phone = savedOrder.customer.phone;
+        if (savedOrder.customer.address) updateUserData.address = savedOrder.customer.address;
+        
+        const custData = orderData.customer || {};
+        if (custData.province) updateUserData.province = custData.province;
+        if (custData.district) updateUserData.district = custData.district;
+        if (custData.ward) updateUserData.ward = custData.ward;
+        if (custData.street) updateUserData.street = custData.street;
+
+        let userQuery: any = null;
+        if (orderData.customerId && mongoose.Types.ObjectId.isValid(orderData.customerId)) {
+          userQuery = { _id: orderData.customerId };
+        } else if (orderData.customer?.email) {
+          userQuery = { email: String(orderData.customer.email).toLowerCase().trim() };
+        } else if (savedOrder.customer.phone) {
+          userQuery = { phone: savedOrder.customer.phone };
+        }
+
+        if (userQuery && Object.keys(updateUserData).length > 0) {
+          const updatedUser = await User.findOneAndUpdate(
+            userQuery,
+            { $set: updateUserData },
+            { new: true }
+          ).select('-password');
+
+          if (updatedUser) {
+            (savedOrder as any)._doc = {
+              ...(savedOrder as any)._doc,
+              updatedCustomerUser: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                address: updatedUser.address,
+                province: updatedUser.province,
+                district: updatedUser.district,
+                ward: updatedUser.ward,
+                street: updatedUser.street,
+                role: updatedUser.role,
+                avatar: updatedUser.avatar
+              }
+            };
+          }
+        }
+      } catch (uErr: any) {
+        console.warn('⚠️ Cập nhật thông tin tài khoản sau khi đặt hàng thất bại:', uErr.message);
+      }
 
       // Nếu đơn là POS hoàn thành ngay, cập nhật khách hàng
       if (savedOrder.status === OrderStatus.Completed && savedOrder.customer.phone) {

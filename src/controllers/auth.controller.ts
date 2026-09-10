@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User.js';
+import { Otp } from '../models/Otp.js';
 import { Customer } from '../models/Customer.js';
 import { Log } from '../models/Log.js';
 import { AuthService } from '../services/auth.service.js';
+import { EmailService } from '../services/email.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { Role } from '../types/enums.js';
 
@@ -233,6 +235,168 @@ export class AuthController {
       ).select('-password');
 
       sendSuccess(res, user, 'Cập nhật ảnh đại diện thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Gửi mã OTP xác thực đăng ký qua Email
+   */
+  static async sendRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { username, email } = req.body;
+
+      if (!username || !email) {
+        sendError(res, 'Vui lòng cung cấp tên đăng nhập và email nhận mã xác minh', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      const cleanUsername = String(username).toLowerCase().trim();
+      const cleanEmail = String(email).toLowerCase().trim();
+
+      if (cleanUsername.length < 3) {
+        sendError(res, 'Tên đăng nhập phải có ít nhất 3 ký tự', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        sendError(res, 'Địa chỉ email không đúng định dạng', 400, 'INVALID_EMAIL');
+        return;
+      }
+
+      // 1. Kiểm tra xem username đã tồn tại chưa
+      const existUser = await User.findOne({ username: cleanUsername });
+      if (existUser) {
+        sendError(res, 'Tên tài khoản này đã được sử dụng. Vui lòng chọn tên khác.', 409, 'USERNAME_EXISTS');
+        return;
+      }
+
+      // 2. Kiểm tra xem email đã tồn tại chưa
+      const existEmail = await User.findOne({ email: cleanEmail });
+      if (existEmail) {
+        sendError(res, 'Địa chỉ email này đã được sử dụng. Vui lòng đăng nhập hoặc chọn email khác.', 409, 'EMAIL_EXISTS');
+        return;
+      }
+
+      // 3. Sinh mã OTP 6 số ngẫu nhiên
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // 4. Lưu OTP vào MongoDB (tự hủy sau 5 phút)
+      await Otp.deleteMany({ email: cleanEmail });
+      await Otp.create({ email: cleanEmail, otp: otpCode });
+
+      // 5. Gửi email
+      const emailSent = await EmailService.sendOtpEmail(cleanEmail, otpCode, cleanUsername);
+      if (!emailSent) {
+        sendError(res, 'Không thể gửi email lúc này. Vui lòng kiểm tra lại địa chỉ email hoặc thử lại sau.', 500, 'EMAIL_SEND_FAILED');
+        return;
+      }
+
+      sendSuccess(res, { email: cleanEmail }, 'Mã xác minh 6 số đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Xác thực mã OTP và hoàn tất đăng ký tài khoản khách hàng
+   */
+  static async verifyRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { username, email, password, confirmPassword, otp } = req.body;
+
+      if (!username || !email || !password || !otp) {
+        sendError(res, 'Vui lòng cung cấp đầy đủ thông tin đăng ký và mã xác minh OTP', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      if (confirmPassword && password !== confirmPassword) {
+        sendError(res, 'Mật khẩu xác nhận không khớp với mật khẩu đã nhập', 400, 'PASSWORD_MISMATCH');
+        return;
+      }
+
+      if (password.length < 3) {
+        sendError(res, 'Mật khẩu phải có ít nhất 3 ký tự', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      const cleanUsername = String(username).toLowerCase().trim();
+      const cleanEmail = String(email).toLowerCase().trim();
+      const cleanOtp = String(otp).trim();
+
+      // 1. Kiểm tra OTP
+      const validOtp = await Otp.findOne({ email: cleanEmail, otp: cleanOtp });
+      if (!validOtp) {
+        sendError(res, 'Mã xác minh không chính xác hoặc đã hết hạn. Vui lòng kiểm tra lại hộp thư.', 400, 'INVALID_OTP');
+        return;
+      }
+
+      // 2. Xóa OTP sau khi dùng
+      await Otp.deleteMany({ email: cleanEmail });
+
+      // 3. Kiểm tra xem username/email đã bị ai đăng ký trong lúc chờ OTP không
+      const existUser = await User.findOne({
+        $or: [{ username: cleanUsername }, { email: cleanEmail }]
+      });
+      if (existUser) {
+        sendError(res, 'Tên đăng nhập hoặc Email này đã được đăng ký. Vui lòng thử lại.', 409, 'USER_EXISTS');
+        return;
+      }
+
+      // 4. Tạo User mới với vai trò Customer
+      const newUser = new User({
+        name: cleanUsername,
+        username: cleanUsername,
+        password,
+        email: cleanEmail,
+        role: Role.Customer,
+        isEmailVerified: true,
+        isActive: true,
+        lastLogin: new Date()
+      });
+
+      await newUser.save();
+
+      // 5. Tự động cấp token đăng nhập ngay lập tức
+      const tokens = AuthService.generateTokens({
+        id: newUser._id.toString(),
+        username: newUser.username,
+        role: newUser.role,
+        name: newUser.name
+      });
+
+      res.cookie('token', tokens.accessToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'lax'
+      });
+
+      sendSuccess(
+        res,
+        {
+          user: {
+            id: newUser._id,
+            name: newUser.name,
+            username: newUser.username,
+            email: newUser.email,
+            phone: newUser.phone,
+            address: newUser.address,
+            province: newUser.province,
+            district: newUser.district,
+            ward: newUser.ward,
+            street: newUser.street,
+            role: newUser.role,
+            avatar: newUser.avatar,
+            cart: newUser.cart || [],
+            wishlist: newUser.wishlist || []
+          },
+          tokens
+        },
+        'Xác thực email và đăng ký tài khoản thành công',
+        201
+      );
     } catch (error) {
       next(error);
     }

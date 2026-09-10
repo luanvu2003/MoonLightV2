@@ -3182,17 +3182,46 @@ function renderCheckoutPage() {
   // Khởi tạo bộ chọn địa chỉ nếu đang ở trang checkout
   initCheckoutAddressSelector();
 
-  // Tự động điền thông tin khách hàng nếu đã đăng nhập
+  // Tự động điền thông tin khách hàng nếu đã đăng nhập hoặc đã từng đặt hàng
   try {
-    const loggedCustomer = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    const loggedCustomer = JSON.parse(localStorage.getItem('moonlight_user') || 'null') ||
+                           JSON.parse(localStorage.getItem('moonlight_saved_customer') || 'null');
     if (loggedCustomer) {
       const nameInput = document.getElementById('cusName');
       const phoneInput = document.getElementById('cusPhone');
+      const streetInput = document.getElementById('cusStreet');
       if (nameInput && !nameInput.value && (loggedCustomer.fullName || loggedCustomer.name)) {
         nameInput.value = loggedCustomer.fullName || loggedCustomer.name;
       }
       if (phoneInput && !phoneInput.value && loggedCustomer.phone) {
         phoneInput.value = loggedCustomer.phone;
+      }
+      if (streetInput && !streetInput.value && loggedCustomer.street) {
+        streetInput.value = loggedCustomer.street;
+      }
+
+      // Khôi phục Tỉnh/Thành, Quận/Huyện, Phường/Xã
+      if (loggedCustomer.provinceCode) {
+        const provEl = document.getElementById('cusProvince');
+        if (provEl && !provEl.value) {
+          provEl.value = loggedCustomer.provinceCode;
+          provEl.dispatchEvent(new Event('change'));
+          setTimeout(() => {
+            if (loggedCustomer.districtCode) {
+              const distEl = document.getElementById('cusDistrict');
+              if (distEl) {
+                distEl.value = loggedCustomer.districtCode;
+                distEl.dispatchEvent(new Event('change'));
+                setTimeout(() => {
+                  if (loggedCustomer.wardCode) {
+                    const wardEl = document.getElementById('cusWard');
+                    if (wardEl) wardEl.value = loggedCustomer.wardCode;
+                  }
+                }, 120);
+              }
+            }
+          }, 120);
+        }
       }
     }
   } catch (e) {}
@@ -3539,7 +3568,11 @@ async function handleCheckout(e) {
   // Gửi API backend nếu có
   try {
     if (window.MoonlightAPI) {
-      await window.MoonlightAPI.createOrder(newOrder);
+      const orderRes = await window.MoonlightAPI.createOrder(newOrder);
+      if (orderRes && orderRes.data && orderRes.data.updatedCustomerUser) {
+        localStorage.setItem('moonlight_user', JSON.stringify(orderRes.data.updatedCustomerUser));
+        if (typeof updateCustomerNavbarUI === 'function') updateCustomerNavbarUI();
+      }
     }
   } catch (err) {
     if (submitBtn) {
@@ -3554,16 +3587,28 @@ async function handleCheckout(e) {
     return;
   }
 
-  // Lưu thông tin khách hàng để tự điền cho lần sau
+  // Lưu thông tin khách hàng để tự điền cho các lần sau
   try {
-    localStorage.setItem('moonlight_saved_customer', JSON.stringify({
+    const savedCustomerData = {
       name,
       phone,
+      address,
       street: streetEl?.value?.trim() || '',
+      province: provinceEl?.options[provinceEl.selectedIndex]?.text || '',
       provinceCode: provinceEl?.value || '',
+      district: districtEl?.options[districtEl.selectedIndex]?.text || '',
       districtCode: districtEl?.value || '',
+      ward: wardEl?.options[wardEl.selectedIndex]?.text || '',
       wardCode: wardEl?.value || ''
-    }));
+    };
+    localStorage.setItem('moonlight_saved_customer', JSON.stringify(savedCustomerData));
+
+    // Cập nhật ngay vào tài khoản đăng nhập hiện tại nếu có
+    const currUser = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    if (currUser) {
+      Object.assign(currUser, savedCustomerData);
+      localStorage.setItem('moonlight_user', JSON.stringify(currUser));
+    }
   } catch (saveErr) {}
 
   // Lưu vào LocalStorage
@@ -4257,50 +4302,74 @@ function initCustomerAuthUI() {
               </button>
             </form>
 
-            <!-- Form Đăng Ký -->
-            <form id="customerRegisterForm" style="display:none;" onsubmit="handleCustomerRegisterSubmit(event)">
+            <!-- Form Đăng Ký (Tối giản 4 trường) -->
+            <form id="customerRegisterForm" style="display:none;" onsubmit="handleCustomerRegisterStep1(event)">
               <div class="auth-form-group">
-                <label>Họ và tên của bạn</label>
-                <div class="auth-input-wrapper">
-                  <i class="far fa-id-card"></i>
-                  <input type="text" id="custRegName" placeholder="Ví dụ: Nguyễn Văn An" required>
-                </div>
-              </div>
-              <div class="auth-form-group">
-                <label>Tên tài khoản (viết liền không dấu)</label>
+                <label>Tên tài khoản</label>
                 <div class="auth-input-wrapper">
                   <i class="far fa-user"></i>
-                  <input type="text" id="custRegUsername" placeholder="vd: nguyenan" required autocomplete="username">
-                </div>
-              </div>
-              <div class="auth-form-row" style="display:flex; gap:10px;">
-                <div class="auth-form-group" style="flex:1;">
-                  <label>Số điện thoại</label>
-                  <div class="auth-input-wrapper">
-                    <i class="fas fa-phone-alt"></i>
-                    <input type="tel" id="custRegPhone" placeholder="0393.xxx.xxx">
-                  </div>
-                </div>
-                <div class="auth-form-group" style="flex:1;">
-                  <label>Email (tùy chọn)</label>
-                  <div class="auth-input-wrapper">
-                    <i class="far fa-envelope"></i>
-                    <input type="email" id="custRegEmail" placeholder="an@example.com">
-                  </div>
+                  <input type="text" id="custRegUsername" placeholder="Nhập tên tài khoản (viết liền không dấu)..." required autocomplete="username" minlength="3">
                 </div>
               </div>
               <div class="auth-form-group">
-                <label>Mật khẩu tạo mới</label>
+                <label>Địa chỉ Email nhận mã xác minh</label>
+                <div class="auth-input-wrapper">
+                  <i class="far fa-envelope"></i>
+                  <input type="email" id="custRegEmail" placeholder="Ví dụ: yourname@gmail.com..." required autocomplete="email">
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <label>Mật khẩu</label>
                 <div class="auth-input-wrapper">
                   <i class="fas fa-lock"></i>
-                  <input type="password" id="custRegPassword" placeholder="Tối thiểu 3 ký tự..." required autocomplete="new-password">
+                  <input type="password" id="custRegPassword" placeholder="Tối thiểu 3 ký tự..." required autocomplete="new-password" minlength="3">
                   <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegPassword', this)"><i class="far fa-eye"></i></button>
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <label>Nhập lại mật khẩu</label>
+                <div class="auth-input-wrapper">
+                  <i class="fas fa-shield-alt"></i>
+                  <input type="password" id="custRegConfirmPassword" placeholder="Nhập lại mật khẩu vừa đặt..." required autocomplete="new-password" minlength="3">
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegConfirmPassword', this)"><i class="far fa-eye"></i></button>
                 </div>
               </div>
               <div id="customerRegAlert" class="auth-alert error" style="display:none;"></div>
               <button type="submit" class="btn-auth-submit" id="custRegSubmitBtn">
-                <span>TẠO TÀI KHOẢN MOONLIGHT</span> <i class="fas fa-check"></i>
+                <span>TIẾP TỤC & NHẬN MÃ QUA EMAIL</span> <i class="fas fa-paper-plane"></i>
               </button>
+            </form>
+
+            <!-- Form Xác Thực Mã OTP qua Email -->
+            <form id="customerOtpForm" style="display:none;" onsubmit="handleCustomerOtpSubmit(event)">
+              <div style="text-align:center; margin-bottom:18px;">
+                <div style="width:52px; height:52px; border-radius:50%; background:rgba(223,186,115,0.12); color:var(--gold); display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:22px; border:1px solid rgba(223,186,115,0.3);">
+                  <i class="fas fa-envelope-open-text"></i>
+                </div>
+                <h4 style="color:#fff; margin:0 0 6px 0; font-size:16px; font-weight:700;">XÁC MINH EMAIL</h4>
+                <p style="color:#94a3b8; font-size:12.5px; margin:0; line-height:1.5;">
+                  Mã xác thực 6 số đã được gửi đến:<br>
+                  <strong id="otpTargetEmail" style="color:var(--gold); font-size:13px;">email@gmail.com</strong>
+                </p>
+              </div>
+              <div class="auth-form-group">
+                <label style="text-align:center; display:block; margin-bottom:8px;">Nhập mã xác thực 6 số</label>
+                <div class="auth-input-wrapper" style="max-width:240px; margin:0 auto;">
+                  <input type="text" id="custRegOtp" placeholder="------" required maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" style="text-align:center; font-size:26px; letter-spacing:10px; font-weight:900; color:var(--gold); font-family:monospace; padding:10px 0;">
+                </div>
+              </div>
+              <div id="customerOtpAlert" class="auth-alert error" style="display:none;"></div>
+              <button type="submit" class="btn-auth-submit" id="custOtpSubmitBtn">
+                <span>XÁC NHẬN & TẠO TÀI KHOẢN</span> <i class="fas fa-check-circle"></i>
+              </button>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:12px;">
+                <button type="button" onclick="backToRegisterForm()" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:0; display:flex; align-items:center; gap:4px;">
+                  <i class="fas fa-arrow-left"></i> Sửa thông tin
+                </button>
+                <button type="button" id="resendOtpBtn" onclick="resendRegisterOtp()" style="background:none; border:none; color:var(--gold); cursor:pointer; padding:0; font-weight:600;">
+                  Gửi lại mã (<span id="otpCountdownText">60s</span>)
+                </button>
+              </div>
             </form>
           </div>
           <div class="auth-modal-footer">
@@ -4401,16 +4470,27 @@ function closeAuthModal() {
   if (overlay) overlay.classList.remove('open');
 }
 
+let registerOtpCountdownInterval = null;
+let pendingRegisterData = null;
+
 function switchAuthTab(tab) {
   const tabLoginBtn = document.getElementById('tabLoginBtn');
   const tabRegBtn = document.getElementById('tabRegisterBtn');
   const loginForm = document.getElementById('customerLoginForm');
   const regForm = document.getElementById('customerRegisterForm');
+  const otpForm = document.getElementById('customerOtpForm');
   const loginAlert = document.getElementById('customerLoginAlert');
   const regAlert = document.getElementById('customerRegAlert');
+  const otpAlert = document.getElementById('customerOtpAlert');
+  const googleWrapper = document.querySelector('.google-auth-wrapper');
+  const authDivider = document.querySelector('.auth-divider');
 
   if (loginAlert) loginAlert.style.display = 'none';
   if (regAlert) regAlert.style.display = 'none';
+  if (otpAlert) otpAlert.style.display = 'none';
+  if (otpForm) otpForm.style.display = 'none';
+  if (googleWrapper) googleWrapper.style.display = 'block';
+  if (authDivider) authDivider.style.display = 'flex';
 
   if (tab === 'register') {
     if (tabLoginBtn) tabLoginBtn.classList.remove('active');
@@ -4477,48 +4557,185 @@ async function handleCustomerLoginSubmit(event) {
   }
 }
 
-async function handleCustomerRegisterSubmit(event) {
+async function handleCustomerRegisterStep1(event) {
   event.preventDefault();
-  const name = document.getElementById('custRegName').value.trim();
   const username = document.getElementById('custRegUsername').value.trim();
-  const phone = document.getElementById('custRegPhone').value.trim();
   const email = document.getElementById('custRegEmail').value.trim();
-  const password = document.getElementById('custRegPassword').value.trim();
+  const password = document.getElementById('custRegPassword').value;
+  const confirmPassword = document.getElementById('custRegConfirmPassword').value;
   const alertBox = document.getElementById('customerRegAlert');
   const submitBtn = document.getElementById('custRegSubmitBtn');
 
-  if (!name || !username || !password) return;
+  if (alertBox) alertBox.style.display = 'none';
+
+  if (password !== confirmPassword) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = 'Mật khẩu xác nhận không khớp với mật khẩu đã nhập!';
+    }
+    return;
+  }
+
+  if (password.length < 3) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = 'Mật khẩu phải có tối thiểu 3 ký tự!';
+    }
+    return;
+  }
 
   const originalContent = submitBtn.innerHTML;
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG TẠO TÀI KHOẢN...';
-  if (alertBox) alertBox.style.display = 'none';
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG GỬI MÃ XÁC MINH...';
 
   try {
-    const res = await MoonlightAPI.register({ name, username, phone, email, password });
+    const res = await MoonlightAPI.sendRegisterOtp(username, email);
     if (res && res.success) {
-      updateCustomerNavbarUI();
-      closeAuthModal();
-      showToast({
-        title: 'Đăng ký thành công',
-        message: `Chào mừng ${name} đến với câu lạc bộ MoonLight Luxury!`,
-        type: 'success'
-      });
+      pendingRegisterData = { username, email, password, confirmPassword };
 
-      // Đồng bộ giỏ hàng lên tài khoản vừa tạo
-      await syncUserDataWithServer();
+      // Chuyển sang màn hình nhập mã OTP
+      const regForm = document.getElementById('customerRegisterForm');
+      const otpForm = document.getElementById('customerOtpForm');
+      const googleWrapper = document.querySelector('.google-auth-wrapper');
+      const authDivider = document.querySelector('.auth-divider');
+      const targetEmailEl = document.getElementById('otpTargetEmail');
+
+      if (regForm) regForm.style.display = 'none';
+      if (googleWrapper) googleWrapper.style.display = 'none';
+      if (authDivider) authDivider.style.display = 'none';
+      if (otpForm) otpForm.style.display = 'block';
+      if (targetEmailEl) targetEmailEl.innerText = email;
+
+      const otpInput = document.getElementById('custRegOtp');
+      if (otpInput) {
+        otpInput.value = '';
+        setTimeout(() => otpInput.focus(), 200);
+      }
+
+      startOtpCountdown();
+
+      showToast({
+        title: 'Đã gửi mã xác minh',
+        message: `Mã OTP 6 số đã được gửi tới email: ${email}. Vui lòng kiểm tra hộp thư!`,
+        type: 'info'
+      });
     } else {
-      throw new Error(res?.message || 'Đăng ký thất bại. Tên tài khoản có thể đã tồn tại.');
+      throw new Error(res?.message || 'Không thể gửi mã xác minh.');
     }
   } catch (err) {
     if (alertBox) {
       alertBox.style.display = 'block';
-      alertBox.innerText = err.message || 'Đăng ký không thành công. Vui lòng thử lại.';
+      alertBox.innerText = err.message || 'Lỗi gửi mã xác minh. Vui lòng kiểm tra lại.';
     }
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalContent;
   }
+}
+
+async function handleCustomerOtpSubmit(event) {
+  event.preventDefault();
+  const otpInput = document.getElementById('custRegOtp');
+  const otp = otpInput ? otpInput.value.trim() : '';
+  const alertBox = document.getElementById('customerOtpAlert');
+  const submitBtn = document.getElementById('custOtpSubmitBtn');
+
+  if (!pendingRegisterData || !otp) return;
+  if (alertBox) alertBox.style.display = 'none';
+
+  const originalContent = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG XÁC MINH...';
+
+  try {
+    const res = await MoonlightAPI.verifyRegisterOtp({
+      ...pendingRegisterData,
+      otp
+    });
+
+    if (res && res.success) {
+      if (registerOtpCountdownInterval) clearInterval(registerOtpCountdownInterval);
+      updateCustomerNavbarUI();
+      closeAuthModal();
+      showToast({
+        title: 'Đăng ký thành công',
+        message: `Chào mừng ${res.data?.user?.username || 'bạn'} đã trở thành thành viên MoonLight!`,
+        type: 'success'
+      });
+
+      pendingRegisterData = null;
+      await syncUserDataWithServer();
+    } else {
+      throw new Error(res?.message || 'Mã xác minh không chính xác.');
+    }
+  } catch (err) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = err.message || 'Mã xác thực không hợp lệ hoặc đã hết hạn.';
+    }
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalContent;
+  }
+}
+
+function backToRegisterForm() {
+  if (registerOtpCountdownInterval) clearInterval(registerOtpCountdownInterval);
+  const regForm = document.getElementById('customerRegisterForm');
+  const otpForm = document.getElementById('customerOtpForm');
+  const googleWrapper = document.querySelector('.google-auth-wrapper');
+  const authDivider = document.querySelector('.auth-divider');
+  if (otpForm) otpForm.style.display = 'none';
+  if (regForm) regForm.style.display = 'block';
+  if (googleWrapper) googleWrapper.style.display = 'block';
+  if (authDivider) authDivider.style.display = 'flex';
+}
+
+async function resendRegisterOtp() {
+  if (!pendingRegisterData) return;
+  const resendBtn = document.getElementById('resendOtpBtn');
+  if (resendBtn && resendBtn.disabled) return;
+
+  try {
+    showToast({ title: 'Gửi lại OTP', message: 'Đang gửi lại mã xác minh mới...', type: 'info' });
+    const res = await MoonlightAPI.sendRegisterOtp(pendingRegisterData.username, pendingRegisterData.email);
+    if (res && res.success) {
+      startOtpCountdown();
+      showToast({ title: 'Đã gửi mã mới', message: 'Mã xác minh mới đã được gửi tới email của bạn!', type: 'success' });
+    } else {
+      throw new Error(res?.message || 'Không thể gửi lại mã.');
+    }
+  } catch (err) {
+    showToast({ title: 'Gửi mã thất bại', message: err.message || 'Lỗi gửi mã OTP', type: 'error' });
+  }
+}
+
+function startOtpCountdown() {
+  if (registerOtpCountdownInterval) clearInterval(registerOtpCountdownInterval);
+  let seconds = 60;
+  const countdownEl = document.getElementById('otpCountdownText');
+  const resendBtn = document.getElementById('resendOtpBtn');
+
+  if (resendBtn) {
+    resendBtn.disabled = true;
+    resendBtn.style.opacity = '0.5';
+    resendBtn.style.cursor = 'not-allowed';
+  }
+  if (countdownEl) countdownEl.innerText = `${seconds}s`;
+
+  registerOtpCountdownInterval = setInterval(() => {
+    seconds--;
+    if (countdownEl) countdownEl.innerText = `${seconds}s`;
+    if (seconds <= 0) {
+      clearInterval(registerOtpCountdownInterval);
+      if (resendBtn) {
+        resendBtn.disabled = false;
+        resendBtn.style.opacity = '1';
+        resendBtn.style.cursor = 'pointer';
+        resendBtn.innerHTML = '<i class="fas fa-redo-alt"></i> Gửi lại mã';
+      }
+    }
+  }, 1000);
 }
 
 function handleCustomerLogout() {

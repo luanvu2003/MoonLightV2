@@ -5,6 +5,12 @@ export interface IUser {
     username: string;
     email?: string;
     phone?: string;
+    address?: string;
+    province?: string;
+    district?: string;
+    ward?: string;
+    street?: string;
+    isEmailVerified?: boolean;
     googleId?: string;
     password?: string;
     role: Role;

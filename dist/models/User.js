@@ -39,6 +39,35 @@ const UserSchema = new Schema({
         trim: true,
         default: ''
     },
+    address: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    province: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    district: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    ward: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    street: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
     googleId: {
         type: String,
         sparse: true,

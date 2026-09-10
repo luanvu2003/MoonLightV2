@@ -6,6 +6,14 @@ export declare class AuthController {
     static changePassword(req: Request, res: Response, next: NextFunction): Promise<void>;
     static updateAvatar(req: Request, res: Response, next: NextFunction): Promise<void>;
     /**
+     * Gửi mã OTP xác thực đăng ký qua Email
+     */
+    static sendRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * Xác thực mã OTP và hoàn tất đăng ký tài khoản khách hàng
+     */
+    static verifyRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
      * Đăng ký tài khoản Khách Hàng mới
      */
     static register(req: Request, res: Response, next: NextFunction): Promise<void>;

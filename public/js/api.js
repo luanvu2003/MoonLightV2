@@ -92,8 +92,15 @@ const MoonlightAPI = {
     return res;
   },
 
-  async register(data) {
-    const res = await this.request('/auth/register', {
+  async sendRegisterOtp(username, email) {
+    return await this.request('/auth/send-register-otp', {
+      method: 'POST',
+      body: JSON.stringify({ username, email })
+    });
+  },
+
+  async verifyRegisterOtp(data) {
+    const res = await this.request('/auth/verify-register-otp', {
       method: 'POST',
       body: JSON.stringify(data)
     });
