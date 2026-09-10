@@ -54,6 +54,184 @@
         .profile-breadcrumb a:hover {
             color: var(--gold, #b48518);
         }
+
+        /* Profile Form Styling */
+        .profile-content-card .form-group {
+            margin-bottom: 18px;
+            width: 100%;
+        }
+        .profile-content-card .form-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 7px;
+        }
+        .profile-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 680px) {
+            .profile-form-row {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+        }
+
+        /* Tất cả các trường input trong tab hồ sơ & đổi mật khẩu */
+        .profile-content-card input[type="text"],
+        .profile-content-card input[type="email"],
+        .profile-content-card input[type="tel"],
+        .profile-content-card input[type="password"] {
+            width: 100% !important;
+            display: block !important;
+            box-sizing: border-box !important;
+            padding: 12px 16px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            font-size: 13.5px !important;
+            font-family: var(--font, 'Montserrat', sans-serif) !important;
+            color: #0f172a !important;
+            background: #ffffff !important;
+            outline: none !important;
+            transition: all 0.25s ease !important;
+            line-height: 1.5 !important;
+        }
+        .profile-content-card input[type="text"]:focus,
+        .profile-content-card input[type="email"]:focus,
+        .profile-content-card input[type="tel"]:focus,
+        .profile-content-card input[type="password"]:focus {
+            border-color: var(--gold, #d4af37) !important;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18) !important;
+            background: #ffffff !important;
+        }
+        .profile-content-card input::placeholder {
+            color: #94a3b8 !important;
+            font-size: 13px !important;
+            font-weight: 400 !important;
+        }
+
+        /* Trường khóa không cho sửa */
+        .locked-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .profile-content-card input.input-locked,
+        .locked-input-wrapper input.input-locked,
+        input.input-locked {
+            background-color: #f8fafc !important;
+            color: #475569 !important;
+            border: 1.5px solid #cbd5e1 !important;
+            cursor: not-allowed !important;
+            padding-right: 42px !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
+        }
+        .profile-content-card input.input-locked:focus,
+        .locked-input-wrapper input.input-locked:focus {
+            border-color: #cbd5e1 !important;
+            box-shadow: none !important;
+        }
+        .locked-field-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* Huy hiệu trạng thái trường */
+        .badge-locked {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+        .badge-editable {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        /* Khối địa chỉ nhận hàng phân cấp */
+        .profile-content-card .checkout-address-block {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .profile-content-card .address-field-item label {
+            font-size: 12px !important;
+            color: #475569 !important;
+            margin-bottom: 6px !important;
+            font-weight: 600 !important;
+        }
+
+        /* Nút đổi mật khẩu & Nút Lưu hồ sơ */
+        .btn-change-pwd {
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid #0f172a;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-change-pwd:hover {
+            background: var(--gold, #d4af37);
+            color: #000000;
+            border-color: var(--gold, #d4af37);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+        }
+
+        .btn-save-profile {
+            background: linear-gradient(135deg, #d4af37, #b48518);
+            color: #000000;
+            border: none;
+            padding: 13px 34px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            transition: all 0.25s ease;
+        }
+        .btn-save-profile:hover {
+            background: linear-gradient(135deg, #f59e0b, #d4af37);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
+        }
     </style>
 </head>
 
@@ -205,15 +383,15 @@
                                 </small>
                             </div>
 
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                            <div class="profile-form-row">
                                 <div class="form-group">
-                                    <label style="font-weight:600; font-size:13px; color:#0f172a; margin-bottom:6px;">Tên tài khoản (Username)</label>
+                                    <label>Tên tài khoản (Username)</label>
                                     <input type="text" id="profUsername" readonly class="input-locked">
                                 </div>
                                 <div class="form-group">
-                                    <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                        <span style="font-weight:600; font-size:13px; color:#0f172a;">Email</span>
-                                        <span class="badge-editable" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;"><i class="fas fa-check-circle"></i> Đã xác thực</span>
+                                    <label>
+                                        <span>Email</span>
+                                        <span class="badge-editable"><i class="fas fa-check-circle"></i> Đã xác thực</span>
                                     </label>
                                     <input type="email" id="profEmail" readonly class="input-locked">
                                 </div>
@@ -225,17 +403,17 @@
                             </h4>
 
                             <!-- SỐ ĐIỆN THOẠI CÓ THỂ SỬA -->
-                            <div class="form-group" style="margin-bottom:16px;">
-                                <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <span style="font-weight:600; font-size:13px; color:#0f172a;">Số điện thoại nhận hàng *</span>
+                            <div class="form-group">
+                                <label>
+                                    <span>Số điện thoại nhận hàng *</span>
                                     <span class="badge-editable"><i class="far fa-edit"></i> Có thể chỉnh sửa</span>
                                 </label>
-                                <input type="tel" id="profPhone" required placeholder="Ví dụ: 0912345678" style="padding:12px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;">
+                                <input type="tel" id="profPhone" required placeholder="Ví dụ: 0912345678">
                             </div>
 
                             <!-- BỘ CHỌN ĐỊA CHỈ PHÂN CẤP CHUẨN -->
-                            <div class="checkout-address-block" style="margin-bottom:18px;">
-                                <label style="font-size:13px; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:6px; color:#0f172a;">
+                            <div class="checkout-address-block">
+                                <label style="font-size:13px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px; color:#0f172a;">
                                     <i class="fas fa-map-marker-alt" style="color:var(--gold,#dfba73);"></i> Địa chỉ nhận hàng mặc định
                                 </label>
 
@@ -269,12 +447,12 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group" style="margin-top:6px; margin-bottom:8px;">
-                                    <label for="profStreet">Số nhà, tên đường, tòa nhà</label>
-                                    <input type="text" id="profStreet" placeholder="Ví dụ: 127 Tăng Bạt Hổ, Tòa nhà Landmark 81..." style="padding:11px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                <div class="form-group" style="margin-top:10px; margin-bottom:0;">
+                                    <label for="profStreet" style="font-size:12px; color:#475569; margin-bottom:6px; font-weight:600;">Số nhà, tên đường, tòa nhà</label>
+                                    <input type="text" id="profStreet" placeholder="Ví dụ: 127 Tăng Bạt Hổ, Tòa nhà Landmark 81...">
                                 </div>
 
-                                <div class="address-preview-card" id="profAddressPreviewCard" style="display:none; margin-top:10px;">
+                                <div class="address-preview-card" id="profAddressPreviewCard" style="display:none; margin-top:12px;">
                                     <div class="address-preview-icon"><i class="fas fa-check-circle"></i></div>
                                     <div class="address-preview-body">
                                         <span class="address-preview-title">Địa chỉ lưu trữ đầy đủ:</span>
@@ -284,7 +462,7 @@
                             </div>
 
                             <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
-                                <button type="submit" id="btnSaveProfileSubmit" class="btn-primary" style="padding:13px 32px; font-weight:700; display:inline-flex; align-items:center; gap:8px; border-radius:6px; cursor:pointer;">
+                                <button type="submit" id="btnSaveProfileSubmit" class="btn-save-profile">
                                     <i class="fas fa-save"></i> <span>LƯU THAY ĐỔI HỒ SƠ</span>
                                 </button>
                             </div>
@@ -292,25 +470,25 @@
 
                         <!-- ĐỔI MẬT KHẨU -->
                         <div style="margin-top:40px; border-top:1px solid #e2e8f0; padding-top:24px;">
-                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
                                 3. Bảo mật & Đổi mật khẩu
                             </h4>
-                            <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">Quý khách nên đặt mật khẩu dài và kết hợp chữ số để tăng tính bảo mật.</p>
+                            <p style="font-size:12.5px; color:#64748b; margin-bottom:18px;">Quý khách nên đặt mật khẩu dài và kết hợp chữ số để tăng tính bảo mật.</p>
                             
-                            <form id="changePasswordForm" onsubmit="handleChangePassword(event)" style="max-width:480px;">
-                                <div class="form-group" style="margin-bottom:12px;">
-                                    <label style="font-size:13px; font-weight:600;">Mật khẩu hiện tại</label>
-                                    <input type="password" id="pwdCurrent" required placeholder="Nhập mật khẩu đang dùng..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                            <form id="changePasswordForm" onsubmit="handleChangePassword(event)" style="max-width:520px;">
+                                <div class="form-group">
+                                    <label>Mật khẩu hiện tại</label>
+                                    <input type="password" id="pwdCurrent" required placeholder="Nhập mật khẩu đang dùng...">
                                 </div>
-                                <div class="form-group" style="margin-bottom:12px;">
-                                    <label style="font-size:13px; font-weight:600;">Mật khẩu mới</label>
-                                    <input type="password" id="pwdNew" required minlength="3" placeholder="Tối thiểu 3 ký tự..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                <div class="form-group">
+                                    <label>Mật khẩu mới</label>
+                                    <input type="password" id="pwdNew" required minlength="3" placeholder="Tối thiểu 3 ký tự...">
                                 </div>
-                                <div class="form-group" style="margin-bottom:16px;">
-                                    <label style="font-size:13px; font-weight:600;">Nhập lại mật khẩu mới</label>
-                                    <input type="password" id="pwdConfirm" required minlength="3" placeholder="Xác nhận lại mật khẩu mới..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                <div class="form-group">
+                                    <label>Nhập lại mật khẩu mới</label>
+                                    <input type="password" id="pwdConfirm" required minlength="3" placeholder="Xác nhận lại mật khẩu mới...">
                                 </div>
-                                <button type="submit" id="btnChangePwdSubmit" class="btn-order-action" style="padding:10px 20px; font-weight:700;">
+                                <button type="submit" id="btnChangePwdSubmit" class="btn-change-pwd">
                                     <i class="fas fa-key"></i> ĐỔI MẬT KHẨU
                                 </button>
                             </form>
