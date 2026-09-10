@@ -4773,7 +4773,7 @@ async function renderAdminTickets() {
                                             ${dateStr}
                                         </td>
                                         <td style="padding: 14px 18px; vertical-align: middle; text-align: right; white-space: nowrap;">
-                                            <button onclick="openReplyTicketModal('${t._id}')" class="btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Xem chi tiết và trả lời khách">
+                                            <button type="button" onclick="openReplyTicketModal('${t._id || t.id}')" class="btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Xem chi tiết và trả lời khách">
                                                 <i class="fas fa-reply"></i> ${hasReply ? 'Xem & Phản hồi' : 'Xử lý'}
                                             </button>
                                         </td>
@@ -4827,7 +4827,10 @@ function openReplyTicketModal(ticketId) {
     }
 
     const modal = document.getElementById('replyTicketModal');
-    if (!modal) return;
+    if (!modal) {
+        console.error('Không tìm thấy modal #replyTicketModal');
+        return;
+    }
 
     const categoryNames = {
         order_issue: 'Sự cố đơn hàng',
@@ -4837,15 +4840,32 @@ function openReplyTicketModal(ticketId) {
         other: 'Yêu cầu khác'
     };
 
-    document.getElementById('admModalTicketId').value = ticket._id || ticket.id;
-    document.getElementById('admModalTicketCode').innerText = '#' + (ticket.ticketCode || 'TK-000000');
-    document.getElementById('admModalCustomerName').innerText = ticket.customerName || 'Khách hàng';
-    document.getElementById('admModalCustomerContact').innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
-    document.getElementById('admModalTicketCategory').innerText = `${categoryNames[ticket.category] || ticket.category} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
-    document.getElementById('admModalTicketDate').innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
-    document.getElementById('admModalTicketSubject').innerText = ticket.subject || '';
-    document.getElementById('admModalTicketMessage').innerText = ticket.message || '';
-    document.getElementById('admModalReplyMessage').value = ticket.reply?.message || '';
+    const idEl = document.getElementById('admModalTicketId');
+    if (idEl) idEl.value = ticket._id || ticket.id;
+
+    const codeEl = document.getElementById('admModalTicketCode');
+    if (codeEl) codeEl.innerText = '#' + (ticket.ticketCode || 'TK-000000');
+
+    const nameEl = document.getElementById('admModalCustomerName');
+    if (nameEl) nameEl.innerText = ticket.customerName || 'Khách hàng';
+
+    const contactEl = document.getElementById('admModalCustomerContact');
+    if (contactEl) contactEl.innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
+
+    const catEl = document.getElementById('admModalTicketCategory');
+    if (catEl) catEl.innerText = `${categoryNames[ticket.category] || ticket.category || 'Yêu cầu khác'} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
+
+    const dateEl = document.getElementById('admModalTicketDate');
+    if (dateEl) dateEl.innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
+
+    const subjEl = document.getElementById('admModalTicketSubject');
+    if (subjEl) subjEl.innerText = ticket.subject || '';
+
+    const msgEl = document.getElementById('admModalTicketMessage');
+    if (msgEl) msgEl.innerText = ticket.message || '';
+
+    const repEl = document.getElementById('admModalReplyMessage');
+    if (repEl) repEl.value = ticket.reply?.message || '';
     
     // Select appropriate status
     const statusSelect = document.getElementById('admModalNewStatus');
@@ -4857,12 +4877,23 @@ function openReplyTicketModal(ticketId) {
         }
     }
 
+    modal.classList.add('open');
+    modal.classList.add('active');
     modal.style.display = 'flex';
+
+    // Click outside backdrop to close
+    modal.onclick = (e) => {
+        if (e.target === modal) closeReplyTicketModal();
+    };
 }
 
 function closeReplyTicketModal() {
     const modal = document.getElementById('replyTicketModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 async function handleAdminSubmitReply(event) {
@@ -4884,7 +4915,8 @@ async function handleAdminSubmitReply(event) {
         }
 
         const res = await MoonlightAPI.replyTicket(ticketId, {
-            replyMessage,
+            message: replyMessage,
+            replyMessage: replyMessage,
             status
         });
 
@@ -4906,6 +4938,15 @@ async function handleAdminSubmitReply(event) {
         }
     }
 }
+
+// Gán toàn cục để đảm bảo các handler HTML inline luôn gọi được
+window.openReplyTicketModal = openReplyTicketModal;
+window.closeReplyTicketModal = closeReplyTicketModal;
+window.handleAdminSubmitReply = handleAdminSubmitReply;
+window.handleAdminTicketSearch = handleAdminTicketSearch;
+window.setAdminTicketCategoryFilter = setAdminTicketCategoryFilter;
+window.filterAdminTickets = filterAdminTickets;
+window.refreshAdminTickets = refreshAdminTickets;
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---
 

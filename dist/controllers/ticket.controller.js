@@ -115,8 +115,9 @@ export const getAllTickets = async (req, res) => {
 export const replyTicket = async (req, res) => {
     try {
         const ticketId = req.params.id;
-        const { message, status } = req.body;
-        if (!message || !message.trim()) {
+        const { message, replyMessage, status } = req.body;
+        const replyText = (message || replyMessage || '').trim();
+        if (!replyText) {
             sendError(res, 'Nội dung phản hồi không được để trống', 400, 'VALIDATION_ERROR');
             return;
         }
@@ -127,7 +128,7 @@ export const replyTicket = async (req, res) => {
         }
         const replierName = req.user?.name || req.user?.username || 'CSKH MoonLight';
         ticket.reply = {
-            message: message.trim(),
+            message: replyText,
             repliedBy: replierName,
             repliedAt: new Date()
         };

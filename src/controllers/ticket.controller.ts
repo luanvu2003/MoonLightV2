@@ -131,9 +131,10 @@ export const getAllTickets = async (req: Request, res: Response): Promise<void> 
 export const replyTicket = async (req: Request, res: Response): Promise<void> => {
   try {
     const ticketId = req.params.id;
-    const { message, status } = req.body;
+    const { message, replyMessage, status } = req.body;
+    const replyText = (message || replyMessage || '').trim();
 
-    if (!message || !message.trim()) {
+    if (!replyText) {
       sendError(res, 'Nội dung phản hồi không được để trống', 400, 'VALIDATION_ERROR');
       return;
     }
@@ -147,7 +148,7 @@ export const replyTicket = async (req: Request, res: Response): Promise<void> =>
     const replierName = req.user?.name || req.user?.username || 'CSKH MoonLight';
 
     ticket.reply = {
-      message: message.trim(),
+      message: replyText,
       repliedBy: replierName,
       repliedAt: new Date()
     };
