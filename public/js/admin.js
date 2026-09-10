@@ -1339,44 +1339,45 @@ async function renderAdminCustomers() {
 
     container.innerHTML = `
         <!-- KPI METRICS BAR -->
+        <!-- KPI METRICS BAR -->
         <div class="stats-grid-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3); margin: 0 auto;">
                     <i class="fas fa-users"></i>
                 </div>
-                <div>
-                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG NGƯỜI DÙNG</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalUsersCount}</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #94a3b8; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">TỔNG NGƯỜI DÙNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; width: 100%; display: block;">${totalUsersCount}</h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3); margin: 0 auto;">
                     <i class="fas fa-cart-shopping"></i>
                 </div>
-                <div>
-                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">KHÁCH ĐÃ ĐẶT HÀNG</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #34d399;">${buyersCount} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">/ ${totalUsersCount}</small></h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #94a3b8; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">KHÁCH ĐÃ ĐẶT HÀNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #34d399; text-align: center; width: 100%; display: block;">${buyersCount} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">/ ${totalUsersCount}</small></h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(91,80,246,0.12); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(91,80,246,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(91,80,246,0.12); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(91,80,246,0.3); margin: 0 auto;">
                     <i class="fas fa-boxes-packing"></i>
                 </div>
-                <div>
-                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG ĐƠN ĐÃ ĐẶT</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalOrdersPlaced} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">đơn</small></h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #94a3b8; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">TỔNG ĐƠN ĐÃ ĐẶT</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; width: 100%; display: block;">${totalOrdersPlaced} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">đơn</small></h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.3); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 25px rgba(212,175,55,0.15);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.3); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 25px rgba(212,175,55,0.15);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35); margin: 0 auto;">
                     <i class="fas fa-coins"></i>
                 </div>
-                <div>
-                    <span style="color: var(--gold); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG TIỀN ĐÃ MUA</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 22px; font-weight: 900; color: var(--gold);">${totalRevenueGenerated.toLocaleString()}₫</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: var(--gold); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">TỔNG TIỀN ĐÃ MUA</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 900; color: var(--gold); text-align: center; width: 100%; display: block;">${totalRevenueGenerated.toLocaleString()}₫</h3>
                 </div>
             </div>
         </div>
@@ -4605,44 +4606,45 @@ async function renderAdminTickets() {
 
     container.innerHTML = `
         <!-- KPI METRICS BAR -->
+        <!-- KPI METRICS BAR -->
         <div class="stats-grid-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3); margin: 0 auto;">
                     <i class="fas fa-headset"></i>
                 </div>
-                <div>
-                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG PHIẾU HỖ TRỢ</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalTickets}</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #94a3b8; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">TỔNG PHIẾU HỖ TRỢ</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; width: 100%; display: block;">${totalTickets}</h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245,158,11,0.12); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(245,158,11,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245,158,11,0.12); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(245,158,11,0.3); margin: 0 auto;">
                     <i class="fas fa-clock"></i>
                 </div>
-                <div>
-                    <span style="color: #fbbf24; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">CHỜ TIẾP NHẬN</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fbbf24;">${pendingTickets}</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #fbbf24; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">CHỜ TIẾP NHẬN</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #fbbf24; text-align: center; width: 100%; display: block;">${pendingTickets}</h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3); margin: 0 auto;">
                     <i class="fas fa-comment-dots"></i>
                 </div>
-                <div>
-                    <span style="color: #34d399; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ĐÃ PHẢN HỒI</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #34d399;">${repliedTickets}</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: #34d399; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">ĐÃ PHẢN HỒI</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #34d399; text-align: center; width: 100%; display: block;">${repliedTickets}</h3>
                 </div>
             </div>
 
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 25px rgba(212,175,55,0.1);">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35);">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: 0 4px 25px rgba(212,175,55,0.1);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35); margin: 0 auto;">
                     <i class="fas fa-circle-check"></i>
                 </div>
-                <div>
-                    <span style="color: var(--gold, #d4af37); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ĐÃ XONG / ĐÃ ĐÓNG</span>
-                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${closedTickets}</h3>
+                <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: var(--gold, #d4af37); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; text-align: center; display: block; width: 100%;">ĐÃ XONG / ĐÃ ĐÓNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; width: 100%; display: block;">${closedTickets}</h3>
                 </div>
             </div>
         </div>
