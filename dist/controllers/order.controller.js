@@ -473,5 +473,81 @@ export class OrderController {
             next(error);
         }
     }
+    /**
+     * Lấy toàn bộ đơn hàng của khách hàng đang đăng nhập kèm trạng thái chi tiết
+     */
+    static async getMyOrders(req, res, next) {
+        try {
+            if (!req.user) {
+                sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+                return;
+            }
+            const user = await User.findById(req.user.id);
+            const orConditions = [{ customerId: req.user.id }];
+            if (user?.phone) {
+                orConditions.push({ 'customer.phone': user.phone });
+            }
+            if (user?.email) {
+                orConditions.push({ 'customer.email': user.email });
+            }
+            if (req.user.username) {
+                orConditions.push({ 'customer.phone': req.user.username });
+            }
+            const orders = await Order.find({ $or: orConditions })
+                .sort({ createdAt: -1 })
+                .lean();
+            sendSuccess(res, orders, 'Lấy danh sách đơn hàng thành công');
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    /**
+     * Khách hàng tự hủy đơn hàng của mình khi đơn còn ở trạng thái Chờ tiếp nhận (Pending)
+     */
+    static async cancelMyOrder(req, res, next) {
+        try {
+            if (!req.user) {
+                sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+                return;
+            }
+            const idStr = String(req.params.id || '').trim();
+            const { reason } = req.body;
+            const isObjectId = mongoose.Types.ObjectId.isValid(idStr);
+            const query = isObjectId ? { $or: [{ _id: idStr }, { orderCode: idStr }] } : { orderCode: idStr };
+            const order = await Order.findOne(query);
+            if (!order) {
+                sendError(res, 'Không tìm thấy đơn hàng cần hủy', 404, 'ORDER_NOT_FOUND');
+                return;
+            }
+            // Xác thực quyền sở hữu đơn hàng
+            const user = await User.findById(req.user.id);
+            const isOwner = (order.customerId && String(order.customerId) === String(req.user.id)) ||
+                (user?.phone && order.customer?.phone === user.phone) ||
+                (user?.email && order.customer?.email === user.email);
+            if (!isOwner) {
+                sendError(res, 'Bạn không có quyền thao tác trên đơn hàng này', 403, 'FORBIDDEN');
+                return;
+            }
+            if (order.status !== OrderStatus.Pending) {
+                sendError(res, `Đơn hàng đang ở trạng thái "${order.status === OrderStatus.Confirmed ? 'Đã xác nhận' : 'Đang xử lý / Đang giao'}", không thể tự hủy. Quý khách vui lòng liên hệ hotline/zalo để được hỗ trợ.`, 400, 'ORDER_CANNOT_BE_CANCELLED');
+                return;
+            }
+            order.status = OrderStatus.Cancelled;
+            order.cancelReason = reason || 'Khách hàng yêu cầu hủy đơn qua trang quản lý cá nhân';
+            await order.save();
+            // Hoàn kho nguyên tử
+            if (order.items) {
+                await restoreOrderStock(order.items);
+            }
+            if (order.customer?.phone) {
+                await CustomerService.syncCustomerStatsByPhone(order.customer.phone);
+            }
+            sendSuccess(res, order, 'Đã hủy đơn hàng thành công');
+        }
+        catch (error) {
+            next(error);
+        }
+    }
 }
 //# sourceMappingURL=order.controller.js.map

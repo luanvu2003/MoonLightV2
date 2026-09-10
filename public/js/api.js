@@ -167,6 +167,17 @@ const MoonlightAPI = {
     });
   },
 
+  async updateProfile(data) {
+    const res = await this.request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    if (res?.data?.user) {
+      localStorage.setItem('moonlight_user', JSON.stringify(res.data.user));
+    }
+    return res;
+  },
+
   // 3. Products
   async getProducts(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -232,6 +243,17 @@ const MoonlightAPI = {
   async deleteOrder(id) {
     return this.request(`/orders/${id}`, {
       method: 'DELETE'
+    });
+  },
+
+  async getMyOrders() {
+    return this.request('/orders/my-orders');
+  },
+
+  async cancelMyOrder(id, reason = '') {
+    return this.request(`/orders/${id}/cancel-my-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason })
     });
   },
 

@@ -2967,6 +2967,74 @@ const VN_PROVINCES_FALLBACK = [
   { code: 15, name: "Tỉnh Yên Bái" }
 ];
 
+// Chuyển đổi trạng thái dùng thông tin tài khoản đã lưu khi checkout
+function toggleUseSavedCustomerProfile(useSaved) {
+  const loggedUser = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+  if (!loggedUser) return;
+
+  const phoneInput = document.getElementById('cusPhone');
+  const streetInput = document.getElementById('cusStreet');
+  const provEl = document.getElementById('cusProvince');
+
+  if (useSaved) {
+    if (phoneInput && loggedUser.phone) phoneInput.value = loggedUser.phone;
+    if (streetInput && loggedUser.street) streetInput.value = loggedUser.street;
+    restoreCheckoutAddress(loggedUser);
+    showToast({ title: 'Đã dùng thông tin lưu', message: 'Hệ thống đã tự động điền thông tin tài khoản của bạn.', type: 'info' });
+  } else {
+    // Để trống các trường SĐT & địa chỉ để khách nhập mới cho đơn này (Họ tên vẫn cố định theo tài khoản)
+    if (phoneInput) phoneInput.value = '';
+    if (streetInput) streetInput.value = '';
+    if (provEl) {
+      provEl.value = '';
+      provEl.dispatchEvent(new Event('change'));
+    }
+  }
+}
+
+// Khôi phục bộ chọn Tỉnh / Quận / Phường đồng bộ
+function restoreCheckoutAddress(source) {
+  if (!source) return;
+  const pVal = source.provinceCode || source.province;
+  const provEl = document.getElementById('cusProvince');
+  if (!provEl || !pVal) return;
+
+  const tryMatch = () => {
+    let matchedOpt = Array.from(provEl.options).find(o => o.value === String(pVal) || o.getAttribute('data-name') === pVal || (pVal && o.text.includes(pVal)));
+    if (matchedOpt) {
+      provEl.value = matchedOpt.value;
+      provEl.dispatchEvent(new Event('change'));
+      setTimeout(() => {
+        const dVal = source.districtCode || source.district;
+        const distEl = document.getElementById('cusDistrict');
+        if (distEl && dVal) {
+          let matchedDist = Array.from(distEl.options).find(o => o.value === String(dVal) || o.getAttribute('data-name') === dVal || (dVal && o.text.includes(dVal)));
+          if (matchedDist) {
+            distEl.value = matchedDist.value;
+            distEl.dispatchEvent(new Event('change'));
+            setTimeout(() => {
+              const wVal = source.wardCode || source.ward;
+              const wardEl = document.getElementById('cusWard');
+              if (wardEl && wVal) {
+                let matchedWard = Array.from(wardEl.options).find(o => o.value === String(wVal) || o.getAttribute('data-name') === wVal || (wVal && o.text.includes(wVal)));
+                if (matchedWard) wardEl.value = matchedWard.value;
+                if (typeof updateCheckoutAddressValue === 'function') updateCheckoutAddressValue();
+              }
+            }, 180);
+          }
+        }
+      }, 180);
+    }
+  };
+
+  // Nếu provinces chưa nạp xong thì chờ xíu
+  if (provEl.options.length <= 1) {
+    setTimeout(tryMatch, 300);
+  } else {
+    tryMatch();
+  }
+}
+
 function updateCheckoutAddressValue() {
   const provinceEl = document.getElementById('cusProvince');
   const districtEl = document.getElementById('cusDistrict');
@@ -3182,49 +3250,80 @@ function renderCheckoutPage() {
   // Khởi tạo bộ chọn địa chỉ nếu đang ở trang checkout
   initCheckoutAddressSelector();
 
-  // Tự động điền thông tin khách hàng nếu đã đăng nhập hoặc đã từng đặt hàng
+  // Tự động điền thông tin khách hàng và xử lý khóa Họ Tên cố định theo tài khoản
   try {
-    const loggedCustomer = JSON.parse(localStorage.getItem('moonlight_user') || 'null') ||
-                           JSON.parse(localStorage.getItem('moonlight_saved_customer') || 'null');
-    if (loggedCustomer) {
-      const nameInput = document.getElementById('cusName');
-      const phoneInput = document.getElementById('cusPhone');
-      const streetInput = document.getElementById('cusStreet');
-      if (nameInput && !nameInput.value && (loggedCustomer.fullName || loggedCustomer.name)) {
-        nameInput.value = loggedCustomer.fullName || loggedCustomer.name;
-      }
-      if (phoneInput && !phoneInput.value && loggedCustomer.phone) {
-        phoneInput.value = loggedCustomer.phone;
-      }
-      if (streetInput && !streetInput.value && loggedCustomer.street) {
-        streetInput.value = loggedCustomer.street;
-      }
+    const loggedUser = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    const savedCustomer = JSON.parse(localStorage.getItem('moonlight_saved_customer') || 'null');
 
-      // Khôi phục Tỉnh/Thành, Quận/Huyện, Phường/Xã
-      if (loggedCustomer.provinceCode) {
-        const provEl = document.getElementById('cusProvince');
-        if (provEl && !provEl.value) {
-          provEl.value = loggedCustomer.provinceCode;
-          provEl.dispatchEvent(new Event('change'));
-          setTimeout(() => {
-            if (loggedCustomer.districtCode) {
-              const distEl = document.getElementById('cusDistrict');
-              if (distEl) {
-                distEl.value = loggedCustomer.districtCode;
-                distEl.dispatchEvent(new Event('change'));
-                setTimeout(() => {
-                  if (loggedCustomer.wardCode) {
-                    const wardEl = document.getElementById('cusWard');
-                    if (wardEl) wardEl.value = loggedCustomer.wardCode;
-                  }
-                }, 120);
-              }
-            }
-          }, 120);
+    const savedCard = document.getElementById('checkoutSavedProfileCard');
+    const nameInput = document.getElementById('cusName');
+    const phoneInput = document.getElementById('cusPhone');
+    const streetInput = document.getElementById('cusStreet');
+    const nameLockedNotice = document.getElementById('cusNameLockedNotice');
+    const nameLockIcon = document.getElementById('cusNameLockIcon');
+
+    if (loggedUser) {
+      // 1. NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP:
+      // RÀNG BUỘC CỐ ĐỊNH: Họ và tên KHÔNG THỂ SỬA
+      if (nameInput) {
+        nameInput.value = loggedUser.name || loggedUser.username || '';
+        nameInput.readOnly = true;
+        nameInput.classList.add('input-locked');
+        nameInput.title = 'Họ và tên cố định theo tài khoản MoonLight của bạn, không thể chỉnh sửa.';
+      }
+      if (nameLockedNotice) nameLockedNotice.style.display = 'inline-flex';
+      if (nameLockIcon) nameLockIcon.style.display = 'block';
+
+      // Số điện thoại CÓ THỂ SỬA
+      if (phoneInput) {
+        phoneInput.readOnly = false;
+        if (!phoneInput.value && loggedUser.phone) {
+          phoneInput.value = loggedUser.phone;
         }
       }
+
+      // Hiển thị khối tùy chọn thông tin đã lưu
+      if (savedCard) {
+        savedCard.style.display = 'block';
+        const nameText = document.getElementById('savedProfileNameText');
+        const phoneText = document.getElementById('savedProfilePhoneText');
+        const addrText = document.getElementById('savedProfileAddressText');
+        if (nameText) nameText.innerText = loggedUser.name || loggedUser.username || 'Khách hàng MoonLight';
+        if (phoneText) phoneText.innerText = loggedUser.phone || 'Chưa cập nhật SĐT';
+        
+        const fullAddr = loggedUser.address || [loggedUser.street, loggedUser.ward, loggedUser.district, loggedUser.province].filter(Boolean).join(', ');
+        if (addrText) addrText.innerText = fullAddr || 'Chưa lưu địa chỉ (Vui lòng chọn bên dưới)';
+
+        // Tự động điền số nhà tên đường nếu có
+        if (streetInput && !streetInput.value && loggedUser.street) {
+          streetInput.value = loggedUser.street;
+        }
+      }
+    } else {
+      // KHÁCH VÃNG LAI: Tên có thể sửa bình thường
+      if (nameInput) {
+        nameInput.readOnly = false;
+        nameInput.classList.remove('input-locked');
+      }
+      if (nameLockedNotice) nameLockedNotice.style.display = 'none';
+      if (nameLockIcon) nameLockIcon.style.display = 'none';
+      if (savedCard) savedCard.style.display = 'none';
+
+      if (savedCustomer) {
+        if (nameInput && !nameInput.value && savedCustomer.name) nameInput.value = savedCustomer.name;
+        if (phoneInput && !phoneInput.value && savedCustomer.phone) phoneInput.value = savedCustomer.phone;
+        if (streetInput && !streetInput.value && savedCustomer.street) streetInput.value = savedCustomer.street;
+      }
     }
-  } catch (e) {}
+
+    // Khôi phục bộ chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã
+    const sourceGeo = loggedUser || savedCustomer;
+    if (sourceGeo && (sourceGeo.provinceCode || sourceGeo.province)) {
+      restoreCheckoutAddress(sourceGeo);
+    }
+  } catch (e) {
+    console.warn('Lỗi khôi phục thông tin checkout:', e);
+  }
 
   if (!container) return;
 
@@ -4235,8 +4334,9 @@ function initCustomerAuthUI() {
             </div>
           </div>
           <div class="user-dropdown-divider"></div>
+          <a href="profile.html?tab=profile" class="user-dropdown-item"><i class="fas fa-id-card"></i> Thông tin cá nhân</a>
+          <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
           <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
-          <a href="javascript:void(0)" onclick="openCustomerOrdersModal()" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
           <div class="user-dropdown-divider"></div>
           <a href="javascript:void(0)" onclick="handleCustomerLogout()" class="user-dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
         </div>
@@ -4302,10 +4402,17 @@ function initCustomerAuthUI() {
               </button>
             </form>
 
-            <!-- Form Đăng Ký (Tối giản 4 trường) -->
+            <!-- Form Đăng Ký (Bổ sung Họ và tên) -->
             <form id="customerRegisterForm" style="display:none;" onsubmit="handleCustomerRegisterStep1(event)">
               <div class="auth-form-group">
-                <label>Tên tài khoản</label>
+                <label>Họ và tên *</label>
+                <div class="auth-input-wrapper">
+                  <i class="far fa-id-badge"></i>
+                  <input type="text" id="custRegFullName" placeholder="Ví dụ: Nguyễn Văn A..." required autocomplete="name">
+                </div>
+              </div>
+              <div class="auth-form-group">
+                <label>Tên tài khoản (Username)</label>
                 <div class="auth-input-wrapper">
                   <i class="far fa-user"></i>
                   <input type="text" id="custRegUsername" placeholder="Nhập tên tài khoản (viết liền không dấu)..." required autocomplete="username" minlength="3">
@@ -4559,6 +4666,8 @@ async function handleCustomerLoginSubmit(event) {
 
 async function handleCustomerRegisterStep1(event) {
   event.preventDefault();
+  const fullNameEl = document.getElementById('custRegFullName');
+  const fullName = fullNameEl ? fullNameEl.value.trim() : '';
   const username = document.getElementById('custRegUsername').value.trim();
   const email = document.getElementById('custRegEmail').value.trim();
   const password = document.getElementById('custRegPassword').value;
@@ -4567,6 +4676,14 @@ async function handleCustomerRegisterStep1(event) {
   const submitBtn = document.getElementById('custRegSubmitBtn');
 
   if (alertBox) alertBox.style.display = 'none';
+
+  if (!fullName) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = 'Vui lòng nhập họ và tên đầy đủ của bạn!';
+    }
+    return;
+  }
 
   if (password !== confirmPassword) {
     if (alertBox) {
@@ -4591,7 +4708,7 @@ async function handleCustomerRegisterStep1(event) {
   try {
     const res = await MoonlightAPI.sendRegisterOtp(username, email);
     if (res && res.success) {
-      pendingRegisterData = { username, email, password, confirmPassword };
+      pendingRegisterData = { name: fullName, username, email, password, confirmPassword };
 
       // Chuyển sang màn hình nhập mã OTP
       const regForm = document.getElementById('customerRegisterForm');
@@ -4996,8 +5113,12 @@ async function syncUserDataWithServer() {
   }
 }
 
-// Mở modal Đơn Hàng Của Tôi
-async function openCustomerOrdersModal() {
+// Mở trang Đơn Hàng Của Tôi (Trang riêng biệt profile.html)
+function openCustomerOrdersModal() {
+  window.location.href = 'profile.html?tab=orders';
+}
+
+async function legacyCustomerOrdersModal() {
   const modal = document.getElementById('customerOrdersModal');
   const container = document.getElementById('customerOrdersList');
   if (!modal || !container) return;

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Sơ & Đơn Hàng Của Tôi | MoonLight Haute Couture</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        .badge-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-status.pending { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-status.confirmed { background: rgba(59, 130, 246, 0.12); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-status.shipping { background: rgba(139, 92, 246, 0.12); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .badge-status.completed { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-status.cancelled { background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .order-cancelled-notice {
+            background: #fef2f2;
+            border: 1px dashed #f87171;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 14px 0;
+            color: #991b1b;
+            font-size: 12.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body class="profile-body">
+    <!-- Navbar (Đồng bộ MoonLight Luxury) -->
+    <header id="navbar" class="navbar-solid">
+        <div class="container nav-container">
+            <div class="logo">
+                <h1><a href="index.html">MOON<span class="highlight">LIGHT</span>.</a></h1>
+            </div>
+            <nav class="menu">
+                <a href="index.html">Trang Chủ</a>
+                <a href="catalog.html">Bộ Sưu Tập</a>
+                <a href="try-on.html" class="nav-tryon">
+                    <span>Thử Đồ AI</span>
+                    <span class="ai-badge">NEW</span>
+                </a>
+                <a href="index.html#contact">Liên Hệ</a>
+            </nav>
+            <div class="nav-icons">
+                <div class="icon-item" onclick="openSearchModal()" title="Tìm kiếm">
+                    <i class="far fa-search"></i>
+                </div>
+                <div class="icon-item" onclick="openWishlistModal()" title="Yêu thích">
+                    <i class="far fa-heart"></i>
+                    <span class="badge" id="wishlistCount">0</span>
+                </div>
+                <div class="icon-item" onclick="toggleCart()" title="Giỏ hàng">
+                    <i class="far fa-shopping-bag"></i>
+                    <span class="badge" id="cartCount">0</span>
+                </div>
+                <div class="icon-item nav-user-item" id="navUserBtn" onclick="handleUserIconClick(event)" title="Tài khoản">
+                    <i class="far fa-user" id="navUserIcon"></i>
+                    <span class="user-active-dot" id="userActiveDot" style="display:none;"></span>
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="user-dropdown-header">
+                            <div class="user-dropdown-avatar" id="dropdownUserAvatar"><i class="fas fa-user"></i></div>
+                            <div class="user-dropdown-info">
+                                <strong id="dropdownUserName">Khách hàng</strong>
+                                <span class="user-tier-badge" id="dropdownUserTier">Khách mới</span>
+                            </div>
+                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="profile.html?tab=profile" class="user-dropdown-item"><i class="fas fa-id-card"></i> Thông tin cá nhân</a>
+                        <a href="profile.html?tab=orders" class="user-dropdown-item"><i class="fas fa-box-open"></i> Đơn mua của tôi</a>
+                        <a href="checkout.html" class="user-dropdown-item"><i class="fas fa-shopping-bag"></i> Giỏ hàng của tôi</a>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="javascript:void(0)" onclick="handleCustomerLogout()" class="user-dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <!-- Nội dung chính -->
+    <main class="profile-page-wrapper">
+        <div class="container">
+            <!-- Thẻ Tóm Tắt Khách Hàng (Hero Card) -->
+            <div class="profile-hero-card">
+                <div class="profile-hero-inner">
+                    <div class="profile-user-summary">
+                        <div class="profile-avatar-box" id="profAvatarBox">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="profile-user-info">
+                            <h2 id="profHeroName">Khách Hàng MoonLight</h2>
+                            <div class="profile-user-meta">
+                                <span><i class="fas fa-crown" style="color:var(--gold);"></i> <strong id="profHeroTier">Thành viên MoonLight</strong></span>
+                                <span>·</span>
+                                <span id="profHeroEmail">email@example.com</span>
+                                <span>·</span>
+                                <span id="profHeroPhone">Chưa cập nhật SĐT</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-hero-stats">
+                        <div class="profile-stat-box">
+                            <div class="profile-stat-val" id="heroTotalOrders">0</div>
+                            <div class="profile-stat-lbl">Tổng đơn</div>
+                        </div>
+                        <div class="profile-stat-box">
+                            <div class="profile-stat-val" id="heroShippingOrders">0</div>
+                            <div class="profile-stat-lbl">Đang giao</div>
+                        </div>
+                        <div class="profile-stat-box">
+                            <div class="profile-stat-val" id="heroCompletedOrders">0</div>
+                            <div class="profile-stat-lbl">Hoàn tất</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bố Cục 2 Cột: Sidebar Tab & Nội dung Tab -->
+            <div class="profile-layout-grid">
+                <!-- Sidebar Điều Hướng -->
+                <aside class="profile-nav-sidebar">
+                    <button type="button" class="profile-nav-btn active" id="btnTabProfile" onclick="switchProfileTab('profile')">
+                        <i class="fas fa-id-card"></i>
+                        <span>Thông tin cá nhân</span>
+                    </button>
+                    <button type="button" class="profile-nav-btn" id="btnTabOrders" onclick="switchProfileTab('orders')">
+                        <i class="fas fa-box-open"></i>
+                        <span>Đơn mua của tôi</span>
+                        <span class="badge-counter" id="navOrdersCounter">0</span>
+                    </button>
+                    <a href="checkout.html" class="profile-nav-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Giỏ hàng hiện tại</span>
+                    </a>
+                    <a href="catalog.html" class="profile-nav-btn">
+                        <i class="fas fa-compass"></i>
+                        <span>Khám phá bộ sưu tập</span>
+                    </a>
+                    <div style="margin: 12px 0; border-top: 1px solid #f1f5f9;"></div>
+                    <button type="button" class="profile-nav-btn text-danger" onclick="handleCustomerLogout()">
+                        <i class="fas fa-sign-out-alt" style="color:#ef4444;"></i>
+                        <span style="color:#ef4444;">Đăng xuất</span>
+                    </button>
+                </aside>
+
+                <!-- Vùng Nội Dung -->
+                <section class="profile-main-content">
+                    <!-- ================= TAB 1: THÔNG TIN CÁ NHÂN ================= -->
+                    <div class="profile-content-card" id="paneProfile">
+                        <div class="profile-section-title">
+                            <span><i class="fas fa-user-circle" style="color:var(--gold,#d4af37); margin-right:8px;"></i> HỒ SƠ CÁ NHÂN</span>
+                            <small style="font-size:12px; font-weight:normal; color:#64748b;">Quản lý thông tin tài khoản và địa chỉ giao hàng</small>
+                        </div>
+
+                        <form id="profileForm" onsubmit="handleSaveProfile(event)">
+                            <!-- KHỐI 1: THÔNG TIN TÀI KHOẢN (CỐ ĐỊNH TÊN) -->
+                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px;">
+                                1. Định danh tài khoản (Bảo mật)
+                            </h4>
+
+                            <!-- RÀNG BUỘC: HỌ VÀ TÊN KHÔNG THỂ SỬA -->
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight:600; font-size:13px; color:#0f172a;">Họ và tên *</span>
+                                    <span class="badge-locked"><i class="fas fa-lock"></i> Cố định theo tài khoản (Không thể sửa)</span>
+                                </label>
+                                <div class="locked-input-wrapper">
+                                    <input type="text" id="profFullName" readonly class="input-locked" placeholder="Chưa cập nhật họ tên">
+                                    <i class="fas fa-lock locked-field-icon"></i>
+                                </div>
+                                <small style="color:#64748b; font-size:12px; margin-top:5px; display:block;">
+                                    <i class="fas fa-shield-alt" style="color:var(--gold,#d4af37);"></i> Họ và tên được cố định nhằm đảm bảo tính xác thực của các đơn hàng may đo.
+                                </small>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                                <div class="form-group">
+                                    <label style="font-weight:600; font-size:13px; color:#0f172a; margin-bottom:6px;">Tên tài khoản (Username)</label>
+                                    <input type="text" id="profUsername" readonly class="input-locked">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                        <span style="font-weight:600; font-size:13px; color:#0f172a;">Email</span>
+                                        <span class="badge-editable" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;"><i class="fas fa-check-circle"></i> Đã xác thực</span>
+                                    </label>
+                                    <input type="email" id="profEmail" readonly class="input-locked">
+                                </div>
+                            </div>
+
+                            <!-- KHỐI 2: THÔNG TIN GIAO HÀNG (CÓ THỂ SỬA) -->
+                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-top:24px; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px; border-top:1px dashed #e2e8f0; padding-top:20px;">
+                                2. Thông tin liên hệ & Địa chỉ giao hàng mặc định
+                            </h4>
+
+                            <!-- SỐ ĐIỆN THOẠI CÓ THỂ SỬA -->
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight:600; font-size:13px; color:#0f172a;">Số điện thoại nhận hàng *</span>
+                                    <span class="badge-editable"><i class="far fa-edit"></i> Có thể chỉnh sửa</span>
+                                </label>
+                                <input type="tel" id="profPhone" required placeholder="Ví dụ: 0912345678" style="padding:12px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;">
+                            </div>
+
+                            <!-- BỘ CHỌN ĐỊA CHỈ PHÂN CẤP CHUẨN -->
+                            <div class="checkout-address-block" style="margin-bottom:18px;">
+                                <label style="font-size:13px; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:6px; color:#0f172a;">
+                                    <i class="fas fa-map-marker-alt" style="color:var(--gold,#dfba73);"></i> Địa chỉ nhận hàng mặc định
+                                </label>
+
+                                <div class="address-select-grid">
+                                    <div class="form-group address-field-item">
+                                        <label for="profProvince">Tỉnh / Thành phố *</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="profProvince">
+                                                <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group address-field-item">
+                                        <label for="profDistrict">Quận / Huyện *</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="profDistrict" disabled>
+                                                <option value="">-- Chọn Quận / Huyện --</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group address-field-item">
+                                        <label for="profWard">Phường / Xã *</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="profWard" disabled>
+                                                <option value="">-- Chọn Phường / Xã --</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top:6px; margin-bottom:8px;">
+                                    <label for="profStreet">Số nhà, tên đường, tòa nhà</label>
+                                    <input type="text" id="profStreet" placeholder="Ví dụ: 127 Tăng Bạt Hổ, Tòa nhà Landmark 81..." style="padding:11px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                </div>
+
+                                <div class="address-preview-card" id="profAddressPreviewCard" style="display:none; margin-top:10px;">
+                                    <div class="address-preview-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="address-preview-body">
+                                        <span class="address-preview-title">Địa chỉ lưu trữ đầy đủ:</span>
+                                        <span class="address-preview-text" id="profAddressPreviewText"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+                                <button type="submit" id="btnSaveProfileSubmit" class="btn-primary" style="padding:13px 32px; font-weight:700; display:inline-flex; align-items:center; gap:8px; border-radius:6px; cursor:pointer;">
+                                    <i class="fas fa-save"></i> <span>LƯU THAY ĐỔI HỒ SƠ</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- ĐỔI MẬT KHẨU -->
+                        <div style="margin-top:40px; border-top:1px solid #e2e8f0; padding-top:24px;">
+                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                                3. Bảo mật & Đổi mật khẩu
+                            </h4>
+                            <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">Quý khách nên đặt mật khẩu dài và kết hợp chữ số để tăng tính bảo mật.</p>
+                            
+                            <form id="changePasswordForm" onsubmit="handleChangePassword(event)" style="max-width:480px;">
+                                <div class="form-group" style="margin-bottom:12px;">
+                                    <label style="font-size:13px; font-weight:600;">Mật khẩu hiện tại</label>
+                                    <input type="password" id="pwdCurrent" required placeholder="Nhập mật khẩu đang dùng..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:12px;">
+                                    <label style="font-size:13px; font-weight:600;">Mật khẩu mới</label>
+                                    <input type="password" id="pwdNew" required minlength="3" placeholder="Tối thiểu 3 ký tự..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:16px;">
+                                    <label style="font-size:13px; font-weight:600;">Nhập lại mật khẩu mới</label>
+                                    <input type="password" id="pwdConfirm" required minlength="3" placeholder="Xác nhận lại mật khẩu mới..." style="padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;">
+                                </div>
+                                <button type="submit" id="btnChangePwdSubmit" class="btn-order-action" style="padding:10px 20px; font-weight:700;">
+                                    <i class="fas fa-key"></i> ĐỔI MẬT KHẨU
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ================= TAB 2: ĐƠN MUA CỦA TÔI & TRẠNG THÁI ================= -->
+                    <div class="profile-content-card" id="paneOrders" style="display:none;">
+                        <div class="profile-section-title">
+                            <span><i class="fas fa-boxes" style="color:var(--gold,#d4af37); margin-right:8px;"></i> ĐƠN MUA CỦA TÔI</span>
+                            <small style="font-size:12px; font-weight:normal; color:#64748b;">Theo dõi trạng thái và lịch sử mua sắm thời gian thực</small>
+                        </div>
+
+                        <!-- Bộ Lọc Trạng Thái Đơn Hàng -->
+                        <div class="orders-filter-bar">
+                            <button class="orders-filter-btn active" data-status="all" onclick="filterCustomerOrders('all')">Tất cả (<span id="countFilterAll">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="pending" onclick="filterCustomerOrders('pending')">Chờ tiếp nhận (<span id="countFilterPending">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="confirmed" onclick="filterCustomerOrders('confirmed')">Đã xác nhận (<span id="countFilterConfirmed">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="shipping" onclick="filterCustomerOrders('shipping')">Đang giao hàng (<span id="countFilterShipping">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="completed" onclick="filterCustomerOrders('completed')">Giao thành công (<span id="countFilterCompleted">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="cancelled" onclick="filterCustomerOrders('cancelled')">Đã hủy (<span id="countFilterCancelled">0</span>)</button>
+                        </div>
+
+                        <!-- Danh Sách Đơn Hàng -->
+                        <div id="customerOrdersContainer">
+                            <div style="text-align:center; padding:50px 20px; color:#888;">
+                                <i class="fas fa-spinner fa-spin" style="font-size:28px; color:var(--gold);"></i>
+                                <p style="margin-top:14px; font-size:13.5px;">Đang tải danh sách đơn hàng...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Xem Mã Chuyển Khoản Ngân Hàng (TPBank VietQR) -->
+    <div id="profileQrModal" class="cart-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div style="background:#ffffff; border-radius:14px; max-width:400px; width:90%; padding:24px; text-align:center; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+            <button onclick="document.getElementById('profileQrModal').style.display='none'" style="position:absolute; top:14px; right:14px; border:none; background:none; font-size:18px; cursor:pointer; color:#64748b;">
+                <i class="fas fa-times"></i>
+            </button>
+            <h4 style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:6px;">QUÉT MÃ VIETQR THANH TOÁN</h4>
+            <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">Chuyển khoản tự động qua ngân hàng TPBank</p>
+            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:14px;">
+                <img id="profileQrImg" src="" alt="VietQR TPBank" style="max-width:240px; width:100%; border-radius:6px;">
+            </div>
+            <div style="font-size:13px; color:#334155; line-height:1.6; text-align:left; background:#fff; border:1px dashed #cbd5e1; border-radius:6px; padding:10px 14px;">
+                <div>Ngân hàng: <strong>TPBank (Tiên Phong)</strong></div>
+                <div>Số tài khoản: <strong style="color:var(--gold,#b48518); font-family:monospace;">89896789999</strong></div>
+                <div>Số tiền: <strong id="profileQrAmountText" style="color:#0f172a;">--</strong></div>
+                <div>Nội dung CK: <strong id="profileQrMemoText" style="color:var(--gold,#b48518); font-family:monospace;">--</strong></div>
+            </div>
+            <button onclick="document.getElementById('profileQrModal').style.display='none'" class="btn-primary" style="width:100%; margin-top:16px; padding:11px; border-radius:6px; font-weight:700;">
+                ĐÃ HOÀN TẤT CHUYỂN KHOẢN
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+
+</html>

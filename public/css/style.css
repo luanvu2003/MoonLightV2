@@ -2503,6 +2503,548 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
     text-decoration: underline;
 }
 
+/* ==========================================================================
+   MOONLIGHT CUSTOMER PROFILE & ORDER STATUS PAGE STYLES
+   ========================================================================== */
+
+/* 1. Checkout Saved Profile Card & Locked Name Input */
+.checkout-saved-profile-card {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(15, 23, 42, 0.02));
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+.saved-profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.saved-profile-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin: 0 !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+    color: #0f172a !important;
+}
+.saved-profile-checkbox-label input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--gold, #d4af37);
+    cursor: pointer;
+    margin: 0;
+}
+.saved-profile-edit-link {
+    font-size: 12px;
+    color: #b48518;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: 0.2s;
+}
+.saved-profile-edit-link:hover {
+    text-decoration: underline;
+    color: #785303;
+}
+.saved-profile-preview {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #334155;
+}
+.saved-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+}
+.saved-profile-row:last-child { margin-bottom: 0; }
+.saved-profile-row i {
+    color: var(--gold, #d4af37);
+    width: 16px;
+    text-align: center;
+}
+
+.badge-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.locked-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+.locked-input-wrapper input.input-locked {
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    cursor: not-allowed !important;
+    padding-right: 36px !important;
+    font-weight: 600 !important;
+}
+.locked-field-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 13px;
+}
+
+/* 2. Profile Page Layout & Components */
+.profile-page-wrapper {
+    padding: 40px 0 80px;
+    background: #f8fafc;
+    min-height: 85vh;
+}
+.profile-hero-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+.profile-hero-card::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.profile-hero-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+.profile-user-summary {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.profile-avatar-box {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d4af37, #f59e0b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #000;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.profile-avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.profile-user-info h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+}
+.profile-user-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #94a3b8;
+    flex-wrap: wrap;
+}
+.profile-hero-stats {
+    display: flex;
+    gap: 24px;
+}
+.profile-stat-box {
+    text-align: center;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    min-width: 110px;
+}
+.profile-stat-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold, #d4af37);
+    font-family: monospace;
+}
+.profile-stat-lbl {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+}
+
+/* Profile Main Grid & Navigation Tabs */
+.profile-layout-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+}
+@media (max-width: 900px) {
+    .profile-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.profile-nav-sidebar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    height: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.profile-nav-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    margin-bottom: 6px;
+}
+.profile-nav-btn i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+.profile-nav-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+.profile-nav-btn:hover i {
+    color: var(--gold, #d4af37);
+}
+.profile-nav-btn.active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+    color: #b48518;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+.profile-nav-btn.active i {
+    color: #b48518;
+}
+.profile-nav-btn .badge-counter {
+    margin-left: auto;
+    background: var(--gold, #d4af37);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+/* Card Content Blocks */
+.profile-content-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.profile-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.3px;
+}
+
+/* Orders List & Stepper */
+.orders-filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.orders-filter-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.orders-filter-btn:hover {
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+.orders-filter-btn.active {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+}
+
+.order-box-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 18px;
+    transition: all 0.2s ease;
+}
+.order-box-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+.order-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 14px;
+}
+.order-code-badge {
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.order-date-text {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 10px;
+}
+
+/* Visual Stepper 4 Steps */
+.order-stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 18px 0 22px;
+    padding: 0 10px;
+}
+.order-stepper::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 40px;
+    right: 40px;
+    height: 3px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+.stepper-progress-fill {
+    position: absolute;
+    top: 14px;
+    left: 40px;
+    height: 3px;
+    background: var(--gold, #d4af37);
+    z-index: 1;
+    transition: width 0.3s ease;
+}
+.stepper-step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+.stepper-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0 auto 6px;
+    transition: all 0.3s ease;
+}
+.stepper-step.completed .stepper-circle {
+    background: var(--gold, #d4af37);
+    border-color: var(--gold, #d4af37);
+    color: #000;
+    font-weight: bold;
+}
+.stepper-step.active .stepper-circle {
+    border-color: var(--gold, #d4af37);
+    color: var(--gold, #d4af37);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+.stepper-label {
+    font-size: 11.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+.stepper-step.completed .stepper-label,
+.stepper-step.active .stepper-label {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+/* Order Item Rows */
+.order-item-row {
+    display: flex;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px dashed #f1f5f9;
+    align-items: center;
+}
+.order-item-row:last-child {
+    border-bottom: none;
+}
+.order-item-img {
+    width: 58px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+.order-item-info {
+    flex: 1;
+}
+.order-item-info h5 {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0 0 3px 0;
+    color: #0f172a;
+}
+.order-item-info p {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+.order-item-price {
+    text-align: right;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Order Footer & Actions */
+.order-box-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 14px;
+    margin-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+.order-total-sum {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold, #b48518);
+}
+.order-actions-group {
+    display: flex;
+    gap: 8px;
+}
+.btn-order-action {
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-order-action:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+.btn-order-action.danger {
+    color: #ef4444;
+    border-color: #fecaca;
+}
+.btn-order-action.danger:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+.btn-order-action.primary {
+    background: var(--gold, #d4af37);
+    color: #000;
+    border-color: var(--gold, #d4af37);
+}
+.btn-order-action.primary:hover {
+    background: #c59f2e;
+}
+
+
 
 
 

@@ -241,6 +241,93 @@ export class AuthController {
   }
 
   /**
+   * Cập nhật thông tin cá nhân của khách hàng (SĐT, Tỉnh/Thành, Quận/Huyện, Phường/Xã, Địa chỉ)
+   * RÀNG BUỘC NGHIÊM NGẶT: Tên (name) KHÔNG ĐƯỢC PHÉP SỬA theo yêu cầu hệ thống.
+   */
+  static async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const { phone, address, province, district, ward, street, avatar } = req.body;
+      const updateData: any = {};
+
+      if (phone !== undefined) {
+        const cleanPhone = String(phone).trim();
+        if (cleanPhone && !/^[0-9+.\s-]{8,15}$/.test(cleanPhone)) {
+          sendError(res, 'Số điện thoại không hợp lệ (cần từ 8 - 15 chữ số)', 400, 'INVALID_PHONE');
+          return;
+        }
+        updateData.phone = cleanPhone;
+      }
+
+      if (address !== undefined) updateData.address = String(address).trim();
+      if (province !== undefined) updateData.province = String(province).trim();
+      if (district !== undefined) updateData.district = String(district).trim();
+      if (ward !== undefined) updateData.ward = String(ward).trim();
+      if (street !== undefined) updateData.street = String(street).trim();
+      if (avatar !== undefined) updateData.avatar = String(avatar).trim();
+
+      // CỐ ĐỊNH TÊN: Tuyệt đối không nhận hoặc cập nhật trường 'name' ở đây!
+
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        { $set: updateData },
+        { new: true }
+      ).select('-password');
+
+      if (!updatedUser) {
+        sendError(res, 'Không tìm thấy thông tin người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      // Đồng bộ thông tin sang Customer profile nếu có số điện thoại
+      if (updatedUser.phone) {
+        try {
+          await Customer.findOneAndUpdate(
+            { phone: updatedUser.phone },
+            {
+              $set: {
+                name: updatedUser.name,
+                phone: updatedUser.phone,
+                address: updatedUser.address || `${updatedUser.street || ''} ${updatedUser.ward || ''} ${updatedUser.district || ''} ${updatedUser.province || ''}`.trim()
+              }
+            },
+            { upsert: true, new: true }
+          );
+        } catch {}
+      }
+
+      sendSuccess(
+        res,
+        {
+          user: {
+            id: updatedUser._id,
+            name: updatedUser.name,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            address: updatedUser.address,
+            province: updatedUser.province,
+            district: updatedUser.district,
+            ward: updatedUser.ward,
+            street: updatedUser.street,
+            role: updatedUser.role,
+            avatar: updatedUser.avatar,
+            cart: updatedUser.cart || [],
+            wishlist: updatedUser.wishlist || []
+          }
+        },
+        'Cập nhật thông tin cá nhân thành công'
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Gửi mã OTP xác thực đăng ký qua Email
    */
   static async sendRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -305,7 +392,7 @@ export class AuthController {
    */
   static async verifyRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { username, email, password, confirmPassword, otp } = req.body;
+      const { name, username, email, password, confirmPassword, otp } = req.body;
 
       if (!username || !email || !password || !otp) {
         sendError(res, 'Vui lòng cung cấp đầy đủ thông tin đăng ký và mã xác minh OTP', 400, 'BAD_REQUEST');
@@ -322,6 +409,7 @@ export class AuthController {
         return;
       }
 
+      const cleanName = String(name || '').trim();
       const cleanUsername = String(username).toLowerCase().trim();
       const cleanEmail = String(email).toLowerCase().trim();
       const cleanOtp = String(otp).trim();
@@ -345,9 +433,9 @@ export class AuthController {
         return;
       }
 
-      // 4. Tạo User mới với vai trò Customer
+      // 4. Tạo User mới với vai trò Customer (Họ tên đầy đủ được ưu tiên lưu trữ chính xác)
       const newUser = new User({
-        name: cleanUsername,
+        name: cleanName || cleanUsername,
         username: cleanUsername,
         password,
         email: cleanEmail,

@@ -64,9 +64,41 @@
             <div class="checkout-grid">
                 <div class="checkout-form-col">
                     <h3 class="checkout-title">THÔNG TIN GIAO HÀNG</h3>
+                    
+                    <!-- Khối chọn thông tin giao hàng đã lưu trong tài khoản -->
+                    <div id="checkoutSavedProfileCard" class="checkout-saved-profile-card" style="display:none;">
+                        <div class="saved-profile-header">
+                            <label class="saved-profile-checkbox-label">
+                                <input type="checkbox" id="useSavedProfileCheckbox" checked onchange="toggleUseSavedCustomerProfile(this.checked)">
+                                <span>Sử dụng thông tin giao hàng đã lưu trong tài khoản</span>
+                            </label>
+                            <a href="profile.html?tab=profile" target="_blank" class="saved-profile-edit-link"><i class="far fa-edit"></i> Quản lý địa chỉ</a>
+                        </div>
+                        <div class="saved-profile-preview" id="savedProfilePreviewBox">
+                            <div class="saved-profile-row"><i class="fas fa-user-shield"></i> <strong>Họ tên:</strong> <span id="savedProfileNameText">--</span> <span class="badge-locked"><i class="fas fa-lock"></i> Cố định theo tài khoản</span></div>
+                            <div class="saved-profile-row"><i class="fas fa-phone-alt"></i> <strong>SĐT:</strong> <span id="savedProfilePhoneText">--</span> <span class="badge-editable"><i class="far fa-edit"></i> Có thể sửa</span></div>
+                            <div class="saved-profile-row"><i class="fas fa-map-marker-alt"></i> <strong>Địa chỉ:</strong> <span id="savedProfileAddressText">Chưa lưu</span></div>
+                        </div>
+                    </div>
+
                     <form id="checkoutForm" onsubmit="handleCheckout(event)">
-                        <div class="form-group"><label>Họ và tên *</label><input type="text" id="cusName" required placeholder="Ví dụ: Nguyễn Văn A"></div>
-                        <div class="form-group"><label>Số điện thoại *</label><input type="tel" id="cusPhone" required placeholder="Ví dụ: 0912345678"></div>
+                        <div class="form-group">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Họ và tên *</span>
+                                <span id="cusNameLockedNotice" class="badge-locked" style="display:none;"><i class="fas fa-lock"></i> Cố định theo tài khoản</span>
+                            </label>
+                            <div class="locked-input-wrapper">
+                                <input type="text" id="cusName" required placeholder="Ví dụ: Nguyễn Văn A">
+                                <i class="fas fa-lock locked-field-icon" id="cusNameLockIcon" style="display:none;"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Số điện thoại *</span>
+                                <span class="badge-editable" id="cusPhoneNotice"><i class="far fa-edit"></i> Có thể sửa</span>
+                            </label>
+                            <input type="tel" id="cusPhone" required placeholder="Ví dụ: 0912345678">
+                        </div>
                         <!-- ĐỊA CHỈ GIAO HÀNG PHÂN CẤP CHUẨN LUXURY -->
                         <div class="checkout-address-block">
                             <label style="font-size:13px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; color:#0f172a;">

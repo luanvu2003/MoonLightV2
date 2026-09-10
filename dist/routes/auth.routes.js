@@ -13,5 +13,6 @@ router.get('/me', authenticate, AuthController.getMe);
 router.post('/sync', authenticate, AuthController.syncUserData);
 router.put('/password', authenticate, AuthController.changePassword);
 router.put('/avatar', authenticate, AuthController.updateAvatar);
+router.put('/profile', authenticate, AuthController.updateProfile);
 export default router;
 //# sourceMappingURL=auth.routes.js.map

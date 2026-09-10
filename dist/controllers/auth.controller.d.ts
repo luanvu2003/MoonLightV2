@@ -6,6 +6,11 @@ export declare class AuthController {
     static changePassword(req: Request, res: Response, next: NextFunction): Promise<void>;
     static updateAvatar(req: Request, res: Response, next: NextFunction): Promise<void>;
     /**
+     * Cập nhật thông tin cá nhân của khách hàng (SĐT, Tỉnh/Thành, Quận/Huyện, Phường/Xã, Địa chỉ)
+     * RÀNG BUỘC NGHIÊM NGẶT: Tên (name) KHÔNG ĐƯỢC PHÉP SỬA theo yêu cầu hệ thống.
+     */
+    static updateProfile(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
      * Gửi mã OTP xác thực đăng ký qua Email
      */
     static sendRegisterOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
