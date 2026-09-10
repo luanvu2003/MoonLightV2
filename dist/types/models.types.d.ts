@@ -66,11 +66,13 @@ export interface IOrderCustomer {
     name: string;
     phone: string;
     address: string;
+    email?: string;
     note?: string;
 }
 export interface IOrder {
     _id?: any;
     orderCode: string;
+    customerId?: any;
     customer: IOrderCustomer;
     items: IOrderItem[];
     subtotal: number;

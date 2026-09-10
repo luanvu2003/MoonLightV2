@@ -244,6 +244,10 @@ export class OrderController {
         orderData.status = OrderStatus.Pending;
       }
 
+      if (!orderData.customerId && (req as any).user?.id) {
+        orderData.customerId = (req as any).user.id;
+      }
+
       const newOrder = new Order(orderData);
       const savedOrder = await newOrder.save();
 

@@ -39,6 +39,7 @@ const OrderCustomerSchema = new Schema<IOrderCustomer>(
     name: { type: String, required: [true, 'Tên người nhận không được để trống'] },
     phone: { type: String, required: [true, 'Số điện thoại không được để trống'] },
     address: { type: String, required: [true, 'Địa chỉ giao hàng không được để trống'] },
+    email: { type: String, default: '' },
     note: { type: String, default: '' }
   },
   { _id: false }
@@ -50,6 +51,12 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       required: true,
       unique: true,
+      index: true
+    },
+    customerId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
       index: true
     },
     customer: {

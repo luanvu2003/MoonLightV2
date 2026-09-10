@@ -205,6 +205,9 @@ export class OrderController {
             if (!orderData.status) {
                 orderData.status = OrderStatus.Pending;
             }
+            if (!orderData.customerId && req.user?.id) {
+                orderData.customerId = req.user.id;
+            }
             const newOrder = new Order(orderData);
             const savedOrder = await newOrder.save();
             // Tự động lưu thông tin khách hàng (SĐT, Địa chỉ) vào tài khoản User nếu có liên kết

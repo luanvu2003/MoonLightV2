@@ -587,8 +587,8 @@ function switchTab(tabName) {
             subtitle: 'Xử lý đơn đặt hàng, kiểm tra đối soát thanh toán và in vận đơn.'
         },
         customers: {
-            heading: 'Khách Hàng Thân Thiết',
-            subtitle: 'Danh sách khách hàng thân thiết và lịch sử mua sắm.'
+            heading: 'Quản Lý Người Dùng & Khách Hàng',
+            subtitle: 'Danh sách tài khoản người dùng, thông tin liên hệ và lịch sử giao dịch toàn hệ thống.'
         },
         reviews: {
             heading: 'Đánh Giá Khách Hàng',
@@ -1203,171 +1203,290 @@ function showAdminNotifications() {
     showToast('info', 'Hệ thống có 3 thông báo mới: 2 đơn hàng hoàn thành và 1 cảnh báo tồn kho.');
 }
 
-function renderAdminCustomers() {
+// --- 8. QUẢN LÝ NGƯỜI DÙNG & KHÁCH HÀNG (LIVE SERVER DATA & ORDER HISTORY) ---
+let cachedCustomerUsers = [];
+let customerUserTypeFilter = 'all'; // 'all', 'ordered', 'no_orders', 'google', 'registered', 'guest'
+let isLoadingCustomers = false;
+
+async function renderAdminCustomers() {
     const container = document.getElementById('adminContent');
     if (!container) return;
 
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { role: 'Staff' };
     const canExportCustomers = loggedUser.role === 'Admin' || loggedUser.role === 'Owner';
 
-    const customerMap = new Map();
-    orders.forEach(o => {
-        const phone = o.customer?.phone ? String(o.customer.phone).trim() : '';
-        const name = o.customer?.name ? String(o.customer.name).trim() : 'Khách vãng lai';
-        const key = phone || name || 'Khách vãng lai';
-        if (!customerMap.has(key)) {
-            customerMap.set(key, {
-                name: name,
-                phone: phone || '---',
-                address: o.customer?.address || 'Tại showroom MoonLight',
-                totalOrders: 0,
-                completedOrders: 0,
-                totalSpent: 0
-            });
-        }
-        const c = customerMap.get(key);
-        c.totalOrders += 1;
-        if (o.status === 'completed') {
-            c.completedOrders += 1;
-            c.totalSpent += (Number(o.total) || 0);
-        }
-    });
+    // Hiển thị khung chờ tải lần đầu nếu chưa có cache
+    if (cachedCustomerUsers.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 80px 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 36px; color: var(--gold); margin-bottom: 16px;"></i>
+                <h3 style="color: #fff; font-size: 18px; margin: 0 0 8px 0;">Đang đồng bộ dữ liệu người dùng & khách hàng...</h3>
+                <p style="color: #94a3b8; font-size: 13px; margin: 0;">Hệ thống đang tổng hợp dữ liệu đơn hàng và tài khoản thời gian thực</p>
+            </div>
+        `;
+    }
 
-    const customerList = Array.from(customerMap.values()).map(c => {
-        let rank = 'Khách Mới';
-        let rankBadgeClass = 'dark';
-        let rankIcon = 'fa-user';
-        if (c.totalSpent >= 10000000) {
-            rank = 'VIP';
-            rankBadgeClass = 'gold';
-            rankIcon = 'fa-crown';
-        } else if (c.totalSpent >= 5000000) {
-            rank = 'Thân Thiết';
-            rankBadgeClass = 'indigo';
-            rankIcon = 'fa-gem';
+    // Tải dữ liệu từ backend
+    if (!isLoadingCustomers) {
+        isLoadingCustomers = true;
+        try {
+            const res = await MoonlightAPI.getCustomersStats();
+            if (res && res.success && Array.isArray(res.data)) {
+                cachedCustomerUsers = res.data;
+            }
+        } catch (err) {
+            console.warn('Lỗi khi tải danh sách người dùng từ API, sử dụng dữ liệu dự phòng:', err);
+            // Fallback sang gom từ mảng orders nếu offline
+            if (cachedCustomerUsers.length === 0) {
+                const customerMap = new Map();
+                orders.forEach(o => {
+                    const phone = o.customer?.phone ? String(o.customer.phone).trim() : '';
+                    const name = o.customer?.name ? String(o.customer.name).trim() : 'Khách vãng lai';
+                    const key = phone || name || 'Khách vãng lai';
+                    if (!customerMap.has(key)) {
+                        customerMap.set(key, {
+                            id: key,
+                            name: name,
+                            username: phone ? `user_${phone}` : 'user',
+                            email: o.customer?.email || 'Chưa cập nhật',
+                            phone: phone || 'Chưa cập nhật',
+                            address: o.customer?.address || 'Tại showroom MoonLight',
+                            role: 'Customer',
+                            isRegistered: false,
+                            stats: {
+                                totalOrders: 0,
+                                completedOrders: 0,
+                                cancelledOrders: 0,
+                                totalSpent: 0
+                            }
+                        });
+                    }
+                    const c = customerMap.get(key);
+                    c.stats.totalOrders += 1;
+                    if (o.status === 'completed') {
+                        c.stats.completedOrders += 1;
+                        c.stats.totalSpent += (Number(o.total) || 0);
+                    } else if (o.status === 'cancelled') {
+                        c.stats.cancelledOrders += 1;
+                    }
+                });
+                cachedCustomerUsers = Array.from(customerMap.values());
+            }
+        } finally {
+            isLoadingCustomers = false;
         }
-        return { ...c, rank, rankBadgeClass, rankIcon };
-    });
+    }
 
-    // Lọc theo từ khóa tìm kiếm (Tên hoặc Số điện thoại) và bộ lọc hạng
+    // Tổng hợp các chỉ số KPI
+    const totalUsersCount = cachedCustomerUsers.length;
+    const buyersCount = cachedCustomerUsers.filter(u => (u.stats?.totalOrders || 0) > 0).length;
+    const totalOrdersPlaced = cachedCustomerUsers.reduce((sum, u) => sum + (u.stats?.totalOrders || 0), 0);
+    const totalRevenueGenerated = cachedCustomerUsers.reduce((sum, u) => sum + (u.stats?.totalSpent || 0), 0);
+
+    // Lọc theo từ khóa tìm kiếm
     const kw = customerSearchKeyword.toLowerCase().trim();
-    let list = customerList.filter(c => {
-        const matchesName = c.name.toLowerCase().includes(kw);
-        const matchesPhone = c.phone.replace(/[\s.-]/g, '').includes(kw.replace(/[\s.-]/g, ''));
-        const matchesSearch = !kw || matchesName || matchesPhone;
+    let list = cachedCustomerUsers.filter(u => {
+        const name = (u.name || '').toLowerCase();
+        const username = (u.username || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        const phone = (u.phone || '').replace(/[\s.-]/g, '');
+        const addr = (u.address || '').toLowerCase();
+        const cleanKw = kw.replace(/[\s.-]/g, '');
 
-        let matchesRank = true;
-        if (customerRankFilter === 'vip') matchesRank = c.rank === 'VIP';
-        else if (customerRankFilter === 'regular') matchesRank = c.rank === 'Thân Thiết';
-        else if (customerRankFilter === 'new') matchesRank = c.rank === 'Khách Mới';
+        const matchesKw = !kw || name.includes(kw) || username.includes(kw) || email.includes(kw) || phone.includes(cleanKw) || addr.includes(kw);
 
-        return matchesSearch && matchesRank;
+        let matchesType = true;
+        if (customerUserTypeFilter === 'ordered') {
+            matchesType = (u.stats?.totalOrders || 0) > 0;
+        } else if (customerUserTypeFilter === 'no_orders') {
+            matchesType = (u.stats?.totalOrders || 0) === 0;
+        } else if (customerUserTypeFilter === 'google') {
+            matchesType = Boolean(u.isGoogleAuth);
+        } else if (customerUserTypeFilter === 'registered') {
+            matchesType = Boolean(u.isRegistered);
+        } else if (customerUserTypeFilter === 'guest') {
+            matchesType = !u.isRegistered;
+        }
+
+        return matchesKw && matchesType;
     });
 
-    // Sắp xếp chi tiêu cao nhất lên đầu
-    list.sort((a, b) => b.totalSpent - a.totalSpent);
+    // Sắp xếp ưu tiên người chi tiêu nhiều nhất và có đơn hàng
+    list.sort((a, b) => {
+        const spentA = a.stats?.totalSpent || 0;
+        const spentB = b.stats?.totalSpent || 0;
+        if (spentB !== spentA) return spentB - spentA;
+        return (b.stats?.totalOrders || 0) - (a.stats?.totalOrders || 0);
+    });
 
     container.innerHTML = `
-        <!-- THANH HÀNH ĐỘNG KHÁCH HÀNG (THOÁNG ĐÃNG, KHÔNG LẶP TIÊU ĐỀ) -->
-        <div class="orders-action-bar">
-            <div class="orders-live-status">
-                <span class="live-dot-pulse"></span>
-                <span>Cơ sở dữ liệu khách hàng thân thiết MoonLight</span>
-                <span class="adm-badge store-tag" style="font-size:10px; padding:2px 7px; margin-left:4px;">Thời gian thực</span>
-                <span style="color:var(--text-muted); font-size:12px; margin-left:6px;">Tổng <b>${customerList.length}</b> khách hàng (${list.length} đang hiển thị)</span>
+        <!-- KPI METRICS BAR -->
+        <div class="stats-grid-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG NGƯỜI DÙNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalUsersCount}</h3>
+                </div>
             </div>
-            <div class="orders-action-buttons">
-                ${canExportCustomers ? `
-                    <button class="btn-outline" onclick="exportCustomersCSV()" title="Xuất danh sách khách hàng sang file CSV">
-                        <i class="fas fa-file-excel" style="color:#10b981;"></i> Xuất Khách Hàng (CSV)
-                    </button>
-                ` : `
-                    <span class="adm-badge" style="background:rgba(91,80,246,0.15); color:var(--primary-indigo); font-size:12px; padding:6px 12px;">
-                        <i class="fas fa-shield-alt"></i> Bảo mật danh bạ khách hàng
-                    </span>
-                `}
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3);">
+                    <i class="fas fa-cart-shopping"></i>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">KHÁCH ĐÃ ĐẶT HÀNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #34d399;">${buyersCount} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">/ ${totalUsersCount}</small></h3>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(91,80,246,0.12); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(91,80,246,0.3);">
+                    <i class="fas fa-boxes-packing"></i>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG ĐƠN ĐÃ ĐẶT</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalOrdersPlaced} <small style="font-size: 13px; font-weight: 500; color: #94a3b8;">đơn</small></h3>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.3); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 25px rgba(212,175,55,0.15);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35);">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div>
+                    <span style="color: var(--gold); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG TIỀN ĐÃ MUA</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 22px; font-weight: 900; color: var(--gold);">${totalRevenueGenerated.toLocaleString()}₫</h3>
+                </div>
             </div>
         </div>
 
-        <!-- TOOLBAR: TÌM KIẾM THEO TÊN / SĐT & BỘ LỌC HẠNG -->
-        <div class="admin-toolbar">
-            <div class="search-box" style="flex:1; max-width:420px; position:relative;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="customerSearchInput" placeholder="Tìm kiếm theo Tên hoặc Số điện thoại khách..." value="${customerSearchKeyword}" oninput="searchCustomers(this.value)">
+        <!-- THANH CÔNG CỤ TÌM KIẾM & BỘ LỌC -->
+        <div class="admin-toolbar" style="margin-bottom: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+            <div class="search-box" style="flex: 1; max-width: 460px; position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
+                <input type="text" id="customerSearchInput" placeholder="Tìm theo Tên, SĐT, Email, Địa chỉ hoặc Tên đăng nhập..." value="${customerSearchKeyword}" oninput="searchCustomers(this.value)" style="width: 100%; padding: 10px 38px 10px 40px; background: var(--bg-card, #161a29); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
                 ${customerSearchKeyword ? `
-                    <button type="button" onclick="clearCustomerSearch()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:14px; line-height:1;" title="Xóa tìm kiếm">&times;</button>
+                    <button type="button" onclick="clearCustomerSearch()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; line-height: 1;">&times;</button>
                 ` : ''}
             </div>
-            <div class="filter-group" style="flex-wrap:wrap; gap:6px;">
-                <button class="filter-pill-btn ${customerRankFilter==='all'?'active':''}" onclick="setCustomerRankFilter('all')">Tất Cả Hạng</button>
-                <button class="filter-pill-btn ${customerRankFilter==='vip'?'active':''}" onclick="setCustomerRankFilter('vip')">
-                    <i class="fas fa-crown" style="color:var(--gold);"></i> VIP
+
+            <div class="filter-group" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <button class="filter-pill-btn ${customerUserTypeFilter === 'all' ? 'active' : ''}" onclick="setCustomerUserTypeFilter('all')">Tất Cả (${cachedCustomerUsers.length})</button>
+                <button class="filter-pill-btn ${customerUserTypeFilter === 'ordered' ? 'active' : ''}" onclick="setCustomerUserTypeFilter('ordered')">
+                    <i class="fas fa-bag-shopping" style="color: #10b981;"></i> Đã Đặt Hàng (${buyersCount})
                 </button>
-                <button class="filter-pill-btn ${customerRankFilter==='regular'?'active':''}" onclick="setCustomerRankFilter('regular')">
-                    <i class="fas fa-gem" style="color:#818cf8;"></i> Thân Thiết
+                <button class="filter-pill-btn ${customerUserTypeFilter === 'no_orders' ? 'active' : ''}" onclick="setCustomerUserTypeFilter('no_orders')">
+                    <i class="fas fa-user-clock" style="color: #94a3b8;"></i> Chưa Đặt Hàng (${cachedCustomerUsers.length - buyersCount})
                 </button>
-                <button class="filter-pill-btn ${customerRankFilter==='new'?'active':''}" onclick="setCustomerRankFilter('new')">
-                    <i class="fas fa-user" style="color:#94a3b8;"></i> Khách Mới
+                <button class="filter-pill-btn ${customerUserTypeFilter === 'google' ? 'active' : ''}" onclick="setCustomerUserTypeFilter('google')">
+                    <i class="fab fa-google" style="color: #ea4335;"></i> Google
                 </button>
+                <button class="filter-pill-btn ${customerUserTypeFilter === 'registered' ? 'active' : ''}" onclick="setCustomerUserTypeFilter('registered')">
+                    <i class="fas fa-shield-alt" style="color: var(--gold);"></i> Đã Đăng Ký
+                </button>
+                ${canExportCustomers ? `
+                    <button class="btn-outline" onclick="exportCustomersCSV()" style="padding: 6px 14px; font-size: 12.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="Xuất danh sách sang file Excel CSV">
+                        <i class="fas fa-file-excel" style="color: #10b981;"></i> Xuất CSV
+                    </button>
+                ` : ''}
             </div>
         </div>
 
-        <!-- BẢNG DANH SÁCH KHÁCH HÀNG -->
-        <div class="data-table-container">
+        <!-- BẢNG DANH SÁCH NGƯỜI DÙNG & KHÁCH HÀNG -->
+        <div class="data-table-container" style="background: var(--bg-card, #161a29); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th style="width:240px;">Khách Hàng</th>
-                        <th style="width:160px;">Số Điện Thoại</th>
+                        <th style="width: 260px;">Người Dùng / Khách Hàng</th>
+                        <th style="width: 150px;">Số Điện Thoại</th>
+                        <th style="width: 220px;">Email</th>
                         <th>Địa Chỉ Giao Hàng</th>
-                        <th style="width:110px; text-align:center;">Số Đơn Hàng</th>
-                        <th style="width:150px; text-align:right;">Tổng Chi Tiêu</th>
-                        <th style="width:130px; text-align:center;">Thao Tác</th>
+                        <th style="width: 150px; text-align: center;">Tổng Đơn Đã Đặt</th>
+                        <th style="width: 160px; text-align: right;">Số Tiền Đã Đặt</th>
+                        <th style="width: 140px; text-align: center;">Lịch Sử Đơn</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${list.length === 0 ? `
-                        <tr><td colspan="6" style="text-align:center; padding:40px; color:#777;">
-                            <i class="fas fa-user-slash" style="font-size:24px; margin-bottom:8px; display:block; opacity:0.5;"></i>
-                            Không tìm thấy khách hàng nào khớp với "${customerSearchKeyword}".
-                        </td></tr>
-                    ` : list.map(c => {
-                        const initials = (c.name || 'K').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 50px 20px; color: #777;">
+                                <i class="fas fa-user-slash" style="font-size: 32px; margin-bottom: 10px; display: block; opacity: 0.4;"></i>
+                                Không tìm thấy người dùng nào phù hợp với bộ lọc hiện tại.
+                            </td>
+                        </tr>
+                    ` : list.map(u => {
+                        const initials = (u.name || u.username || 'U').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+                        const stats = u.stats || { totalOrders: 0, completedOrders: 0, cancelledOrders: 0, totalSpent: 0 };
+                        const hasOrders = stats.totalOrders > 0;
+                        const avatarHtml = u.avatar ? `
+                            <img src="${u.avatar}" alt="${u.name}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(212,175,55,0.4);">
+                        ` : `
+                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, rgba(91,80,246,0.35), rgba(212,175,55,0.35)); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;">
+                                ${initials}
+                            </div>
+                        `;
+
                         return `
                             <tr>
                                 <td>
-                                    <div style="display:flex; align-items:center; gap:10px;">
-                                        <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, rgba(91, 80, 246, 0.35), rgba(212, 175, 55, 0.35)); border:1px solid rgba(255, 255, 255, 0.15); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#ffffff; flex-shrink:0;">
-                                            ${initials}
-                                        </div>
-                                        <div>
-                                            <strong style="color:#fff; font-size:13.5px;">${c.name}</strong><br>
-                                            <span class="adm-badge ${c.rankBadgeClass}" style="font-size:10.5px; padding:1px 7px; margin-top:3px; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
-                                                <i class="fas ${c.rankIcon}"></i> ${c.rank}
-                                            </span>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        ${avatarHtml}
+                                        <div style="overflow: hidden;">
+                                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                <strong style="color: #fff; font-size: 13.5px;">${u.name}</strong>
+                                                ${u.isGoogleAuth ? `
+                                                    <span class="adm-badge indigo" style="font-size: 9.5px; padding: 1px 5px;" title="Đăng nhập qua Google"><i class="fab fa-google"></i> Google</span>
+                                                ` : u.isRegistered ? `
+                                                    <span class="adm-badge gold" style="font-size: 9.5px; padding: 1px 5px;">Tài khoản</span>
+                                                ` : `
+                                                    <span class="adm-badge dark" style="font-size: 9.5px; padding: 1px 5px;">Khách POS</span>
+                                                `}
+                                            </div>
+                                            <small style="color: #64748b; font-size: 11px; display: block; margin-top: 2px;">@${u.username || 'user'}</small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div style="display:flex; align-items:center; gap:6px;">
-                                        <i class="fas fa-phone-alt" style="font-size:11px; color:#10b981;"></i>
-                                        <span style="font-family:monospace; font-size:12.5px; color:#e2e8f0; font-weight:600;">${c.phone}</span>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-phone-alt" style="font-size: 11px; color: ${u.phone && u.phone !== 'Chưa cập nhật' ? '#10b981' : '#64748b'};"></i>
+                                        <span style="font-family: monospace; font-size: 12.5px; color: ${u.phone && u.phone !== 'Chưa cập nhật' ? '#e2e8f0' : '#64748b'}; font-weight: 600;">
+                                            ${u.phone || 'Chưa cập nhật'}
+                                        </span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span style="color:#94a3b8; font-size:12px;" title="${c.address}">
-                                        <i class="fas fa-map-marker-alt" style="color:var(--gold); font-size:10px; margin-right:4px;"></i>${c.address}
+                                    <span style="color: ${u.email && u.email !== 'Chưa cập nhật' ? '#94a3b8' : '#64748b'}; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                                        <i class="fas fa-envelope" style="font-size: 11px; color: #38bdf8;"></i>
+                                        <span style="overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${u.email || 'Chưa cập nhật'}</span>
                                     </span>
                                 </td>
-                                <td style="text-align:center;">
-                                    <span class="badge-pill-counter">${c.totalOrders} đơn</span>
+                                <td>
+                                    <span style="color: ${u.address && u.address !== 'Chưa cập nhật' ? '#cbd5e1' : '#64748b'}; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;" title="${u.address}">
+                                        <i class="fas fa-map-marker-alt" style="color: var(--gold); font-size: 10.5px; margin-right: 4px;"></i>${u.address || 'Chưa cập nhật'}
+                                    </span>
                                 </td>
-                                <td style="text-align:right;">
-                                    <strong style="color:var(--gold); font-size:13.5px;">${c.totalSpent.toLocaleString()}₫</strong>
+                                <td style="text-align: center;">
+                                    <strong style="font-size: 13.5px; color: ${hasOrders ? '#fff' : '#64748b'};">
+                                        ${stats.totalOrders} đơn
+                                    </strong>
+                                    ${hasOrders ? `
+                                        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 3px; font-size: 10.5px;">
+                                            <span style="color: #34d399;" title="Giao thành công"><i class="fas fa-check"></i> ${stats.completedOrders || 0}</span>
+                                            <span style="color: #f87171;" title="Không thành công / Hủy"><i class="fas fa-times"></i> ${stats.cancelledOrders || 0}</span>
+                                        </div>
+                                    ` : ''}
                                 </td>
-                                <td style="text-align:center;">
-                                    <button class="btn-view-orders" title="Xem lịch sử đơn hàng của khách này" onclick="orderSearchKeyword='${c.phone !== '---' ? c.phone : c.name}'; switchTab('orders');">
-                                        <i class="fas fa-receipt"></i> Xem đơn
+                                <td style="text-align: right;">
+                                    <strong style="color: ${stats.totalSpent > 0 ? 'var(--gold)' : '#64748b'}; font-size: 14px;">
+                                        ${stats.totalSpent > 0 ? stats.totalSpent.toLocaleString() + '₫' : '0₫'}
+                                    </strong>
+                                </td>
+                                <td style="text-align: center;">
+                                    <button class="btn-view-orders" onclick="openUserOrderHistory('${u.id}', '${u.name.replace(/'/g, "\\'")}')" style="background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.3); color: var(--gold); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" title="Xem container lịch sử đặt hàng và trạng thái giao hàng">
+                                        <i class="fas fa-receipt"></i> Xem đơn (${stats.totalOrders})
                                     </button>
                                 </td>
                             </tr>
@@ -1379,25 +1498,296 @@ function renderAdminCustomers() {
     `;
 }
 
-// Tìm kiếm khách hàng theo Tên hoặc Số Điện Thoại
+// Chuyển tab bộ lọc người dùng
+function setCustomerUserTypeFilter(type) {
+    customerUserTypeFilter = type;
+    renderAdminCustomers();
+}
+
+// Tìm kiếm người dùng theo tên, sđt, email, địa chỉ
 function searchCustomers(keyword) {
     customerSearchKeyword = keyword;
     renderAdminCustomers();
 }
 
-// Xóa từ khóa tìm kiếm khách hàng
 function clearCustomerSearch() {
     customerSearchKeyword = '';
     renderAdminCustomers();
 }
 
-// Lọc khách hàng theo Hạng thành viên
 function setCustomerRankFilter(rank) {
     customerRankFilter = rank;
     renderAdminCustomers();
 }
 
-// Xuất danh sách khách hàng ra file CSV
+/**
+ * Mở container xem lịch sử đặt hàng và trạng thái giao hàng của người dùng
+ */
+async function openUserOrderHistory(userId, userName) {
+    const modal = document.getElementById('userOrderHistoryModal');
+    if (!modal) return;
+
+    modal.classList.add('open');
+    modal.classList.add('active');
+
+    const nameEl = document.getElementById('uohUserName');
+    if (nameEl) nameEl.innerText = userName || 'Chi Tiết Người Dùng';
+
+    const listEl = document.getElementById('uohOrdersList');
+    if (listEl) {
+        listEl.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--gold); margin-bottom: 14px; display: block;"></i>
+                <h4 style="color: #fff; margin: 0 0 6px 0;">Đang tải danh sách đơn hàng...</h4>
+                <p style="font-size: 12.5px; margin: 0;">Đang kiểm tra trạng thái giao hàng từ hệ thống</p>
+            </div>
+        `;
+    }
+
+    try {
+        const res = await MoonlightAPI.getUserOrderHistory(userId);
+        if (res && res.success && res.data) {
+            renderUserOrderHistoryContent(res.data);
+        } else {
+            if (listEl) {
+                listEl.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                        Không thể tải lịch sử đơn hàng của người dùng này.
+                    </div>
+                `;
+            }
+        }
+    } catch (err) {
+        console.error('Lỗi khi tải lịch sử đơn hàng của user:', err);
+        if (listEl) {
+            listEl.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                    Có lỗi xảy ra khi kết nối máy chủ: ${err.message || 'Lỗi mạng'}
+                </div>
+            `;
+        }
+    }
+}
+
+function closeUserOrderHistoryModal() {
+    const modal = document.getElementById('userOrderHistoryModal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+    }
+}
+
+/**
+ * Hiển thị chi tiết nội dung lịch sử đơn hàng trong container
+ */
+function renderUserOrderHistoryContent(data) {
+    const { user, orders: userOrders, stats } = data;
+
+    // 1. Cập nhật Avatar và thông tin User
+    const avatarEl = document.getElementById('uohUserAvatar');
+    const nameEl = document.getElementById('uohUserName');
+    const badgeEl = document.getElementById('uohUserBadge');
+    const authTypeEl = document.getElementById('uohAuthTypeBadge');
+    const phoneEl = document.getElementById('uohUserPhone');
+    const emailEl = document.getElementById('uohUserEmail');
+    const addressEl = document.getElementById('uohUserAddress');
+
+    if (nameEl) nameEl.innerText = user.name || user.username || 'Khách hàng';
+
+    if (avatarEl) {
+        if (user.avatar) {
+            avatarEl.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            const initials = (user.name || user.username || 'U').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+            avatarEl.innerText = initials;
+        }
+    }
+
+    if (badgeEl) {
+        badgeEl.innerText = user.role === 'Customer' ? 'Thành viên Web' : (user.role || 'Khách hàng');
+    }
+
+    if (authTypeEl) {
+        if (user.googleId || user.isGoogleAuth) {
+            authTypeEl.style.display = 'inline-flex';
+        } else {
+            authTypeEl.style.display = 'none';
+        }
+    }
+
+    if (phoneEl) {
+        phoneEl.innerHTML = `<i class="fas fa-phone-alt" style="color: #10b981; margin-right: 5px;"></i> ${user.phone || 'Chưa cập nhật'}`;
+    }
+
+    if (emailEl) {
+        emailEl.innerHTML = `<i class="fas fa-envelope" style="color: #38bdf8; margin-right: 5px;"></i> ${user.email || 'Chưa cập nhật'}`;
+    }
+
+    if (addressEl) {
+        addressEl.innerHTML = `<i class="fas fa-map-marker-alt" style="color: var(--gold); margin-right: 5px;"></i> ${user.address || 'Chưa cập nhật'}`;
+    }
+
+    // 2. Cập nhật 4 thẻ thống kê đơn hàng
+    const totalOrdersEl = document.getElementById('uohStatTotalOrders');
+    const completedOrdersEl = document.getElementById('uohStatCompletedOrders');
+    const cancelledOrdersEl = document.getElementById('uohStatCancelledOrders');
+    const totalSpentEl = document.getElementById('uohStatTotalSpent');
+
+    if (totalOrdersEl) totalOrdersEl.innerText = `${stats.totalOrders || 0} đơn`;
+    if (completedOrdersEl) completedOrdersEl.innerText = `${stats.completedOrders || 0} đơn`;
+    if (cancelledOrdersEl) cancelledOrdersEl.innerText = `${stats.cancelledOrders || 0} đơn`;
+    if (totalSpentEl) totalSpentEl.innerText = `${(stats.totalSpent || 0).toLocaleString()}₫`;
+
+    // 3. Render danh sách từng đơn hàng
+    const listEl = document.getElementById('uohOrdersList');
+    if (!listEl) return;
+
+    if (!userOrders || userOrders.length === 0) {
+        listEl.innerHTML = `
+            <div style="text-align: center; padding: 50px 20px; color: #94a3b8;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 24px; color: #64748b;">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h4 style="color: #fff; margin: 0 0 6px 0; font-size: 16px;">Chưa có đơn đặt hàng nào</h4>
+                <p style="font-size: 13px; margin: 0; color: #64748b;">Người dùng này chưa phát sinh bất kỳ đơn hàng nào trong hệ thống.</p>
+            </div>
+        `;
+        return;
+    }
+
+    listEl.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            ${userOrders.map(order => {
+                // Trạng thái giao hàng
+                let statusBadge = '';
+                let statusBorderColor = 'rgba(255,255,255,0.08)';
+
+                switch (order.status) {
+                    case 'completed':
+                        statusBadge = `
+                            <span class="adm-badge" style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.35); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                                <i class="fas fa-check-circle"></i> GIAO THÀNH CÔNG
+                            </span>
+                        `;
+                        statusBorderColor = 'rgba(16,185,129,0.3)';
+                        break;
+                    case 'cancelled':
+                        statusBadge = `
+                            <span class="adm-badge" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.35); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                                <i class="fas fa-times-circle"></i> KHÔNG THÀNH CÔNG / ĐÃ HỦY
+                            </span>
+                        `;
+                        statusBorderColor = 'rgba(239,68,68,0.3)';
+                        break;
+                    case 'shipping':
+                        statusBadge = `
+                            <span class="adm-badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.35); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                                <i class="fas fa-truck-fast"></i> ĐANG GIAO HÀNG
+                            </span>
+                        `;
+                        statusBorderColor = 'rgba(56,189,248,0.3)';
+                        break;
+                    case 'confirmed':
+                        statusBadge = `
+                            <span class="adm-badge" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                                <i class="fas fa-box"></i> ĐÃ XÁC NHẬN
+                            </span>
+                        `;
+                        statusBorderColor = 'rgba(245,158,11,0.3)';
+                        break;
+                    default:
+                        statusBadge = `
+                            <span class="adm-badge" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.35); font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                                <i class="fas fa-clock"></i> CHỜ TIẾP NHẬN
+                            </span>
+                        `;
+                        statusBorderColor = 'rgba(148,163,184,0.2)';
+                        break;
+                }
+
+                const orderDateStr = order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN', {
+                    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+                }) : '---';
+
+                const items = order.items || [];
+                const totalAmount = Number(order.total) || 0;
+                const isPaid = Boolean(order.isPaid);
+
+                return `
+                    <div style="background: rgba(26,31,46,0.6); border: 1px solid ${statusBorderColor}; border-radius: 12px; padding: 16px 20px; transition: all 0.2s;">
+                        <!-- Đơn hàng Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-weight: 800; font-size: 15px; color: var(--gold); font-family: monospace;">
+                                    ${order.orderCode}
+                                </span>
+                                <span style="color: #94a3b8; font-size: 12px;">
+                                    <i class="far fa-clock" style="margin-right: 4px;"></i>${orderDateStr}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${statusBadge}
+                                <span class="adm-badge ${isPaid ? 'success' : 'warning'}" style="font-size: 11px;">
+                                    <i class="fas ${isPaid ? 'fa-check' : 'fa-hourglass-half'}"></i> ${isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Danh Sách Sản Phẩm Trong Đơn -->
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+                            ${items.map(item => `
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+                                        ${item.img ? `
+                                            <img src="${item.img}" alt="${item.productName}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+                                        ` : `
+                                            <div style="width: 44px; height: 44px; border-radius: 6px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 16px; flex-shrink: 0;">
+                                                <i class="fas fa-shirt"></i>
+                                            </div>
+                                        `}
+                                        <div>
+                                            <strong style="color: #fff; font-size: 13px; display: block;">${item.productName || 'Sản phẩm'}</strong>
+                                            <small style="color: #94a3b8; font-size: 11.5px;">
+                                                ${item.variant ? `Phân loại: <span style="color: var(--gold);">${item.variant}</span> | ` : ''}
+                                                Số lượng: <b style="color: #fff;">x${item.quantity}</b>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right; flex-shrink: 0;">
+                                        <strong style="color: #e2e8f0; font-size: 13px;">${(Number(item.price) || 0).toLocaleString()}₫</strong>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Thông Tin Nhận Hàng & Tổng Tiền -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 12px; flex-wrap: wrap; gap: 12px;">
+                            <div style="font-size: 12px; color: #94a3b8; max-width: 500px;">
+                                <div><i class="fas fa-user" style="color: var(--gold); margin-right: 5px;"></i> Người nhận: <b style="color: #fff;">${order.customer?.name || '---'}</b> - SĐT: <b style="color: #10b981;">${order.customer?.phone || '---'}</b></div>
+                                <div style="margin-top: 3px;"><i class="fas fa-location-dot" style="color: var(--gold); margin-right: 5px;"></i> Giao đến: <span style="color: #cbd5e1;">${order.customer?.address || '---'}</span></div>
+                                ${order.customer?.note ? `<div style="margin-top: 3px; color: #f59e0b;"><i class="fas fa-comment-dots" style="margin-right: 5px;"></i> Ghi chú: ${order.customer.note}</div>` : ''}
+                                <div style="margin-top: 3px;"><i class="fas fa-credit-card" style="color: #818cf8; margin-right: 5px;"></i> Hình thức: <b>${order.paymentMethod === 'banking' ? 'Chuyển khoản VietQR' : 'Thanh toán COD'}</b></div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 11.5px; color: #94a3b8; display: block;">TỔNG THANH TOÁN</span>
+                                <strong style="font-size: 18px; color: var(--gold); font-weight: 800;">${totalAmount.toLocaleString()}₫</strong>
+                                <div style="margin-top: 6px;">
+                                    <button onclick="closeUserOrderHistoryModal(); orderSearchKeyword='${order.orderCode}'; switchTab('orders');" style="background: none; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                                        <i class="fas fa-up-right-from-square"></i> Quản lý đơn này
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Xuất danh sách người dùng & khách hàng ra file CSV
 function exportCustomersCSV() {
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { role: 'Staff' };
     if (loggedUser.role === 'Staff') {
@@ -1405,53 +1795,39 @@ function exportCustomersCSV() {
         return;
     }
 
-    const customerMap = new Map();
-    orders.forEach(o => {
-        const phone = o.customer?.phone ? String(o.customer.phone).trim() : '';
-        const name = o.customer?.name ? String(o.customer.name).trim() : 'Khách vãng lai';
-        const key = phone || name || 'Khách vãng lai';
-        if (!customerMap.has(key)) {
-            customerMap.set(key, {
-                name: name,
-                phone: phone || '---',
-                address: o.customer?.address || 'Tại showroom MoonLight',
-                totalOrders: 0,
-                completedOrders: 0,
-                totalSpent: 0
-            });
-        }
-        const c = customerMap.get(key);
-        c.totalOrders += 1;
-        if (o.status === 'completed') {
-            c.completedOrders += 1;
-            c.totalSpent += (Number(o.total) || 0);
-        }
-    });
-
-    const customerList = Array.from(customerMap.values());
-    if (customerList.length === 0) {
-        showToast("Thông báo", "Chưa có dữ liệu khách hàng để xuất!", "info");
+    const listToExport = cachedCustomerUsers.length > 0 ? cachedCustomerUsers : [];
+    if (listToExport.length === 0) {
+        showToast("Thông báo", "Chưa có dữ liệu người dùng để xuất!", "info");
         return;
     }
 
-    let csv = "\uFEFFTên Khách Hàng,Số Điện Thoại,Địa Chỉ,Số Đơn Hàng,Tổng Chi Tiêu,Hạng Khách Hàng\n";
-    customerList.forEach(c => {
-        let rank = 'Khách Mới';
-        if (c.totalSpent >= 10000000) rank = 'VIP';
-        else if (c.totalSpent >= 5000000) rank = 'Thân Thiết';
-        csv += `"${c.name.replace(/"/g, '""')}","${c.phone}","${c.address.replace(/"/g, '""')}","${c.totalOrders}","${c.totalSpent}","${rank}"\n`;
+    let csv = "\uFEFFHọ và Tên,Tên Đăng Nhập,Số Điện Thoại,Email,Địa Chỉ,Loại Tài Khoản,Tổng Số Đơn Đã Đặt,Đơn Giao Thành Công,Đơn Thất Bại,Tổng Tiền Đã Đặt (VNĐ)\n";
+    listToExport.forEach(u => {
+        const name = (u.name || '').replace(/"/g, '""');
+        const username = (u.username || '').replace(/"/g, '""');
+        const phone = (u.phone || '').replace(/"/g, '""');
+        const email = (u.email || '').replace(/"/g, '""');
+        const address = (u.address || '').replace(/"/g, '""');
+        const type = u.isGoogleAuth ? 'Google Login' : (u.isRegistered ? 'Tài khoản thường' : 'Khách vãng lai');
+        const stats = u.stats || {};
+        const totalOrders = stats.totalOrders || 0;
+        const completed = stats.completedOrders || 0;
+        const cancelled = stats.cancelledOrders || 0;
+        const spent = stats.totalSpent || 0;
+
+        csv += `"${name}","${username}","${phone}","${email}","${address}","${type}","${totalOrders}","${completed}","${cancelled}","${spent}"\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `MoonLight_DanhSachKhachHang_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `MoonLight_NguoiDung_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast("Xuất dữ liệu", "Đã tải xuống file CSV danh sách khách hàng thành công!", "success");
+    showToast("Xuất dữ liệu", `Đã tải xuống danh sách ${listToExport.length} người dùng thành công!`, "success");
 }
 
 function renderAdminReports() {

@@ -235,7 +235,7 @@ const MoonlightAPI = {
     });
   },
 
-  // 5. Customers
+  // 5. Customers & Users Management
   async getCustomers(params = {}) {
     const query = new URLSearchParams(params).toString();
     const endpoint = query ? `/customers?${query}` : '/customers';
@@ -244,6 +244,14 @@ const MoonlightAPI = {
 
   async getCustomerById(id) {
     return this.request(`/customers/${id}`);
+  },
+
+  async getCustomersStats() {
+    return this.request('/users/customers-stats');
+  },
+
+  async getUserOrderHistory(userId) {
+    return this.request(`/users/${userId}/orders`);
   },
 
   // 6. Reviews
