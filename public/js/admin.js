@@ -290,8 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab(defaultTab);
     initAIAgent();
 
-    // Đồng bộ đơn hàng từ server ngay khi mở trang
+    // Đồng bộ đơn hàng & phiếu hỗ trợ từ server ngay khi mở trang
     syncAdminOrdersFromBackend();
+    fetchAdminTickets();
 
     // Tự động kiểm tra và cập nhật biến động trạng thái đơn hàng (Tiền về) mỗi 3.5s
     setInterval(() => {
@@ -494,13 +495,24 @@ function toggleMobileSidebar() {
 
 function updatePendingBadge() {
     const pendingCount = orders.filter(o => o.status === 'pending').length;
-    const badge = document.getElementById('pendingOrderBadge');
+    const badge = document.getElementById('pendingOrderBadge') || document.getElementById('pendingBadge');
     if (badge) {
         if (pendingCount > 0) {
             badge.innerText = pendingCount;
             badge.style.display = 'inline-block';
         } else {
             badge.style.display = 'none';
+        }
+    }
+
+    const ticketBadge = document.getElementById('pendingTicketBadge');
+    if (ticketBadge) {
+        const pendingTickets = allAdminTickets.filter(t => t.status === 'pending' || t.status === 'processing').length;
+        if (pendingTickets > 0) {
+            ticketBadge.innerText = pendingTickets;
+            ticketBadge.style.display = 'inline-block';
+        } else {
+            ticketBadge.style.display = 'none';
         }
     }
 }
@@ -594,6 +606,10 @@ function switchTab(tabName) {
             heading: 'Đánh Giá Khách Hàng',
             subtitle: 'Phản hồi đánh giá khách hàng và chăm sóc chất lượng dịch vụ.'
         },
+        tickets: {
+            heading: 'Yêu Cầu Hỗ Trợ (Tickets)',
+            subtitle: 'Tiếp nhận, xử lý và phản hồi khiếu nại, tư vấn đổi size & may đo của khách hàng.'
+        },
         staff: {
             heading: 'Quản Lý Nhân Sự',
             subtitle: 'Phân quyền tài khoản quản trị viên và nhân viên thu ngân.'
@@ -629,6 +645,8 @@ function switchTab(tabName) {
         syncAdminOrdersFromBackend();
     } else if (tabName === 'reviews') {
         renderAdminReviews();
+    } else if (tabName === 'tickets') {
+        renderAdminTickets();
     } else if (tabName === 'staff') {
         staffSubTab = 'accounts';
         renderAdminStaff();
@@ -4487,6 +4505,404 @@ function exportReviewsCSV() {
     link.click();
     document.body.removeChild(link);
     showToast("Thành công", `Đã xuất ${list.length} đánh giá sang file CSV`, "success");
+}
+
+// --- 8.5. TAB: QUẢN LÝ YÊU CẦU HỖ TRỢ (TICKETS) ---
+
+let allAdminTickets = [];
+let ticketStatusFilter = 'all';
+let ticketSearchKeyword = '';
+let ticketCategoryFilter = 'all';
+let isLoadingAdminTickets = false;
+
+async function fetchAdminTickets() {
+    try {
+        isLoadingAdminTickets = true;
+        const res = await MoonlightAPI.getAllTickets();
+        if (res && res.success && Array.isArray(res.data)) {
+            allAdminTickets = res.data;
+        } else if (res && Array.isArray(res.data?.items)) {
+            allAdminTickets = res.data.items;
+        }
+        updatePendingBadge();
+    } catch (err) {
+        console.error('Lỗi khi tải danh sách ticket từ backend:', err);
+    } finally {
+        isLoadingAdminTickets = false;
+    }
+}
+
+async function renderAdminTickets() {
+    const container = document.getElementById('adminContent');
+    if (!container) return;
+
+    if (allAdminTickets.length === 0 && !isLoadingAdminTickets) {
+        await fetchAdminTickets();
+    }
+
+    const totalTickets = allAdminTickets.length;
+    const pendingTickets = allAdminTickets.filter(t => t.status === 'pending' || t.status === 'processing').length;
+    const repliedTickets = allAdminTickets.filter(t => t.status === 'replied').length;
+    const closedTickets = allAdminTickets.filter(t => t.status === 'closed' || t.status === 'resolved').length;
+
+    // Filter list
+    let list = allAdminTickets.filter(t => {
+        // Status filter
+        if (ticketStatusFilter === 'pending') {
+            if (t.status !== 'pending' && t.status !== 'processing') return false;
+        } else if (ticketStatusFilter === 'replied') {
+            if (t.status !== 'replied') return false;
+        } else if (ticketStatusFilter === 'closed') {
+            if (t.status !== 'closed' && t.status !== 'resolved') return false;
+        }
+
+        // Category filter
+        if (ticketCategoryFilter !== 'all' && t.category !== ticketCategoryFilter) {
+            return false;
+        }
+
+        // Search keyword
+        if (ticketSearchKeyword && ticketSearchKeyword.trim()) {
+            const kw = ticketSearchKeyword.toLowerCase().trim();
+            const matchCode = (t.ticketCode || '').toLowerCase().includes(kw);
+            const matchName = (t.customerName || '').toLowerCase().includes(kw);
+            const matchPhone = (t.customerPhone || '').toLowerCase().includes(kw);
+            const matchSubj = (t.subject || '').toLowerCase().includes(kw);
+            const matchOrder = (t.orderCode || '').toLowerCase().includes(kw);
+            if (!matchCode && !matchName && !matchPhone && !matchSubj && !matchOrder) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    // Sort: newest first
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const categoryNames = {
+        order_issue: 'Sự cố đơn hàng',
+        size_advice: 'Tư vấn may đo / Size',
+        return_refund: 'Đổi trả / Hoàn tiền',
+        payment: 'Thanh toán / Chuyển khoản',
+        other: 'Yêu cầu khác'
+    };
+
+    const statusBadgeMeta = {
+        pending: { label: 'Chờ tiếp nhận', bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: 'rgba(245, 158, 11, 0.35)', icon: 'fa-clock' },
+        processing: { label: 'Đang xử lý', bg: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8', border: 'rgba(14, 165, 233, 0.35)', icon: 'fa-spinner fa-spin' },
+        replied: { label: 'Đã phản hồi', bg: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: 'rgba(16, 185, 129, 0.35)', icon: 'fa-comment-dots' },
+        resolved: { label: 'Đã giải quyết', bg: 'rgba(52, 211, 153, 0.2)', color: '#10b981', border: 'rgba(52, 211, 153, 0.4)', icon: 'fa-check-circle' },
+        closed: { label: 'Đã đóng', bg: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', border: 'rgba(148, 163, 184, 0.3)', icon: 'fa-lock' }
+    };
+
+    const priorityBadges = {
+        low: { label: 'Thấp', color: '#94a3b8' },
+        medium: { label: 'Bình thường', color: '#38bdf8' },
+        high: { label: 'Cao', color: '#f97316' },
+        urgent: { label: 'Khẩn cấp', color: '#ef4444' }
+    };
+
+    container.innerHTML = `
+        <!-- KPI METRICS BAR -->
+        <div class="stats-grid-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(56,189,248,0.3);">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TỔNG PHIẾU HỖ TRỢ</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${totalTickets}</h3>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245,158,11,0.12); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(245,158,11,0.3);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <span style="color: #fbbf24; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">CHỜ TIẾP NHẬN</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fbbf24;">${pendingTickets}</h3>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16,185,129,0.3);">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <div>
+                    <span style="color: #34d399; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ĐÃ PHẢN HỒI</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #34d399;">${repliedTickets}</h3>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(26,31,46,0.9), rgba(18,22,34,0.95)); border: 1px solid rgba(212,175,55,0.25); border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 25px rgba(212,175,55,0.1);">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(212,175,55,0.12); color: var(--gold, #d4af37); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(212,175,55,0.35);">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+                <div>
+                    <span style="color: var(--gold, #d4af37); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ĐÃ XONG / ĐÃ ĐÓNG</span>
+                    <h3 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: #fff;">${closedTickets}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOOLBAR BỘ LỌC VÀ TÌM KIẾM -->
+        <div style="background: var(--bg-surface, #151824); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex: 1; min-width: 280px;">
+                <!-- Ô tìm kiếm -->
+                <div style="position: relative; min-width: 240px; flex: 1;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 13px;"></i>
+                    <input type="text" id="admTicketSearchInput" value="${ticketSearchKeyword || ''}" oninput="handleAdminTicketSearch(this.value)" placeholder="Tìm mã ticket, tên khách, SĐT, tiêu đề..." style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 12px 8px 34px; color: #fff; font-size: 13px; outline: none;">
+                </div>
+
+                <!-- Dropdown danh mục -->
+                <select onchange="setAdminTicketCategoryFilter(this.value)" style="height: 36px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 0 12px; color: #fff; font-size: 13px; outline: none;">
+                    <option value="all" ${ticketCategoryFilter === 'all' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Tất cả chủ đề</option>
+                    <option value="order_issue" ${ticketCategoryFilter === 'order_issue' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Sự cố đơn hàng</option>
+                    <option value="size_advice" ${ticketCategoryFilter === 'size_advice' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Tư vấn may đo / Size</option>
+                    <option value="return_refund" ${ticketCategoryFilter === 'return_refund' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Đổi trả / Hoàn tiền</option>
+                    <option value="payment" ${ticketCategoryFilter === 'payment' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Thanh toán / Chuyển khoản</option>
+                    <option value="other" ${ticketCategoryFilter === 'other' ? 'selected' : ''} style="background:#1e2235; color:#fff;">Yêu cầu khác</option>
+                </select>
+            </div>
+
+            <!-- Nút lọc trạng thái & làm mới -->
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="display: inline-flex; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 3px;">
+                    <button class="adm-filter-pill ${ticketStatusFilter === 'all' ? 'active' : ''}" onclick="filterAdminTickets('all')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; color: ${ticketStatusFilter === 'all' ? '#000' : '#cbd5e1'}; background: ${ticketStatusFilter === 'all' ? 'var(--gold, #d4af37)' : 'transparent'}; font-weight: ${ticketStatusFilter === 'all' ? '700' : '500'};">
+                        Tất cả (${totalTickets})
+                    </button>
+                    <button class="adm-filter-pill ${ticketStatusFilter === 'pending' ? 'active' : ''}" onclick="filterAdminTickets('pending')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; color: ${ticketStatusFilter === 'pending' ? '#000' : '#cbd5e1'}; background: ${ticketStatusFilter === 'pending' ? '#fbbf24' : 'transparent'}; font-weight: ${ticketStatusFilter === 'pending' ? '700' : '500'};">
+                        Chờ tiếp nhận (${pendingTickets})
+                    </button>
+                    <button class="adm-filter-pill ${ticketStatusFilter === 'replied' ? 'active' : ''}" onclick="filterAdminTickets('replied')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; color: ${ticketStatusFilter === 'replied' ? '#000' : '#cbd5e1'}; background: ${ticketStatusFilter === 'replied' ? '#34d399' : 'transparent'}; font-weight: ${ticketStatusFilter === 'replied' ? '700' : '500'};">
+                        Đã phản hồi (${repliedTickets})
+                    </button>
+                    <button class="adm-filter-pill ${ticketStatusFilter === 'closed' ? 'active' : ''}" onclick="filterAdminTickets('closed')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; color: ${ticketStatusFilter === 'closed' ? '#000' : '#cbd5e1'}; background: ${ticketStatusFilter === 'closed' ? '#94a3b8' : 'transparent'}; font-weight: ${ticketStatusFilter === 'closed' ? '700' : '500'};">
+                        Đã đóng (${closedTickets})
+                    </button>
+                </div>
+
+                <button onclick="refreshAdminTickets()" style="padding: 7px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 8px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-redo ${isLoadingAdminTickets ? 'fa-spin' : ''}"></i> Làm mới
+                </button>
+            </div>
+        </div>
+
+        <!-- BẢNG DANH SÁCH TICKETS -->
+        <div style="background: var(--bg-surface, #151824); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            ${list.length === 0 ? `
+                <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <i class="fas fa-headset" style="font-size: 46px; color: #475569; margin-bottom: 12px; display: block;"></i>
+                    <h4 style="color: #fff; font-size: 16px; margin: 0 0 6px 0;">Không tìm thấy yêu cầu hỗ trợ nào</h4>
+                    <p style="font-size: 13px; color: #64748b; margin: 0;">Hãy thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem các phiếu khác.</p>
+                </div>
+            ` : `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 14px 18px;">MÃ PHIẾU</th>
+                                <th style="padding: 14px 18px;">KHÁCH HÀNG</th>
+                                <th style="padding: 14px 18px;">CHỦ ĐỀ & ĐƠN HÀNG</th>
+                                <th style="padding: 14px 18px;">TIÊU ĐỀ & NỘI DUNG</th>
+                                <th style="padding: 14px 18px;">ƯU TIÊN</th>
+                                <th style="padding: 14px 18px;">TRẠNG THÁI</th>
+                                <th style="padding: 14px 18px;">NGÀY TẠO</th>
+                                <th style="padding: 14px 18px; text-align: right;">THAO TÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${list.map(t => {
+                                const sm = statusBadgeMeta[t.status] || { label: t.status, bg: 'rgba(255,255,255,0.1)', color: '#fff', border: 'rgba(255,255,255,0.2)', icon: 'fa-info' };
+                                const pri = priorityBadges[t.priority] || { label: 'Bình thường', color: '#38bdf8' };
+                                const catLabel = categoryNames[t.category] || t.category;
+                                const dateStr = t.createdAt ? new Date(t.createdAt).toLocaleString('vi-VN') : 'Mới đây';
+                                const hasReply = t.reply && t.reply.message;
+
+                                return `
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                                        <td style="padding: 14px 18px; vertical-align: middle;">
+                                            <span style="font-family: monospace; font-weight: 700; color: var(--gold, #d4af37); background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.25); padding: 3px 8px; border-radius: 4px; font-size: 12px; display: inline-block;">
+                                                #${t.ticketCode || 'TK-000000'}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle;">
+                                            <strong style="color: #f1f5f9; display: block; font-size: 13.5px;">${escapeAdminHtml(t.customerName || 'Khách hàng')}</strong>
+                                            <span style="color: #94a3b8; font-size: 11.5px; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                                <i class="fas fa-phone-alt" style="font-size: 10px; color: #10b981;"></i> ${t.customerPhone || 'Không có SĐT'}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle;">
+                                            <span style="font-size: 12px; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px;">
+                                                ${catLabel}
+                                            </span>
+                                            ${t.orderCode ? `
+                                                <div style="font-size: 11.5px; color: #38bdf8; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="fas fa-box"></i> Đơn #${t.orderCode}
+                                                </div>
+                                            ` : ''}
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle; max-width: 320px;">
+                                            <strong style="color: #fff; font-size: 13px; display: block; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                                ${escapeAdminHtml(t.subject)}
+                                            </strong>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                                                ${escapeAdminHtml(t.message)}
+                                            </p>
+                                            ${hasReply ? `
+                                                <div style="margin-top: 6px; font-size: 11px; color: #34d399; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="fas fa-reply"></i> Đã phản hồi bởi ${escapeAdminHtml(t.reply.repliedBy || 'CSKH')}
+                                                </div>
+                                            ` : ''}
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle;">
+                                            <span style="font-size: 11.5px; font-weight: 700; color: ${pri.color};">
+                                                ${pri.label}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle;">
+                                            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; background: ${sm.bg}; color: ${sm.color}; border: 1px solid ${sm.border};">
+                                                <i class="fas ${sm.icon}"></i> ${sm.label}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle; color: #94a3b8; font-size: 11.5px; white-space: nowrap;">
+                                            ${dateStr}
+                                        </td>
+                                        <td style="padding: 14px 18px; vertical-align: middle; text-align: right; white-space: nowrap;">
+                                            <button onclick="openReplyTicketModal('${t._id}')" class="btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Xem chi tiết và trả lời khách">
+                                                <i class="fas fa-reply"></i> ${hasReply ? 'Xem & Phản hồi' : 'Xử lý'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `}
+        </div>
+    `;
+}
+
+function escapeAdminHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function handleAdminTicketSearch(val) {
+    ticketSearchKeyword = val;
+    renderAdminTickets();
+}
+
+function setAdminTicketCategoryFilter(cat) {
+    ticketCategoryFilter = cat;
+    renderAdminTickets();
+}
+
+function filterAdminTickets(status) {
+    ticketStatusFilter = status;
+    renderAdminTickets();
+}
+
+async function refreshAdminTickets() {
+    await fetchAdminTickets();
+    renderAdminTickets();
+    showToast("Thành công", "Đã cập nhật danh sách yêu cầu hỗ trợ mới nhất!", "success");
+}
+
+function openReplyTicketModal(ticketId) {
+    const ticket = allAdminTickets.find(t => String(t._id || t.id) === String(ticketId));
+    if (!ticket) {
+        showToast("Lỗi", "Không tìm thấy thông tin phiếu hỗ trợ!", "error");
+        return;
+    }
+
+    const modal = document.getElementById('replyTicketModal');
+    if (!modal) return;
+
+    const categoryNames = {
+        order_issue: 'Sự cố đơn hàng',
+        size_advice: 'Tư vấn may đo / Size',
+        return_refund: 'Đổi trả / Hoàn tiền',
+        payment: 'Thanh toán / Chuyển khoản',
+        other: 'Yêu cầu khác'
+    };
+
+    document.getElementById('admModalTicketId').value = ticket._id || ticket.id;
+    document.getElementById('admModalTicketCode').innerText = '#' + (ticket.ticketCode || 'TK-000000');
+    document.getElementById('admModalCustomerName').innerText = ticket.customerName || 'Khách hàng';
+    document.getElementById('admModalCustomerContact').innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
+    document.getElementById('admModalTicketCategory').innerText = `${categoryNames[ticket.category] || ticket.category} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
+    document.getElementById('admModalTicketDate').innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
+    document.getElementById('admModalTicketSubject').innerText = ticket.subject || '';
+    document.getElementById('admModalTicketMessage').innerText = ticket.message || '';
+    document.getElementById('admModalReplyMessage').value = ticket.reply?.message || '';
+    
+    // Select appropriate status
+    const statusSelect = document.getElementById('admModalNewStatus');
+    if (statusSelect) {
+        if (ticket.status === 'pending') {
+            statusSelect.value = 'replied';
+        } else {
+            statusSelect.value = ticket.status || 'replied';
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeReplyTicketModal() {
+    const modal = document.getElementById('replyTicketModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function handleAdminSubmitReply(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnAdminSubmitReply');
+    const ticketId = document.getElementById('admModalTicketId')?.value;
+    const replyMessage = document.getElementById('admModalReplyMessage')?.value?.trim();
+    const status = document.getElementById('admModalNewStatus')?.value || 'replied';
+
+    if (!replyMessage) {
+        showToast("Thiếu nội dung", "Vui lòng nhập câu trả lời cho khách hàng!", "warning");
+        return;
+    }
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi phản hồi...';
+        }
+
+        const res = await MoonlightAPI.replyTicket(ticketId, {
+            replyMessage,
+            status
+        });
+
+        if (res && (res.success || res.data)) {
+            showToast("Thành công", "Đã gửi phản hồi và cập nhật trạng thái phiếu hỗ trợ!", "success");
+            closeReplyTicketModal();
+            await fetchAdminTickets();
+            renderAdminTickets();
+        } else {
+            showToast("Lỗi", res?.message || "Không thể gửi phản hồi lúc này.", "error");
+        }
+    } catch (err) {
+        console.error('Lỗi khi phản hồi ticket:', err);
+        showToast("Lỗi", err.message || "Không thể kết nối đến máy chủ.", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI PHẢN HỒI';
+        }
+    }
 }
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---

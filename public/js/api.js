@@ -383,6 +383,36 @@ const MoonlightAPI = {
       method: 'POST',
       timeout: 180000 // 3 phút cho git pull, build TypeScript và reload PM2
     });
+  },
+
+  // 11. Support Tickets (Hệ thống phiếu hỗ trợ)
+  async createTicket(data) {
+    return this.request('/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async getMyTickets() {
+    return this.request('/tickets/my-tickets');
+  },
+
+  async closeMyTicket(id) {
+    return this.request(`/tickets/${id}/close`, {
+      method: 'PUT'
+    });
+  },
+
+  async getAllTickets(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/tickets${qs ? '?' + qs : ''}`);
+  },
+
+  async replyTicket(id, data) {
+    return this.request(`/tickets/${id}/reply`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
   }
 };
 

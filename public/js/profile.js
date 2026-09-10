@@ -39,8 +39,9 @@ async function initProfilePage() {
   const targetTab = urlParams.get('tab') || 'profile';
   switchProfileTab(targetTab, false);
 
-  // 5. Tải danh sách đơn hàng của khách hàng
+  // 5. Tải danh sách đơn hàng của khách hàng & tickets
   await loadCustomerOrders();
+  loadCustomerTickets();
 }
 
 function renderLoginRequiredScreen() {
@@ -122,23 +123,34 @@ function populateProfileForm(user) {
   }
 }
 
-// Chuyển đổi Tab (Thông tin cá nhân <-> Đơn mua)
+// Chuyển đổi Tab (Thông tin cá nhân <-> Đơn mua <-> Yêu cầu hỗ trợ)
 function switchProfileTab(tabName, updateUrl = true) {
   const btnProfile = document.getElementById('btnTabProfile');
   const btnOrders = document.getElementById('btnTabOrders');
+  const btnTickets = document.getElementById('btnTabTickets');
   const paneProfile = document.getElementById('paneProfile');
   const paneOrders = document.getElementById('paneOrders');
+  const paneTickets = document.getElementById('paneTickets');
+
+  if (btnProfile) btnProfile.classList.remove('active');
+  if (btnOrders) btnOrders.classList.remove('active');
+  if (btnTickets) btnTickets.classList.remove('active');
+  if (paneProfile) paneProfile.style.display = 'none';
+  if (paneOrders) paneOrders.style.display = 'none';
+  if (paneTickets) paneTickets.style.display = 'none';
 
   if (tabName === 'orders') {
-    if (btnProfile) btnProfile.classList.remove('active');
     if (btnOrders) btnOrders.classList.add('active');
-    if (paneProfile) paneProfile.style.display = 'none';
     if (paneOrders) paneOrders.style.display = 'block';
+  } else if (tabName === 'tickets') {
+    if (btnTickets) btnTickets.classList.add('active');
+    if (paneTickets) paneTickets.style.display = 'block';
+    if (typeof loadCustomerTickets === 'function') {
+      loadCustomerTickets();
+    }
   } else {
     if (btnProfile) btnProfile.classList.add('active');
-    if (btnOrders) btnOrders.classList.remove('active');
     if (paneProfile) paneProfile.style.display = 'block';
-    if (paneOrders) paneOrders.style.display = 'none';
   }
 
   if (updateUrl && window.history.replaceState) {
@@ -451,6 +463,7 @@ async function loadCustomerOrders() {
 
     currentOrdersList = orders;
     updateOrdersCounters(orders);
+    populateTicketOrderCodes(orders);
     renderCustomerOrders(currentFilterStatus);
 
   } catch (err) {
@@ -757,4 +770,309 @@ function showOrderVietQrModal(orderCode, amount) {
   if (memoText) memoText.textContent = orderCode;
 
   modal.style.display = 'flex';
+}
+
+// ==========================================
+// HỆ THỐNG YÊU CẦU HỖ TRỢ / TICKET KHÁCH HÀNG
+// ==========================================
+
+let currentTicketsList = [];
+let currentTicketFilterStatus = 'all';
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function toggleNewTicketForm() {
+  const container = document.getElementById('newTicketFormContainer');
+  const btn = document.getElementById('btnToggleNewTicketForm');
+  if (!container) return;
+
+  const isHidden = container.style.display === 'none' || !container.style.display;
+  if (isHidden) {
+    container.style.display = 'block';
+    if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Đóng biểu mẫu';
+    const subj = document.getElementById('ticketSubject');
+    if (subj) subj.focus();
+  } else {
+    container.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-plus"></i> Tạo yêu cầu mới';
+  }
+}
+
+function populateTicketOrderCodes(orders) {
+  const select = document.getElementById('ticketOrderCode');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">-- Không liên quan đơn cụ thể --</option>' +
+    orders.map(o => {
+      const code = o.orderCode || o.id || o._id;
+      const total = Number(o.total || o.totalAmount || 0).toLocaleString('vi-VN');
+      return `<option value="${code}">#${code} (${total}₫)</option>`;
+    }).join('');
+  if (currentVal) select.value = currentVal;
+}
+
+async function loadCustomerTickets() {
+  const container = document.getElementById('customerTicketsContainer');
+  if (!container) return;
+
+  try {
+    const res = await MoonlightAPI.getMyTickets();
+    let tickets = [];
+    if (res && res.data) {
+      tickets = Array.isArray(res.data) ? res.data : (res.data.items || []);
+    }
+    currentTicketsList = tickets;
+    updateTicketCounters(tickets);
+    renderCustomerTickets(currentTicketFilterStatus);
+  } catch (err) {
+    console.error('Lỗi tải danh sách yêu cầu hỗ trợ:', err);
+    container.innerHTML = `
+      <div style="text-align:center; padding:30px 20px; color:#ef4444;">
+        <i class="fas fa-exclamation-triangle" style="font-size:30px; margin-bottom:10px;"></i>
+        <p style="font-size:13.5px;">Không thể tải danh sách phiếu hỗ trợ lúc này. Vui lòng thử lại.</p>
+        <button class="btn-order-action" onclick="loadCustomerTickets()" style="margin-top:10px;">
+          <i class="fas fa-redo"></i> TẢI LẠI
+        </button>
+      </div>
+    `;
+  }
+}
+
+function updateTicketCounters(tickets) {
+  const total = tickets.length;
+  const pending = tickets.filter(t => t.status === 'pending' || t.status === 'processing').length;
+  const replied = tickets.filter(t => t.status === 'replied').length;
+  const closed = tickets.filter(t => t.status === 'closed' || t.status === 'resolved').length;
+
+  const elAll = document.getElementById('countTicketAll');
+  const elPending = document.getElementById('countTicketPending');
+  const elReplied = document.getElementById('countTicketReplied');
+  const elClosed = document.getElementById('countTicketClosed');
+  const elNavCounter = document.getElementById('navTicketsCounter');
+
+  if (elAll) elAll.textContent = total;
+  if (elPending) elPending.textContent = pending;
+  if (elReplied) elReplied.textContent = replied;
+  if (elClosed) elClosed.textContent = closed;
+
+  if (elNavCounter) {
+    const activeCount = pending + replied;
+    if (activeCount > 0) {
+      elNavCounter.textContent = activeCount;
+      elNavCounter.style.display = 'inline-flex';
+    } else {
+      elNavCounter.style.display = 'none';
+    }
+  }
+}
+
+function filterCustomerTickets(status) {
+  currentTicketFilterStatus = status;
+  const tabsContainer = document.querySelector('#paneTickets .orders-filter-tabs');
+  if (tabsContainer) {
+    tabsContainer.querySelectorAll('.orders-filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-status') === status);
+    });
+  }
+  renderCustomerTickets(status);
+}
+
+function renderCustomerTickets(filterStatus = 'all') {
+  const container = document.getElementById('customerTicketsContainer');
+  if (!container) return;
+
+  let filtered = currentTicketsList;
+  if (filterStatus === 'pending') {
+    filtered = currentTicketsList.filter(t => t.status === 'pending' || t.status === 'processing');
+  } else if (filterStatus === 'replied') {
+    filtered = currentTicketsList.filter(t => t.status === 'replied');
+  } else if (filterStatus === 'closed') {
+    filtered = currentTicketsList.filter(t => t.status === 'closed' || t.status === 'resolved');
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; color:#64748b;">
+        <i class="fas fa-headset" style="font-size:42px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="font-size:16px; color:#0f172a; margin-bottom:6px; font-weight:700;">Chưa có yêu cầu hỗ trợ nào</h4>
+        <p style="font-size:13px; margin-bottom:18px;">Bạn có thể tạo yêu cầu mới nếu cần tư vấn kích thước, đổi trả hoặc hỗ trợ đơn hàng.</p>
+        <button type="button" class="btn-primary" onclick="toggleNewTicketForm()" style="padding:9px 22px; font-size:12.5px; border-radius:5px; border:none; cursor:pointer;">
+          <i class="fas fa-plus"></i> TẠO YÊU CẦU NGAY
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const statusMeta = {
+    pending: { label: 'Chờ tiếp nhận', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: 'fa-clock' },
+    processing: { label: 'Đang xử lý', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', icon: 'fa-spinner fa-spin' },
+    replied: { label: 'Đã phản hồi', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-comment-dots' },
+    resolved: { label: 'Đã giải quyết', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'fa-check-circle' },
+    closed: { label: 'Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: 'fa-lock' }
+  };
+
+  const categoryNames = {
+    order_issue: 'Sự cố đơn hàng',
+    size_advice: 'Tư vấn may đo / Size',
+    return_refund: 'Đổi trả / Hoàn tiền',
+    payment: 'Thanh toán / Chuyển khoản',
+    other: 'Yêu cầu khác'
+  };
+
+  const priorityMeta = {
+    low: { label: 'Thấp', color: '#64748b' },
+    medium: { label: 'Bình thường', color: '#0284c7' },
+    high: { label: 'Cao', color: '#ea580c' },
+    urgent: { label: 'Khẩn cấp', color: '#dc2626' }
+  };
+
+  container.innerHTML = filtered.map(t => {
+    const sm = statusMeta[t.status] || { label: t.status, bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', icon: 'fa-info-circle' };
+    const catLabel = categoryNames[t.category] || t.category;
+    const pri = priorityMeta[t.priority] || { label: 'Bình thường', color: '#0284c7' };
+    const dateStr = t.createdAt ? new Date(t.createdAt).toLocaleString('vi-VN') : '';
+    const isClosed = t.status === 'closed' || t.status === 'resolved';
+
+    let replySection = '';
+    if (t.reply && t.reply.message) {
+      const replyDate = t.reply.repliedAt ? new Date(t.reply.repliedAt).toLocaleString('vi-VN') : '';
+      replySection = `
+        <div class="ticket-reply-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+            <span style="font-size:12.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-certificate" style="color:var(--gold,#d4af37);"></i>
+              Phản hồi từ ${escapeHtml(t.reply.repliedBy || 'Chuyên viên CSKH MoonLight')}:
+            </span>
+            <span style="font-size:11.5px; color:#94a3b8;"><i class="far fa-clock"></i> ${replyDate}</span>
+          </div>
+          <div style="font-size:13.5px; color:#1e293b; line-height:1.6; white-space:pre-wrap;">${escapeHtml(t.reply.message)}</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="ticket-item-card" id="ticketCard-${t._id}">
+        <div class="ticket-header-row">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="ticket-code-tag"><i class="fas fa-ticket-alt"></i> ${t.ticketCode || 'TK-#'}</span>
+            <span style="font-size:12px; font-weight:600; color:#475569; background:#f1f5f9; padding:3px 10px; border-radius:4px;">
+              ${catLabel}
+            </span>
+            ${t.orderCode ? `<span style="font-size:12px; color:#0284c7; font-weight:600; background:#f0f9ff; padding:3px 10px; border-radius:4px; border:1px solid #bae6fd;"><i class="fas fa-box"></i> Đơn: #${t.orderCode}</span>` : ''}
+            <span style="font-size:11.5px; font-weight:600; color:${pri.color};">
+              Ưu tiên: ${pri.label}
+            </span>
+          </div>
+          <div>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; background:${sm.bg}; color:${sm.color}; border:1px solid ${sm.border};">
+              <i class="fas ${sm.icon}"></i> ${sm.label}
+            </span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <h4 style="font-size:15px; font-weight:700; color:#0f172a; margin-bottom:6px;">${escapeHtml(t.subject)}</h4>
+          <p style="font-size:13.5px; color:#334155; line-height:1.6; margin:0; white-space:pre-wrap;">${escapeHtml(t.message)}</p>
+        </div>
+
+        ${replySection}
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #f1f5f9; margin-top:14px; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:12px; color:#94a3b8;">
+            <i class="far fa-calendar-alt"></i> Gửi lúc: ${dateStr}
+          </div>
+          <div>
+            ${!isClosed ? `
+              <button type="button" class="btn-order-action" onclick="handleCloseCustomerTicket('${t._id}')" style="font-size:12px; padding:6px 14px; border-color:#cbd5e1;">
+                <i class="fas fa-check"></i> Đánh dấu đã giải quyết / Đóng ticket
+              </button>
+            ` : `
+              <span style="font-size:12px; color:#94a3b8;"><i class="fas fa-lock"></i> Phiếu đã đóng</span>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleCustomerSubmitTicket(event) {
+  event.preventDefault();
+  const btn = document.getElementById('btnSubmitTicket');
+  const cat = document.getElementById('ticketCategory')?.value;
+  const orderCode = document.getElementById('ticketOrderCode')?.value;
+  const subject = document.getElementById('ticketSubject')?.value?.trim();
+  const priority = document.getElementById('ticketPriority')?.value || 'medium';
+  const message = document.getElementById('ticketMessage')?.value?.trim();
+
+  if (!subject || !message) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng điền đầy đủ tiêu đề và nội dung yêu cầu!', type: 'warning' });
+    return;
+  }
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi yêu cầu...';
+    }
+
+    const payload = {
+      category: cat,
+      orderCode: orderCode || undefined,
+      subject,
+      priority,
+      message
+    };
+
+    const res = await MoonlightAPI.createTicket(payload);
+    if (res && (res.success || res.data)) {
+      showToast({
+        title: 'Gửi thành công!',
+        message: 'Yêu cầu của quý khách đã được gửi đến bộ phận CSKH MoonLight. Chúng tôi sẽ xử lý sớm nhất.',
+        type: 'success'
+      });
+
+      const form = document.getElementById('newTicketForm');
+      if (form) form.reset();
+      toggleNewTicketForm();
+
+      await loadCustomerTickets();
+    } else {
+      showToast({ title: 'Lỗi', message: res?.message || 'Không thể gửi yêu cầu lúc này.', type: 'danger' });
+    }
+  } catch (err) {
+    console.error('Lỗi khi tạo ticket:', err);
+    showToast({ title: 'Lỗi', message: err.message || 'Không thể kết nối đến máy chủ.', type: 'danger' });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI YÊU CẦU HỖ TRỢ';
+    }
+  }
+}
+
+async function handleCloseCustomerTicket(ticketId) {
+  if (!confirm('Quý khách có chắc chắn muốn đóng phiếu hỗ trợ này không?')) return;
+
+  try {
+    const res = await MoonlightAPI.closeMyTicket(ticketId);
+    if (res && (res.success || res.data)) {
+      showToast({ title: 'Thành công', message: 'Đã đóng yêu cầu hỗ trợ.', type: 'success' });
+      await loadCustomerTickets();
+    } else {
+      showToast({ title: 'Lỗi', message: res?.message || 'Không thể đóng ticket lúc này.', type: 'danger' });
+    }
+  } catch (err) {
+    console.error('Lỗi khi đóng ticket:', err);
+    showToast({ title: 'Lỗi', message: err.message || 'Có lỗi xảy ra khi đóng ticket.', type: 'danger' });
+  }
 }

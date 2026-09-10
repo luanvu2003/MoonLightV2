@@ -70,6 +70,11 @@
                     <i class="far fa-star"></i>
                     <span>Đánh giá khách hàng</span>
                 </a>
+                <a href="javascript:void(0)" onclick="switchTab('tickets')" data-roles="Admin,Owner,Staff">
+                    <i class="fas fa-headset"></i>
+                    <span>Yêu cầu hỗ trợ</span>
+                    <span class="menu-badge" id="pendingTicketBadge" style="display:none; background:#f59e0b; color:#000;">0</span>
+                </a>
 
                 <div class="menu-category-label" id="menuLabelPOS">ĐIỂM BÁN HÀNG (POS)</div>
                 <a href="staff.html" target="_blank" class="menu-pos-link" style="color:var(--gold); background:rgba(197,160,89,0.08); border:1px dashed rgba(197,160,89,0.3); margin:4px 12px; border-radius:8px;">
@@ -717,6 +722,79 @@
                 <button type="button" class="btn-outline" onclick="closeUserOrderHistoryModal()" style="padding: 7px 18px; font-size: 12.5px; border-radius: 8px;">
                     <i class="fas fa-times"></i> Đóng cửa sổ
                 </button>
+            </div>
+        </div>
+    <!-- ================= MODAL PHẢN HỒI YÊU CẦU HỖ TRỢ (TICKET) ================= -->
+    <div class="modal-backdrop" id="replyTicketModal" style="display: none; z-index: 10000;">
+        <div class="modal-box" style="max-width: 650px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="color: #fff; font-size: 17px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-headset" style="color: var(--gold, #d4af37);"></i>
+                        <span>Xử Lý Phiếu Hỗ Trợ</span>
+                        <span id="admModalTicketCode" style="font-size: 13px; color: var(--gold, #d4af37); background: rgba(212,175,55,0.12); padding: 2px 8px; border-radius: 4px;"></span>
+                    </h3>
+                    <small style="color: #94a3b8; font-size: 12px; margin-top: 3px; display: block;">Phản hồi trực tiếp tới khách hàng qua email và trang hồ sơ</small>
+                </div>
+                <button class="btn-close-modal" onclick="closeReplyTicketModal()" style="font-size: 24px; color: #94a3b8; cursor: pointer; background: none; border: none; padding: 4px 8px; line-height: 1;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px 24px;">
+                <!-- Customer Info & Ticket Info -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px; margin-bottom: 12px;">
+                        <div>
+                            <span style="color: #64748b;">Khách hàng:</span>
+                            <strong id="admModalCustomerName" style="color: #f1f5f9; display: block; font-size: 13px;"></strong>
+                        </div>
+                        <div>
+                            <span style="color: #64748b;">Số điện thoại / Email:</span>
+                            <div style="color: #94a3b8;" id="admModalCustomerContact"></div>
+                        </div>
+                        <div>
+                            <span style="color: #64748b;">Chủ đề & Đơn hàng:</span>
+                            <div id="admModalTicketCategory" style="color: #cbd5e1; font-weight: 600;"></div>
+                        </div>
+                        <div>
+                            <span style="color: #64748b;">Thời gian gửi:</span>
+                            <div id="admModalTicketDate" style="color: #94a3b8;"></div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 12px;">
+                        <span style="color: #64748b; font-size: 12px; display: block; margin-bottom: 4px;">Tiêu đề yêu cầu:</span>
+                        <strong id="admModalTicketSubject" style="color: #fff; font-size: 14px; display: block; margin-bottom: 8px;"></strong>
+                        <span style="color: #64748b; font-size: 12px; display: block; margin-bottom: 4px;">Nội dung của khách:</span>
+                        <div id="admModalTicketMessage" style="color: #e2e8f0; font-size: 13px; line-height: 1.6; background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+
+                <!-- Form Phản hồi -->
+                <form id="adminReplyTicketForm" onsubmit="handleAdminSubmitReply(event)">
+                    <input type="hidden" id="admModalTicketId">
+                    
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px;">Trạng thái xử lý sau phản hồi</label>
+                        <select id="admModalNewStatus" style="width: 100%; height: 42px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0 14px; color: #fff; outline: none; font-size: 13.5px;">
+                            <option value="replied" style="background:#1e2235; color:#fff;">Đã phản hồi (Khách có thể xem và phản hồi tiếp)</option>
+                            <option value="resolved" style="background:#1e2235; color:#fff;">Đã giải quyết xong (Resolved)</option>
+                            <option value="processing" style="background:#1e2235; color:#fff;">Đang xử lý / Đang may đo hoặc liên hệ vận chuyển</option>
+                            <option value="closed" style="background:#1e2235; color:#fff;">Đóng ticket (Closed)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px;">Nội dung phản hồi gửi khách hàng *</label>
+                        <textarea id="admModalReplyMessage" rows="5" required placeholder="Nhập câu trả lời cụ thể, hướng giải quyết đổi trả, tư vấn size may đo hoặc thông tin bồi hoàn..." style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 14px; color: #fff; outline: none; font-size: 13.5px; line-height: 1.5; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" class="btn-outline" onclick="closeReplyTicketModal()" style="padding: 9px 20px; font-size: 13px; border-radius: 8px;">Hủy bỏ</button>
+                        <button type="submit" id="btnAdminSubmitReply" class="btn-primary" style="padding: 9px 24px; font-size: 13px; border-radius: 8px; display: flex; align-items: center; gap: 8px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer;">
+                            <i class="fas fa-paper-plane"></i> GỬI PHẢN HỒI
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

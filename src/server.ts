@@ -19,6 +19,7 @@ import scheduleRoutes from './routes/schedule.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import systemRoutes from './routes/system.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import ticketRoutes from './routes/ticket.routes.js';
 
 import { Product } from './models/Product.js';
 import { LUXURY_PRODUCTS } from './config/defaultProducts.js';
@@ -75,9 +76,11 @@ app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/system', systemRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/tickets', ticketRoutes);
 
-// 5. Tương thích ngược: Mount /api/products trỏ tới productRoutes
+// 5. Tương thích ngược: Mount /api/...
 app.use('/api/products', productRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // 6. Định tuyến trang chuyên biệt Frontend
 app.get('/try-on', (_req: Request, res: Response) => {

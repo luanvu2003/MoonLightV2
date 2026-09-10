@@ -236,6 +236,47 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
         }
+
+        /* Ticket System Styles */
+        .ticket-item-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            transition: all 0.25s ease;
+        }
+        .ticket-item-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        }
+        .ticket-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .ticket-code-tag {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--gold, #b48518);
+            background: rgba(212, 175, 55, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .ticket-reply-box {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.02) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-left: 4px solid var(--gold, #d4af37);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-top: 14px;
+        }
     </style>
 </head>
 
@@ -341,6 +382,11 @@
                         <i class="fas fa-box-open"></i>
                         <span>Đơn mua của tôi</span>
                         <span class="badge-counter" id="navOrdersCounter">0</span>
+                    </button>
+                    <button type="button" class="profile-nav-btn" id="btnTabTickets" onclick="switchProfileTab('tickets')">
+                        <i class="fas fa-headset"></i>
+                        <span>Yêu cầu hỗ trợ</span>
+                        <span class="badge-counter" id="navTicketsCounter" style="display:none;">0</span>
                     </button>
                     <a href="checkout.html" class="profile-nav-btn">
                         <i class="fas fa-shopping-bag"></i>
@@ -524,6 +570,98 @@
                             <div style="text-align:center; padding:50px 20px; color:#888;">
                                 <i class="fas fa-spinner fa-spin" style="font-size:28px; color:var(--gold);"></i>
                                 <p style="margin-top:14px; font-size:13.5px;">Đang tải danh sách đơn hàng...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= TAB 3: YÊU CẦU HỖ TRỢ (TICKETS) ================= -->
+                    <div class="profile-content-card" id="paneTickets" style="display:none;">
+                        <div class="profile-section-title">
+                            <div>
+                                <span><i class="fas fa-headset" style="color:var(--gold,#d4af37); margin-right:8px;"></i> YÊU CẦU HỖ TRỢ & CSKH</span>
+                                <small style="display:block; font-size:12px; font-weight:normal; color:#64748b; margin-top:4px;">Gửi ticket hỗ trợ đổi trả, tư vấn size hoặc phản hồi đơn hàng</small>
+                            </div>
+                            <button type="button" class="btn-change-pwd" id="btnToggleNewTicketForm" onclick="toggleNewTicketForm()" style="padding:9px 18px; font-size:13px;">
+                                <i class="fas fa-plus"></i> Tạo yêu cầu mới
+                            </button>
+                        </div>
+
+                        <!-- KHỐI TẠO TICKET MỚI (ẨN/HIỆN) -->
+                        <div id="newTicketFormContainer" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:22px; margin-bottom:24px;">
+                            <h4 style="font-size:14.5px; font-weight:700; color:#0f172a; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
+                                <span><i class="fas fa-pen-to-square" style="color:var(--gold,#d4af37); margin-right:6px;"></i> Gửi yêu cầu hỗ trợ mới</span>
+                                <button type="button" onclick="toggleNewTicketForm()" style="border:none; background:none; color:#64748b; cursor:pointer; font-size:14px;"><i class="fas fa-times"></i> Đóng</button>
+                            </h4>
+                            <form id="newTicketForm" onsubmit="handleCustomerSubmitTicket(event)">
+                                <div class="profile-form-row">
+                                    <div class="form-group">
+                                        <label for="ticketCategory">Chủ đề yêu cầu *</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="ticketCategory" required style="height:46px; border:1.5px solid #cbd5e1; border-radius:8px; padding:11px 16px;">
+                                                <option value="order">Đơn hàng & Giao vận</option>
+                                                <option value="return">Đổi trả hàng & Hoàn tiền</option>
+                                                <option value="size">Tư vấn chọn Size & May đo</option>
+                                                <option value="payment">Vấn đề thanh toán / Chuyển khoản</option>
+                                                <option value="other">Góp ý & Yêu cầu khác</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ticketOrderCode">Đơn hàng liên quan (nếu có)</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="ticketOrderCode" style="height:46px; border:1.5px solid #cbd5e1; border-radius:8px; padding:11px 16px;">
+                                                <option value="">-- Không liên quan đến đơn hàng cụ thể --</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-form-row">
+                                    <div class="form-group">
+                                        <label for="ticketSubject">Tiêu đề yêu cầu *</label>
+                                        <input type="text" id="ticketSubject" required placeholder="Ví dụ: Cần hỗ trợ đổi size từ L sang XL...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ticketPriority">Mức độ ưu tiên</label>
+                                        <div class="custom-select-wrap">
+                                            <select id="ticketPriority" style="height:46px; border:1.5px solid #cbd5e1; border-radius:8px; padding:11px 16px;">
+                                                <option value="normal">Bình thường (Phản hồi trong 2-4h)</option>
+                                                <option value="urgent">Cần gấp (Đơn hàng đang giao)</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ticketMessage">Nội dung chi tiết yêu cầu *</label>
+                                    <textarea id="ticketMessage" required rows="4" placeholder="Mô tả cụ thể vấn đề hoặc thông tin may đo / đổi size bạn cần chuyên viên hỗ trợ..." style="width:100%; box-sizing:border-box; padding:12px 16px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; font-family:var(--font); outline:none; resize:vertical; line-height:1.5;"></textarea>
+                                </div>
+
+                                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                                    <button type="button" onclick="toggleNewTicketForm()" class="btn-order-action" style="padding:11px 20px;">Hủy bỏ</button>
+                                    <button type="submit" id="btnSubmitTicket" class="btn-save-profile" style="padding:12px 28px;">
+                                        <i class="fas fa-paper-plane"></i> GỬI YÊU CẦU HỖ TRỢ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Bộ Lọc Trạng Thái Ticket -->
+                        <div class="orders-filter-bar">
+                            <button class="orders-filter-btn active" data-status="all" onclick="filterCustomerTickets('all')">Tất cả (<span id="countTicketAll">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="pending" onclick="filterCustomerTickets('pending')">Chờ tiếp nhận (<span id="countTicketPending">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="replied" onclick="filterCustomerTickets('replied')">Đã phản hồi (<span id="countTicketReplied">0</span>)</button>
+                            <button class="orders-filter-btn" data-status="closed" onclick="filterCustomerTickets('closed')">Đã đóng (<span id="countTicketClosed">0</span>)</button>
+                        </div>
+
+                        <!-- Danh Sách Ticket Của Khách -->
+                        <div id="customerTicketsContainer">
+                            <div style="text-align:center; padding:50px 20px; color:#888;">
+                                <i class="fas fa-spinner fa-spin" style="font-size:28px; color:var(--gold);"></i>
+                                <p style="margin-top:14px; font-size:13.5px;">Đang tải danh sách yêu cầu hỗ trợ...</p>
                             </div>
                         </div>
                     </div>
