@@ -475,15 +475,7 @@ function updateOrdersCounters(orders) {
   const completedCount = orders.filter(o => o.status === 'completed').length;
   const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
 
-  // Cập nhật hero stats
-  const heroTotal = document.getElementById('heroTotalOrders');
-  const heroShipping = document.getElementById('heroShippingOrders');
-  const heroCompleted = document.getElementById('heroCompletedOrders');
   const navCounter = document.getElementById('navOrdersCounter');
-
-  if (heroTotal) heroTotal.textContent = totalCount;
-  if (heroShipping) heroShipping.textContent = shippingCount;
-  if (heroCompleted) heroCompleted.textContent = completedCount;
   if (navCounter) navCounter.textContent = totalCount;
 
   // Cập nhật filter pills
