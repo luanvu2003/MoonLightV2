@@ -186,7 +186,7 @@ export class SystemController {
 
       // 4. Lên lịch reload PM2 sau 2 giây để kịp flush toàn bộ response JSON về cho trình duyệt
       setTimeout(() => {
-        exec('pm2 reload moonlight || pm2 restart moonlight || pm2 reload all || pm2 restart all', (err, stdout, stderr) => {
+        exec('pm2 reload ecosystem.config.cjs || pm2 restart ecosystem.config.cjs || pm2 reload moonlight || pm2 restart moonlight || pm2 reload all || pm2 restart all', (err, stdout, stderr) => {
           if (err) {
             console.error('Lỗi PM2 reload:', err);
           } else {
