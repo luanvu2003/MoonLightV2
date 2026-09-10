@@ -2611,9 +2611,11 @@ input.input-locked {
     color: #475569 !important;
     border: 1.5px solid #cbd5e1 !important;
     cursor: not-allowed !important;
-    padding-right: 42px !important;
     font-weight: 600 !important;
     box-shadow: none !important;
+}
+.locked-input-wrapper input.input-locked {
+    padding-right: 42px !important;
 }
 .locked-field-icon {
     position: absolute;
@@ -2634,15 +2636,17 @@ input.input-locked {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 26px;
     font-size: 13px;
     font-weight: 600;
     color: #0f172a;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
 }
 .profile-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
+    align-items: start;
     margin-bottom: 18px;
 }
 @media (max-width: 680px) {
@@ -2656,9 +2660,10 @@ input.input-locked {
 .profile-content-card input[type="tel"],
 .profile-content-card input[type="password"] {
     width: 100% !important;
+    height: 46px !important;
     display: block !important;
     box-sizing: border-box !important;
-    padding: 12px 16px !important;
+    padding: 11px 16px !important;
     border: 1.5px solid #cbd5e1 !important;
     border-radius: 8px !important;
     font-size: 13.5px !important;
@@ -2667,7 +2672,7 @@ input.input-locked {
     background: #ffffff !important;
     outline: none !important;
     transition: all 0.25s ease !important;
-    line-height: 1.5 !important;
+    line-height: normal !important;
 }
 .profile-content-card input[type="text"]:focus,
 .profile-content-card input[type="email"]:focus,
