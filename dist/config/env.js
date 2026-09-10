@@ -7,10 +7,10 @@ export const ENV = {
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'MOONLIGHT_REFRESH_SECRET_KEY_2026',
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-    EMAIL_USER: process.env.EMAIL_USER || '',
-    EMAIL_PASS: process.env.EMAIL_PASS || '',
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+    EMAIL_USER: process.env.EMAIL_USER || 'moonlight.contact.help@gmail.com',
+    EMAIL_PASS: process.env.EMAIL_PASS || 'gwupomwtazwjkfhr',
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '360224518102-huhgvbiv7o8ls6mdm2nav9gu0cunqd6v.apps.googleusercontent.com',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || 'GOCSPX-0r2EexOPbp-D-bhjd2av8945qIT',
     NODE_ENV: process.env.NODE_ENV || 'development'
 };
 //# sourceMappingURL=env.js.map

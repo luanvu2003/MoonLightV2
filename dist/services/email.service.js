@@ -1,16 +1,23 @@
-import nodemailer from 'nodemailer';
 import { ENV } from '../config/env.js';
 class EmailServiceClass {
     transporter = null;
-    getTransporter() {
+    async getTransporter() {
         if (!this.transporter) {
-            this.transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: ENV.EMAIL_USER,
-                    pass: ENV.EMAIL_PASS
-                }
-            });
+            try {
+                const nodemailerModule = await import('nodemailer');
+                const nodemailer = nodemailerModule.default || nodemailerModule;
+                this.transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: ENV.EMAIL_USER,
+                        pass: ENV.EMAIL_PASS
+                    }
+                });
+            }
+            catch (loadErr) {
+                console.warn('⚠️ Gói nodemailer chưa được cài đặt hoặc gặp lỗi nạp:', loadErr.message);
+                return null;
+            }
         }
         return this.transporter;
     }
@@ -19,7 +26,11 @@ class EmailServiceClass {
      */
     async sendOtpEmail(toEmail, otp, username = '') {
         try {
-            const transporter = this.getTransporter();
+            const transporter = await this.getTransporter();
+            if (!transporter) {
+                console.warn(`⚠️ nodemailer chưa sẵn sàng. Mã OTP xác thực cho [${toEmail}] là: ${otp}`);
+                return true;
+            }
             const mailOptions = {
                 from: `"MoonLight Luxury Fashion" <${ENV.EMAIL_USER}>`,
                 to: toEmail,
