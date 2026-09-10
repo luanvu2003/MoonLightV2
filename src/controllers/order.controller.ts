@@ -254,6 +254,9 @@ export class OrderController {
       // Tự động lưu thông tin khách hàng (SĐT, Địa chỉ) vào tài khoản User nếu có liên kết
       try {
         const updateUserData: any = {};
+        if (savedOrder.customer.name && savedOrder.customer.name.trim() && !/^[0-9+.\s-]{8,15}$/.test(savedOrder.customer.name.trim())) {
+          updateUserData.name = savedOrder.customer.name.trim();
+        }
         if (savedOrder.customer.phone) updateUserData.phone = savedOrder.customer.phone;
         if (savedOrder.customer.address) updateUserData.address = savedOrder.customer.address;
         

@@ -1418,11 +1418,16 @@ async function renderAdminCustomers() {
                             </td>
                         </tr>
                     ` : list.map(u => {
-                        const initials = (u.name || u.username || 'U').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+                        let displayName = u.name || u.username || 'Khách hàng';
+                        if (/^[0-9+.\s-]{8,15}$/.test(displayName)) {
+                            displayName = `Khách hàng (${displayName})`;
+                        }
+                        const cleanNameForInit = displayName.replace(/^Khách hàng \(/, '').replace(/\)$/, '');
+                        const initials = cleanNameForInit.split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase() || 'KH';
                         const stats = u.stats || { totalOrders: 0, completedOrders: 0, cancelledOrders: 0, totalSpent: 0 };
                         const hasOrders = stats.totalOrders > 0;
                         const avatarHtml = u.avatar ? `
-                            <img src="${u.avatar}" alt="${u.name}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(212,175,55,0.4);">
+                            <img src="${u.avatar}" alt="${displayName}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(212,175,55,0.4);">
                         ` : `
                             <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, rgba(91,80,246,0.35), rgba(212,175,55,0.35)); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;">
                                 ${initials}
@@ -1436,7 +1441,7 @@ async function renderAdminCustomers() {
                                         ${avatarHtml}
                                         <div style="overflow: hidden;">
                                             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                                <strong style="color: #fff; font-size: 13.5px;">${u.name}</strong>
+                                                <strong style="color: #fff; font-size: 13.5px;">${displayName}</strong>
                                                 ${u.isGoogleAuth ? `
                                                     <span class="adm-badge indigo" style="font-size: 9.5px; padding: 1px 5px;" title="Đăng nhập qua Google"><i class="fab fa-google"></i> Google</span>
                                                 ` : u.isRegistered ? `
@@ -1485,7 +1490,7 @@ async function renderAdminCustomers() {
                                     </strong>
                                 </td>
                                 <td style="text-align: center;">
-                                    <button class="btn-view-orders" onclick="openUserOrderHistory('${u.id}', '${u.name.replace(/'/g, "\\'")}')" style="background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.3); color: var(--gold); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" title="Xem container lịch sử đặt hàng và trạng thái giao hàng">
+                                    <button class="btn-view-orders" onclick="openUserOrderHistory('${u.id}', '${displayName.replace(/'/g, "\\'")}')" style="background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border: 1px solid rgba(212,175,55,0.3); color: var(--gold); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" title="Xem container lịch sử đặt hàng và trạng thái giao hàng">
                                         <i class="fas fa-receipt"></i> Xem đơn (${stats.totalOrders})
                                     </button>
                                 </td>
@@ -1594,13 +1599,18 @@ function renderUserOrderHistoryContent(data) {
     const emailEl = document.getElementById('uohUserEmail');
     const addressEl = document.getElementById('uohUserAddress');
 
-    if (nameEl) nameEl.innerText = user.name || user.username || 'Khách hàng';
+    let resolvedDisplayName = user.name || user.username || 'Khách hàng';
+    if (/^[0-9+.\s-]{8,15}$/.test(resolvedDisplayName)) {
+        resolvedDisplayName = `Khách hàng (${resolvedDisplayName})`;
+    }
+    if (nameEl) nameEl.innerText = resolvedDisplayName;
 
     if (avatarEl) {
         if (user.avatar) {
-            avatarEl.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width:100%; height:100%; object-fit:cover;">`;
+            avatarEl.innerHTML = `<img src="${user.avatar}" alt="${resolvedDisplayName}" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
-            const initials = (user.name || user.username || 'U').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
+            const cleanNameForInitial = resolvedDisplayName.replace(/^Khách hàng \(/, '').replace(/\)$/, '');
+            const initials = cleanNameForInitial.split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase() || 'KH';
             avatarEl.innerText = initials;
         }
     }

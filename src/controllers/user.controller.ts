@@ -68,9 +68,27 @@ export class UserController {
           [user.street, user.ward, user.district, user.province].filter(Boolean).join(', ') ||
           'Chưa cập nhật';
 
+        // Lấy tên thật từ đơn hàng nếu user.name là số điện thoại hoặc chưa chuẩn
+        const orderWithName = userOrders.find(
+          (o) => o.customer?.name && o.customer.name.trim() && !/^[0-9+.\s-]{8,15}$/.test(o.customer.name.trim())
+        );
+        const actualNameFromOrder = orderWithName?.customer?.name?.trim();
+
+        const isPhoneLikeName = /^[0-9+.\s-]{8,15}$/.test(user.name || '');
+        let resolvedUserName = actualNameFromOrder;
+        if (!resolvedUserName) {
+          if (user.name && !isPhoneLikeName) {
+            resolvedUserName = user.name;
+          } else if (user.name && isPhoneLikeName) {
+            resolvedUserName = `Khách hàng (${user.name})`;
+          } else {
+            resolvedUserName = user.username || 'Khách hàng';
+          }
+        }
+
         return {
           id: user._id,
-          name: user.name || user.username,
+          name: resolvedUserName,
           username: user.username,
           email: user.email || 'Chưa cập nhật',
           phone: user.phone || 'Chưa cập nhật',
@@ -118,10 +136,13 @@ export class UserController {
         if (oEmail && registeredEmails.has(oEmail)) return;
 
         const key = oPhone || o.customer?.name || 'guest_' + o._id;
+        const orderCustName = (o.customer?.name && o.customer.name.trim() && !/^[0-9+.\s-]{8,15}$/.test(o.customer.name.trim())) ? o.customer.name.trim() : '';
+        const initialGuestName = orderCustName || (oPhone ? `Khách hàng (${oPhone})` : 'Khách vãng lai');
+
         if (!guestMap.has(key)) {
           guestMap.set(key, {
             id: 'guest_' + (oPhone || o._id),
-            name: o.customer?.name || 'Khách vãng lai',
+            name: initialGuestName,
             username: oPhone ? `guest_${oPhone}` : 'guest',
             email: o.customer?.email || 'Chưa cập nhật',
             phone: o.customer?.phone || 'Chưa cập nhật',
@@ -146,6 +167,16 @@ export class UserController {
         }
 
         const g = guestMap.get(key);
+        if (orderCustName && (!g.name || g.name.startsWith('Khách hàng (') || g.name === 'Khách vãng lai')) {
+          g.name = orderCustName;
+        }
+        if (g.address === 'Tại showroom MoonLight' && o.customer?.address) {
+          g.address = o.customer.address;
+        }
+        if (g.email === 'Chưa cập nhật' && o.customer?.email) {
+          g.email = o.customer.email;
+        }
+
         g.stats.totalOrders += 1;
         if (o.status === OrderStatus.Completed) {
           g.stats.completedOrders += 1;
@@ -187,7 +218,7 @@ export class UserController {
         };
         targetUser = {
           id,
-          name: searchKey,
+          name: /^[0-9+.\s-]{8,15}$/.test(searchKey) ? `Khách hàng (${searchKey})` : searchKey,
           phone: searchKey,
           email: 'Chưa cập nhật',
           address: 'Tại showroom MoonLight',
@@ -212,7 +243,7 @@ export class UserController {
         orderQuery = { 'customer.phone': id };
         targetUser = {
           id,
-          name: 'Khách hàng',
+          name: /^[0-9+.\s-]{8,15}$/.test(id) ? `Khách hàng (${id})` : id,
           phone: id,
           address: 'Chưa cập nhật',
           isRegistered: false
@@ -220,6 +251,43 @@ export class UserController {
       }
 
       const orders = await Order.find(orderQuery).sort({ createdAt: -1 });
+
+      // Lấy tên, sđt, email, địa chỉ chuẩn xác nhất từ các đơn hàng thực tế
+      const orderWithName = orders.find(
+        (o) => o.customer?.name && o.customer.name.trim() && !/^[0-9+.\s-]{8,15}$/.test(o.customer.name.trim())
+      );
+      const actualCustomerName = orderWithName?.customer?.name?.trim();
+
+      const orderWithAddress = orders.find(
+        (o) => o.customer?.address && o.customer.address.trim() && o.customer.address !== 'Tại showroom MoonLight'
+      );
+      const actualCustomerAddress = orderWithAddress?.customer?.address?.trim();
+
+      const orderWithEmail = orders.find(
+        (o) => o.customer?.email && o.customer.email.trim() && o.customer.email !== 'Chưa cập nhật'
+      );
+      const actualCustomerEmail = orderWithEmail?.customer?.email?.trim();
+
+      let resolvedName = actualCustomerName;
+      if (!resolvedName) {
+        if (targetUser?.name && !/^[0-9+.\s-]{8,15}$/.test(targetUser.name.trim())) {
+          resolvedName = targetUser.name.trim();
+        } else if (targetUser?.name && /^[0-9+.\s-]{8,15}$/.test(targetUser.name.trim())) {
+          resolvedName = `Khách hàng (${targetUser.name.trim()})`;
+        } else if (targetUser?.phone && targetUser.phone !== 'Chưa cập nhật') {
+          resolvedName = `Khách hàng (${targetUser.phone})`;
+        } else {
+          resolvedName = 'Khách hàng';
+        }
+      }
+
+      const finalUser = {
+        ...(targetUser?._doc || targetUser || {}),
+        name: resolvedName,
+        phone: targetUser?.phone && targetUser.phone !== 'Chưa cập nhật' ? targetUser.phone : (orders[0]?.customer?.phone || 'Chưa cập nhật'),
+        email: targetUser?.email && targetUser.email !== 'Chưa cập nhật' ? targetUser.email : (actualCustomerEmail || 'Chưa cập nhật'),
+        address: targetUser?.address && targetUser.address !== 'Chưa cập nhật' && targetUser.address !== 'Tại showroom MoonLight' ? targetUser.address : (actualCustomerAddress || 'Tại showroom MoonLight')
+      };
 
       const totalOrders = orders.length;
       const completedOrders = orders.filter((o) => o.status === OrderStatus.Completed).length;
@@ -235,7 +303,7 @@ export class UserController {
       sendSuccess(
         res,
         {
-          user: targetUser,
+          user: finalUser,
           orders,
           stats: {
             totalOrders,
