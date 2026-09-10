@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import os from 'os';
 import fs from 'fs';
+import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import mongoose from 'mongoose';
@@ -154,17 +155,24 @@ export class SystemController {
         latestCommit = 'Đã cập nhật phiên bản mới nhất';
       }
 
-      // 3. Biên dịch TypeScript với giới hạn bộ nhớ chống tràn RAM trên VPS
+      // 3. Biên dịch TypeScript hoặc sử dụng bản dist/ pre-built đã đồng bộ trực tiếp từ GitHub
       let buildSuccess = true;
       try {
         const { stdout: bOut, stderr: bErr } = await execAsync('NODE_OPTIONS="--max-old-space-size=512" npm run build');
-        buildOutput = (bOut || '') + (bErr || '');
+        buildOutput = (bOut || '') + (bErr || '') || '✅ Đã biên dịch TypeScript thành công.';
       } catch (err: any) {
-        buildSuccess = false;
-        buildOutput = `❌ Lỗi Build TypeScript: ${err.message}`;
+        const errDetails = ((err.stdout || '') + '\n' + (err.stderr || '')).trim() || err.message;
+        const distServerPath = path.join(process.cwd(), 'dist', 'server.js');
+        if (fs.existsSync(distServerPath)) {
+          buildSuccess = true;
+          buildOutput = `ℹ️ Đã sử dụng mã nguồn biên dịch sẵn dist/ đồng bộ từ GitHub (tsc: ${errDetails.slice(0, 120)}...)`;
+        } else {
+          buildSuccess = false;
+          buildOutput = `❌ Lỗi Build TypeScript: ${errDetails}`;
+        }
       }
 
-      // NGUY CƠ SẬP SERVER: Nếu build TypeScript thất bại, tuyệt đối KHÔNG reload PM2 để bảo vệ server đang chạy
+      // NGUY CƠ SẬP SERVER: Nếu build TypeScript thất bại và không có dist/server.js, hủy reload PM2 để bảo vệ máy chủ
       if (!buildSuccess) {
         sendError(
           res,

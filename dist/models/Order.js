@@ -1,0 +1,103 @@
+import mongoose, { Schema } from 'mongoose';
+import { OrderStatus, PaymentMethod } from '../types/enums.js';
+const OrderItemSchema = new Schema({
+    productId: { type: Schema.Types.Mixed, required: true },
+    productName: { type: String, required: true },
+    variant: { type: String, default: '' },
+    img: { type: String, default: '' },
+    price: { type: Number, required: true, default: 0 },
+    quantity: { type: Number, required: true, min: 1, default: 1 },
+    subtotal: { type: Number, required: true, default: 0 }
+}, { _id: false, strict: false });
+OrderItemSchema.pre('validate', function () {
+    const self = this;
+    if (!self.productId) {
+        self.productId = self.id || self._id || 'unknown';
+    }
+    if (!self.productName) {
+        self.productName = self.name || 'Sản phẩm';
+    }
+    if (!self.variant && (self.color || self.size)) {
+        self.variant = [self.color, self.size].filter(Boolean).join(' - ');
+    }
+    if (!self.img && self.image) {
+        self.img = self.image;
+    }
+    if (self.subtotal === undefined || isNaN(self.subtotal) || self.subtotal === null) {
+        self.subtotal = (Number(self.price) || 0) * (Number(self.quantity) || 1);
+    }
+});
+const OrderCustomerSchema = new Schema({
+    name: { type: String, required: [true, 'Tên người nhận không được để trống'] },
+    phone: { type: String, required: [true, 'Số điện thoại không được để trống'] },
+    address: { type: String, required: [true, 'Địa chỉ giao hàng không được để trống'] },
+    note: { type: String, default: '' }
+}, { _id: false });
+const OrderSchema = new Schema({
+    orderCode: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true
+    },
+    customer: {
+        type: OrderCustomerSchema,
+        required: true
+    },
+    items: {
+        type: [OrderItemSchema],
+        required: true,
+        validate: [(val) => val.length > 0, 'Đơn hàng phải có ít nhất 1 sản phẩm']
+    },
+    subtotal: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    discount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    shippingFee: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    total: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    paymentMethod: {
+        type: String,
+        enum: Object.values(PaymentMethod),
+        default: PaymentMethod.COD
+    },
+    status: {
+        type: String,
+        enum: Object.values(OrderStatus),
+        default: OrderStatus.Pending,
+        index: true
+    },
+    isPaid: {
+        type: Boolean,
+        default: false
+    },
+    customerTransferConfirmed: {
+        type: Boolean,
+        default: false
+    },
+    processedBy: {
+        type: Schema.Types.Mixed,
+        default: null
+    },
+    cancelReason: {
+        type: String,
+        default: ''
+    }
+}, {
+    timestamps: true
+});
+export const Order = mongoose.model('Order', OrderSchema);
+//# sourceMappingURL=Order.js.map
