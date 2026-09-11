@@ -686,7 +686,7 @@
     <!-- Modal Xem Mã Chuyển Khoản Ngân Hàng (TPBank VietQR) Chuẩn Đồng Bộ Như Giỏ Hàng / Checkout -->
     <div id="profileQrModal" class="cart-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.68); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:16px;">
         <div style="background:#ffffff; border-radius:16px; max-width:440px; width:100%; padding:22px; text-align:center; position:relative; box-shadow:0 16px 40px rgba(0,0,0,0.28); max-height:92vh; overflow-y:auto; border:1px solid #e2e8f0;">
-            <button type="button" onclick="closeProfileQrModal()" style="position:absolute; top:14px; right:14px; border:none; background:#f1f5f9; width:32px; height:32px; border-radius:50%; font-size:14px; cursor:pointer; color:#64748b; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Đóng">
+            <button type="button" onclick="closeProfileQrModal()" class="profile-modal-corner-close" title="Đóng (Esc)">
                 <i class="fas fa-times"></i>
             </button>
 
@@ -755,8 +755,8 @@
                 </div>
 
                 <div style="margin-top:16px;">
-                    <button type="button" onclick="closeProfileQrModal()" class="btn-order-action" style="width:100%; padding:11px 20px; border-radius:50px; font-weight:700;">
-                        Đóng
+                    <button type="button" onclick="closeProfileQrModal()" class="btn-profile-modal-close">
+                        <i class="fas fa-times"></i> <span>Đóng cửa sổ</span>
                     </button>
                 </div>
             </div>

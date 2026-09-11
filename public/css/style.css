@@ -1555,6 +1555,74 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
     flex-shrink: 0;
 }
 
+/* NÚT ĐÓNG MODAL VIETQR PROFILE CHUYÊN NGHIỆP */
+.btn-profile-modal-close {
+    width: 100%;
+    padding: 12px 24px;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 50px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    font-family: var(--font, 'Montserrat', sans-serif);
+    letter-spacing: 0.3px;
+    text-transform: none;
+    box-sizing: border-box;
+}
+
+.btn-profile-modal-close i {
+    font-size: 13px;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.btn-profile-modal-close:hover {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+}
+
+.btn-profile-modal-close:hover i {
+    color: var(--gold, #dfba73);
+    transform: scale(1.15);
+}
+
+.profile-modal-corner-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+}
+
+.profile-modal-corner-close:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
+    transform: rotate(90deg) scale(1.08);
+}
+
 /* CẶP NÚT BẤM SANG TRỌNG CÂN ĐỐI */
 .success-modal-actions {
     display: grid;

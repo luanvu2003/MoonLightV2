@@ -1345,11 +1345,20 @@ function showOrderVietQrModal(orderCode, amount) {
   modal.style.display = 'flex';
 }
 
-// Đóng modal chuyển khoản khi click ngoài backdrop
+// Đóng modal chuyển khoản khi click ngoài backdrop hoặc bấm Escape
 window.addEventListener('click', (e) => {
   const modal = document.getElementById('profileQrModal');
   if (e.target === modal) {
     closeProfileQrModal();
+  }
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('profileQrModal');
+    if (modal && modal.style.display === 'flex') {
+      closeProfileQrModal();
+    }
   }
 });
 
