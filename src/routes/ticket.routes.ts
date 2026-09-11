@@ -12,7 +12,8 @@ import {
   reopenCustomerTicket,
   rateCustomerTicket,
   getAllTickets,
-  replyTicket
+  replyTicket,
+  updateTicketStatus
 } from '../controllers/ticket.controller.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { Role } from '../types/enums.js';
@@ -35,5 +36,6 @@ router.post('/:id/rating', authenticate, rateCustomerTicket);
 // Routes dành cho Quản trị viên & Nhân viên CSKH
 router.get('/', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), getAllTickets);
 router.put('/:id/reply', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), replyTicket);
+router.put('/:id/status', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), updateTicketStatus);
 
 export default router;

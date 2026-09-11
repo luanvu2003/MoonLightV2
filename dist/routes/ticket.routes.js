@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTicket, getMyTickets, getTicketById, getTicketLive, setTypingStatus, markTicketSeen, uploadTicketAttachment, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, rateCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
+import { createTicket, getMyTickets, getTicketById, getTicketLive, setTypingStatus, markTicketSeen, uploadTicketAttachment, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, rateCustomerTicket, getAllTickets, replyTicket, updateTicketStatus } from '../controllers/ticket.controller.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { Role } from '../types/enums.js';
 const router = Router();
@@ -18,5 +18,6 @@ router.post('/:id/rating', authenticate, rateCustomerTicket);
 // Routes dành cho Quản trị viên & Nhân viên CSKH
 router.get('/', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), getAllTickets);
 router.put('/:id/reply', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), replyTicket);
+router.put('/:id/status', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), updateTicketStatus);
 export default router;
 //# sourceMappingURL=ticket.routes.js.map

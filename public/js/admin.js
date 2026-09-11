@@ -5296,6 +5296,14 @@ function renderAdminChatThreadOnly(ticket) {
     }, 50);
 }
 
+const adminTicketStatusMeta = {
+    pending: { label: 'Chờ phản hồi', bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', icon: 'fa-clock' },
+    replied: { label: 'Đã phản hồi', bg: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: 'rgba(56,189,248,0.35)', icon: 'fa-paper-plane' },
+    processing: { label: 'Đang xử lý', bg: 'rgba(168,85,247,0.15)', color: '#a855f7', border: 'rgba(168,85,247,0.35)', icon: 'fa-cog fa-spin' },
+    resolved: { label: 'Đã giải quyết', bg: 'rgba(16,185,129,0.15)', color: '#10b981', border: 'rgba(16,185,129,0.35)', icon: 'fa-check-circle' },
+    closed: { label: 'Đã đóng', bg: 'rgba(148,163,184,0.15)', color: '#94a3b8', border: 'rgba(148,163,184,0.35)', icon: 'fa-lock' }
+};
+
 function openReplyTicketModal(ticketId) {
     const ticket = allAdminTickets.find(t => String(t._id || t.id) === String(ticketId));
     if (!ticket) {
@@ -5325,29 +5333,101 @@ function openReplyTicketModal(ticketId) {
     const codeEl = document.getElementById('admModalTicketCode');
     if (codeEl) codeEl.innerText = '#' + (ticket.ticketCode || 'TK-000000');
 
-    const nameEl = document.getElementById('admModalCustomerName');
-    if (nameEl) nameEl.innerText = ticket.customerName || 'Khách hàng';
+    // Header Status Badge
+    const badgeEl = document.getElementById('admModalStatusBadge');
+    if (badgeEl) {
+        const sm = adminTicketStatusMeta[ticket.status] || { label: ticket.status || 'Chờ phản hồi', bg: 'rgba(255,255,255,0.1)', color: '#fff', border: 'rgba(255,255,255,0.2)', icon: 'fa-info' };
+        badgeEl.style.background = sm.bg;
+        badgeEl.style.color = sm.color;
+        badgeEl.style.border = `1px solid ${sm.border}`;
+        badgeEl.innerHTML = `<i class="fas ${sm.icon}"></i> ${sm.label}`;
+    }
 
-    const contactEl = document.getElementById('admModalCustomerContact');
-    if (contactEl) contactEl.innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
+    const custName = ticket.customerName || 'Khách hàng';
+    const initialChar = (custName.trim().charAt(0) || 'K').toUpperCase();
+
+    const avatarEl = document.getElementById('admChatUserAvatar');
+    if (avatarEl) avatarEl.innerText = initialChar;
+
+    const chatUserNameEl = document.getElementById('admChatUserName');
+    if (chatUserNameEl) chatUserNameEl.innerText = custName;
+
+    const nameEl = document.getElementById('admModalCustomerName');
+    if (nameEl) nameEl.innerText = custName;
+
+    const phoneEl = document.getElementById('admSideCustomerPhone');
+    if (phoneEl) phoneEl.innerText = ticket.customerPhone || 'Chưa có SĐT';
+
+    const emailEl = document.getElementById('admSideCustomerEmail');
+    if (emailEl) emailEl.innerText = ticket.customerEmail || 'Chưa có Email';
 
     const catEl = document.getElementById('admModalTicketCategory');
-    if (catEl) catEl.innerText = `${categoryNames[ticket.category] || ticket.category || 'Yêu cầu khác'} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
+    if (catEl) catEl.innerText = categoryNames[ticket.category] || ticket.category || 'Yêu cầu khác';
+
+    const orderWrap = document.getElementById('admSideOrderWrap');
+    const orderCodeEl = document.getElementById('admSideOrderCode');
+    if (orderWrap && orderCodeEl) {
+        if (ticket.orderCode) {
+            orderWrap.style.display = 'flex';
+            orderCodeEl.innerText = `#${ticket.orderCode}`;
+        } else {
+            orderWrap.style.display = 'none';
+        }
+    }
+
+    const subjEl = document.getElementById('admModalTicketSubject');
+    if (subjEl) subjEl.innerText = ticket.subject || 'Không có tiêu đề';
 
     const dateEl = document.getElementById('admModalTicketDate');
     if (dateEl) dateEl.innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
 
-    const subjEl = document.getElementById('admModalTicketSubject');
-    if (subjEl) subjEl.innerText = ticket.subject || '';
+    // Status select in right sidebar
+    const statusSelect = document.getElementById('admModalNewStatus');
+    if (statusSelect) {
+        statusSelect.value = ticket.status || 'pending';
+    }
+
+    // Quick Close button state
+    const closeBtn = document.getElementById('btnAdmQuickClose');
+    if (closeBtn) {
+        if (ticket.status === 'closed') {
+            closeBtn.innerHTML = '<i class="fas fa-lock"></i> Phiếu Đã Đóng';
+            closeBtn.disabled = true;
+            closeBtn.style.opacity = '0.5';
+        } else {
+            closeBtn.innerHTML = '<i class="fas fa-lock"></i> Đóng Ticket Ngay';
+            closeBtn.disabled = false;
+            closeBtn.style.opacity = '1';
+        }
+    }
+
+    // Rating Card in sidebar
+    const ratingCard = document.getElementById('admSideRatingCard');
+    const ratingStarsEl = document.getElementById('admSideRatingStars');
+    const ratingCommentEl = document.getElementById('admSideRatingComment');
+    if (ratingCard) {
+        if (ticket.rating && ticket.rating.score) {
+            ratingCard.style.display = 'flex';
+            if (ratingStarsEl) ratingStarsEl.innerText = `${ticket.rating.score}/5 ⭐`;
+            if (ratingCommentEl) {
+                ratingCommentEl.innerText = ticket.rating.comment ? `“${ticket.rating.comment}”` : '“Khách hàng không để lại nhận xét”';
+            }
+        } else {
+            ratingCard.style.display = 'none';
+        }
+    }
 
     // Render khung tin nhắn
     renderAdminChatThreadOnly(ticket);
 
-    // Reset textarea và gán sự kiện gõ phím
+    // Reset textarea và gán sự kiện auto-resize + Enter để gửi
     const repEl = document.getElementById('admModalReplyMessage');
     if (repEl) {
         repEl.value = '';
-        repEl.oninput = () => {
+        repEl.style.height = 'auto';
+        repEl.oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 110) + 'px';
             handleAdminTicketTyping(ticketId);
         };
         repEl.onkeydown = (e) => {
@@ -5356,16 +5436,6 @@ function openReplyTicketModal(ticketId) {
                 document.getElementById('adminReplyTicketForm')?.requestSubmit();
             }
         };
-    }
-    
-    // Select appropriate status
-    const statusSelect = document.getElementById('admModalNewStatus');
-    if (statusSelect) {
-        if (ticket.status === 'pending') {
-            statusSelect.value = 'replied';
-        } else {
-            statusSelect.value = ticket.status || 'replied';
-        }
     }
 
     modal.classList.add('open');
@@ -5396,11 +5466,100 @@ function closeReplyTicketModal() {
     }
 }
 
+function copyAdminPhone() {
+    const phoneEl = document.getElementById('admSideCustomerPhone');
+    const text = phoneEl ? phoneEl.innerText.trim() : '';
+    if (text && text !== 'Chưa có SĐT') {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("Đã sao chép", `Đã copy SĐT: ${text}`, "success");
+        }).catch(() => {});
+    }
+}
+
+function copyAdminEmail() {
+    const emailEl = document.getElementById('admSideCustomerEmail');
+    const text = emailEl ? emailEl.innerText.trim() : '';
+    if (text && text !== 'Chưa có Email') {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("Đã sao chép", `Đã copy Email: ${text}`, "success");
+        }).catch(() => {});
+    }
+}
+
+async function handleAdminUpdateStatusClick() {
+    const ticketId = document.getElementById('admModalTicketId')?.value;
+    const newStatus = document.getElementById('admModalNewStatus')?.value;
+    if (!ticketId || !newStatus) return;
+
+    const btn = document.getElementById('btnAdmQuickStatus');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+    }
+
+    try {
+        const res = await MoonlightAPI.updateTicketStatus(ticketId, newStatus);
+        if (res && (res.success || res.data)) {
+            const updated = res.data;
+            const idx = allAdminTickets.findIndex(t => String(t._id || t.id) === String(ticketId));
+            if (idx !== -1 && updated) {
+                allAdminTickets[idx] = updated;
+            }
+
+            // Cập nhật badge
+            const badgeEl = document.getElementById('admModalStatusBadge');
+            if (badgeEl) {
+                const sm = adminTicketStatusMeta[newStatus] || { label: newStatus, bg: 'rgba(255,255,255,0.1)', color: '#fff', border: 'rgba(255,255,255,0.2)', icon: 'fa-info' };
+                badgeEl.style.background = sm.bg;
+                badgeEl.style.color = sm.color;
+                badgeEl.style.border = `1px solid ${sm.border}`;
+                badgeEl.innerHTML = `<i class="fas ${sm.icon}"></i> ${sm.label}`;
+            }
+
+            const closeBtn = document.getElementById('btnAdmQuickClose');
+            if (closeBtn) {
+                if (newStatus === 'closed') {
+                    closeBtn.innerHTML = '<i class="fas fa-lock"></i> Phiếu Đã Đóng';
+                    closeBtn.disabled = true;
+                    closeBtn.style.opacity = '0.5';
+                } else {
+                    closeBtn.innerHTML = '<i class="fas fa-lock"></i> Đóng Ticket Ngay';
+                    closeBtn.disabled = false;
+                    closeBtn.style.opacity = '1';
+                }
+            }
+
+            renderAdminTickets();
+            showToast("Thành công", `Đã cập nhật trạng thái phiếu: ${adminTicketStatusMeta[newStatus]?.label || newStatus}`, "success");
+        } else {
+            showToast("Lỗi", res?.message || "Không thể cập nhật trạng thái.", "error");
+        }
+    } catch (err) {
+        showToast("Lỗi", err.message || "Không thể kết nối máy chủ.", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Cập Nhật Trạng Thái';
+        }
+    }
+}
+
+async function handleAdminCloseTicketClick() {
+    const ticketId = document.getElementById('admModalTicketId')?.value;
+    if (!ticketId) return;
+
+    const statusSelect = document.getElementById('admModalNewStatus');
+    if (statusSelect) statusSelect.value = 'closed';
+
+    await handleAdminUpdateStatusClick();
+}
+
 async function handleAdminSubmitReply(event) {
     event.preventDefault();
     const btn = document.getElementById('btnAdminSubmitReply');
     const ticketId = document.getElementById('admModalTicketId')?.value;
-    const replyMessage = document.getElementById('admModalReplyMessage')?.value?.trim();
+    const repEl = document.getElementById('admModalReplyMessage');
+    const replyMessage = repEl?.value?.trim();
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
     const file = admSelectedFile;
 
@@ -5451,8 +5610,10 @@ async function handleAdminSubmitReply(event) {
     }
 
     // Xóa ô nhập ngay lập tức và reset đính kèm
-    const repEl = document.getElementById('admModalReplyMessage');
-    if (repEl) repEl.value = '';
+    if (repEl) {
+        repEl.value = '';
+        repEl.style.height = 'auto';
+    }
     handleRemoveAdminAttach();
 
     // Thêm tin nhắn tạm thời 'Đang gửi...' vào khung chat
@@ -5570,6 +5731,10 @@ window.handleAdminTicketTyping = handleAdminTicketTyping;
 window.handleAdminChatScroll = handleAdminChatScroll;
 window.jumpAdminChatToBottom = jumpAdminChatToBottom;
 window.scrollAdminChatToBottom = scrollAdminChatToBottom;
+window.copyAdminPhone = copyAdminPhone;
+window.copyAdminEmail = copyAdminEmail;
+window.handleAdminUpdateStatusClick = handleAdminUpdateStatusClick;
+window.handleAdminCloseTicketClick = handleAdminCloseTicketClick;
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---
 

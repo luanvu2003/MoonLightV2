@@ -25,3 +25,4 @@ export declare const reopenCustomerTicket: (req: Request, res: Response) => Prom
 export declare const rateCustomerTicket: (req: Request, res: Response) => Promise<void>;
 export declare const getAllTickets: (req: Request, res: Response) => Promise<void>;
 export declare const replyTicket: (req: Request, res: Response) => Promise<void>;
+export declare const updateTicketStatus: (req: Request, res: Response) => Promise<void>;

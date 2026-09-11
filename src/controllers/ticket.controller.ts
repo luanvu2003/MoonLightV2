@@ -621,3 +621,31 @@ export const getAllTickets = async (req: Request, res: Response): Promise<void> 
 export const replyTicket = async (req: Request, res: Response): Promise<void> => {
   await addTicketMessage(req, res);
 };
+
+export const updateTicketStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ticketId = req.params.id as string;
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'replied', 'processing', 'resolved', 'closed'];
+    if (!status || !validStatuses.includes(status)) {
+      sendError(res, 'Trạng thái không hợp lệ', 400, 'INVALID_STATUS');
+      return;
+    }
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) {
+      sendError(res, 'Không tìm thấy yêu cầu hỗ trợ này', 404, 'NOT_FOUND');
+      return;
+    }
+
+    ticket.status = status;
+    await ticket.save();
+    ensureTicketMessages(ticket);
+
+    sendSuccess(res, ticket, 'Đã cập nhật trạng thái yêu cầu hỗ trợ thành công');
+  } catch (err: any) {
+    sendError(res, `Lỗi khi cập nhật trạng thái ticket: ${err.message}`, 500, 'UPDATE_STATUS_ERROR');
+  }
+};
+

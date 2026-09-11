@@ -509,6 +509,13 @@ const MoonlightAPI = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+
+  async updateTicketStatus(id, status) {
+    return this.request(`/tickets/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    });
   }
 };
 
