@@ -269,21 +269,60 @@
 
                         <!-- Khung hiển thị kết quả -->
                         <div class="result-viewport" id="resultViewport">
-                            <!-- Hiệu ứng quét Laser Hologram lúc đang xử lý -->
+                            <!-- Hiệu ứng quét Laser Hologram & AI Agent Pipeline HUD -->
                             <div class="scanning-overlay" id="scanningOverlay">
                                 <div class="laser-beam"></div>
                                 <div class="radar-circle">
-                                    <i class="fas fa-fingerprint radar-inner-icon"></i>
+                                    <i class="fas fa-microchip radar-inner-icon"></i>
                                 </div>
-                                <div class="scan-status-text" id="scanStatusText">Đang quét vóc dáng người mẫu...</div>
-                                <div class="scan-sub-text" id="scanSubText">MOONLIGHT AI NEURAL VTON ENGINE</div>
+                                <div class="scan-status-text" id="scanStatusText">Đang khởi tạo AI Agent...</div>
+                                <div class="scan-sub-text" id="scanSubText">MOONLIGHT AI NEURAL VTON WORKFLOW</div>
+
+                                <!-- AI Agent Real-Time Pipeline Stepper HUD -->
+                                <div class="pipeline-stepper" id="pipelineStepper">
+                                    <div class="stepper-track">
+                                        <div class="stepper-step active" id="stepAgent" data-step="agent">
+                                            <div class="step-icon"><i class="fas fa-brain"></i></div>
+                                            <div class="step-label">AI Agent</div>
+                                        </div>
+                                        <div class="stepper-connector" id="conn1"></div>
+                                        <div class="stepper-step" id="stepWorkflow" data-step="workflow">
+                                            <div class="step-icon"><i class="fas fa-diagram-project"></i></div>
+                                            <div class="step-label">Workflow</div>
+                                        </div>
+                                        <div class="stepper-connector" id="conn2"></div>
+                                        <div class="stepper-step" id="stepParsing" data-step="parsing">
+                                            <div class="step-icon"><i class="fas fa-user-astronaut"></i></div>
+                                            <div class="step-label">Human Parsing</div>
+                                        </div>
+                                        <div class="stepper-connector" id="conn3"></div>
+                                        <div class="stepper-step" id="stepMask" data-step="mask">
+                                            <div class="step-icon"><i class="fas fa-mask"></i></div>
+                                            <div class="step-label">Cloth Mask</div>
+                                        </div>
+                                        <div class="stepper-connector" id="conn4"></div>
+                                        <div class="stepper-step" id="stepVton" data-step="vton">
+                                            <div class="step-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                                            <div class="step-label">VTON Model</div>
+                                        </div>
+                                        <div class="stepper-connector" id="conn5"></div>
+                                        <div class="stepper-step" id="stepQuality" data-step="quality">
+                                            <div class="step-icon"><i class="fas fa-shield-check"></i></div>
+                                            <div class="step-label">Quality Check</div>
+                                        </div>
+                                    </div>
+                                    <div class="pipeline-step-desc" id="pipelineStepDesc">
+                                        <span class="step-badge-mini" id="stepBadgeMini">PHASE 1</span>
+                                        <span id="stepDescText">AI Agent đang phân tích vóc dáng và chất liệu trang phục...</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Trạng thái chờ ban đầu -->
                             <div class="empty-result-state" id="emptyResultState">
                                 <i class="fas fa-wand-magic-sparkles"></i>
                                 <h3>Sẵn Sàng Thử Đồ Ảo</h3>
-                                <p>Chọn người mẫu ở Bước 1, chọn trang phục ở Bước 2 và bấm nút <strong>"Kích Hoạt Thử Đồ Với AI"</strong> để xem ảnh biến hóa tại đây!</p>
+                                <p>Chọn người mẫu ở Bước 1, chọn trang phục ở Bước 2 và bấm nút <strong>"Kích Hoạt Thử Đồ Với AI"</strong> để kích hoạt AI Agent tự động phân tích và may đo trang phục!</p>
                             </div>
 
                             <!-- Thanh trượt so sánh Trước & Sau (Không méo hình, clip-path chuẩn xác) -->
@@ -296,6 +335,12 @@
                                 <!-- Lớp ảnh gốc trước khi thay đồ (Before) với clip-path -->
                                 <div class="compare-layer-before" id="compareOverlay">
                                     <img id="beforeImg" src="" alt="Original Person">
+                                </div>
+
+                                <!-- Huy hiệu kiểm định chất lượng AI ở góc trên ảnh -->
+                                <div class="ai-quality-pill" id="aiQualityPill">
+                                    <i class="fas fa-certificate"></i>
+                                    <span id="aiQualityScoreText">98.6% · PASSED</span>
                                 </div>
 
                                 <!-- Đường phân cách & nút kéo trượt -->
@@ -312,6 +357,38 @@
 
                         <!-- Khung chi tiết sản phẩm đang mặc & Nút mua hàng -->
                         <div class="result-action-panel" id="resultActionPanel" style="display: none;">
+                            <!-- Thẻ Báo Cáo Phân Tích AI Agent -->
+                            <div class="ai-audit-card" id="aiAuditCard">
+                                <div class="audit-card-header">
+                                    <div class="audit-title-group">
+                                        <span class="audit-badge"><i class="fas fa-microchip"></i> AI AGENT PIPELINE</span>
+                                        <strong id="auditWorkflowName">Quy trình May đo Vest Hoàng Gia</strong>
+                                    </div>
+                                    <div class="audit-score-group">
+                                        <span class="audit-score-val" id="auditScoreVal">98.6%</span>
+                                        <span class="audit-score-lbl">Độ hoàn thiện</span>
+                                    </div>
+                                </div>
+                                <div class="audit-metrics-grid">
+                                    <div class="audit-metric-item">
+                                        <span class="m-label"><i class="fas fa-ruler-combined"></i> Khớp cổ & ve áo:</span>
+                                        <span class="m-val" id="mCollarVal">99.2% (Chuẩn xác)</span>
+                                    </div>
+                                    <div class="audit-metric-item">
+                                        <span class="m-label"><i class="fas fa-vest"></i> Nếp gấp chất liệu:</span>
+                                        <span class="m-val" id="mFabricVal">98.8% (Tự nhiên)</span>
+                                    </div>
+                                    <div class="audit-metric-item">
+                                        <span class="m-label"><i class="fas fa-sun"></i> Ánh sáng 3D & bóng:</span>
+                                        <span class="m-val" id="mLightVal">98.5% (Khớp nền)</span>
+                                    </div>
+                                    <div class="audit-metric-item">
+                                        <span class="m-label"><i class="fas fa-shield-halved"></i> Quality Check:</span>
+                                        <span class="m-val m-pass" id="mDecisionVal"><i class="fas fa-circle-check"></i> PASSED</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="worn-product-card">
                                 <img id="wpThumb" class="wp-thumb" src="" alt="Worn Product">
                                 <div class="wp-info">

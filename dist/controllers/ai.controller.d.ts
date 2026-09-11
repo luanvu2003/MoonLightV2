@@ -18,4 +18,8 @@ export declare class AIController {
      * AI Virtual Try-On API: Nhận ảnh người dùng + sản phẩm -> Tạo ảnh người mặc trang phục
      */
     static tryOn(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * Lấy danh sách các Workflows may đo chuyên biệt trong hệ thống
+     */
+    static getWorkflows(req: Request, res: Response): Promise<void>;
 }

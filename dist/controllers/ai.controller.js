@@ -5,6 +5,7 @@ import { Product } from '../models/Product.js';
 import { LUXURY_PRODUCTS } from '../config/defaultProducts.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { ENV } from '../config/env.js';
+import { AIWorkflowService } from '../services/ai/workflow.service.js';
 // Danh sách người mẫu mẫu có sẵn với vóc dáng chuẩn, trang phục trung tính
 export const SAMPLE_MODELS = [
     {
@@ -341,154 +342,165 @@ export class AIController {
             }
             const fashnKey = process.env.FASHN_API_KEY;
             const replicateKey = process.env.REPLICATE_API_TOKEN;
-            const startTime = Date.now();
-            let resultImageUrl = '';
-            let provider = 'simulation';
-            // 1. Tích hợp Fashn.ai nếu có key
-            if (fashnKey) {
-                try {
-                    provider = 'fashn';
-                    const runRes = await fetch('https://api.fashn.ai/v1/run', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${fashnKey}`
-                        },
-                        body: JSON.stringify({
-                            model_image: personImage,
-                            garment_image: targetGarmentUrl,
-                            category: category || 'all-body',
-                            mode: 'performance',
-                            nsfw_filter: true
-                        })
-                    });
-                    const runData = await runRes.json();
-                    if (runData.id) {
-                        // Poll status
-                        for (let i = 0; i < 30; i++) {
-                            await new Promise(r => setTimeout(r, 2000));
-                            const statusRes = await fetch(`https://api.fashn.ai/v1/status/${runData.id}`, {
-                                headers: { 'Authorization': `Bearer ${fashnKey}` }
-                            });
-                            const statusData = await statusRes.json();
-                            if (statusData.status === 'completed' && statusData.output && statusData.output[0]) {
-                                resultImageUrl = statusData.output[0];
-                                break;
-                            }
-                            if (statusData.status === 'failed')
-                                break;
-                        }
-                    }
-                }
-                catch (fashnErr) {
-                    console.warn('⚠️ Fashn API error, fallback sang simulation:', fashnErr.message);
-                }
-            }
-            // 2. Tích hợp Replicate IDM-VTON nếu có token
-            if (!resultImageUrl && replicateKey) {
-                try {
-                    provider = 'replicate';
-                    const repRes = await fetch('https://api.replicate.com/v1/predictions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Token ${replicateKey}`
-                        },
-                        body: JSON.stringify({
-                            version: 'c871bb9b046607b680449ecbae55fd8e6d945e0a1948644bf2361b3d021d3ff4',
-                            input: {
-                                human_img: personImage,
-                                garm_img: targetGarmentUrl,
-                                garment_des: product?.name || 'luxury designer outfit'
-                            }
-                        })
-                    });
-                    const repData = await repRes.json();
-                    if (repData.id) {
-                        for (let i = 0; i < 30; i++) {
-                            await new Promise(r => setTimeout(r, 2500));
-                            const stRes = await fetch(`https://api.replicate.com/v1/predictions/${repData.id}`, {
-                                headers: { 'Authorization': `Token ${replicateKey}` }
-                            });
-                            const stData = await stRes.json();
-                            if (stData.status === 'succeeded' && stData.output) {
-                                resultImageUrl = Array.isArray(stData.output) ? stData.output[0] : stData.output;
-                                break;
-                            }
-                            if (stData.status === 'failed')
-                                break;
-                        }
-                    }
-                }
-                catch (repErr) {
-                    console.warn('⚠️ Replicate API error, fallback sang simulation:', repErr.message);
-                }
-            }
-            // 3. Tích hợp IDM-VTON AI trực tiếp từ HuggingFace (ZeroGPU)
-            if (!resultImageUrl && personImage && targetGarmentUrl) {
-                try {
-                    const hfResult = await callIdmVtonHF(personImage, targetGarmentUrl, product?.name || 'luxury outfit');
-                    if (hfResult) {
-                        try {
-                            const dlRes = await fetch(hfResult);
-                            if (dlRes.ok) {
-                                const buf = await dlRes.arrayBuffer();
-                                const saveDir = path.join(process.cwd(), 'public', 'uploads', 'tryon');
-                                await fs.promises.mkdir(saveDir, { recursive: true });
-                                const fileName = `tryon_${Date.now()}.png`;
-                                await fs.promises.writeFile(path.join(saveDir, fileName), Buffer.from(buf));
-                                resultImageUrl = `/uploads/tryon/${fileName}`;
-                                console.log('   💾 Đã lưu ảnh kết quả cục bộ:', resultImageUrl);
-                            }
-                            else {
-                                resultImageUrl = hfResult;
-                            }
-                        }
-                        catch (dlErr) {
-                            console.warn('   ⚠️ Lỗi cache ảnh IDM-VTON cục bộ, dùng URL gốc:', dlErr.message);
-                            resultImageUrl = hfResult;
-                        }
-                        provider = 'idm-vton-ai';
-                    }
-                }
-                catch (hfErr) {
-                    console.warn('⚠️ HF IDM-VTON error:', hfErr.message);
-                }
-            }
-            // 4. Nếu không có kết quả từ bất kỳ AI provider nào:
-            // Trả về provider='client-synthesis' để frontend dùng engine client-side cải tiến
-            if (!resultImageUrl) {
-                provider = 'client-synthesis';
-                resultImageUrl = ''; // client sẽ tự xử lý với engine synthesis cải tiến
-                console.log('   ℹ️ Không có AI provider nào trả kết quả, chuyển sang client-side synthesis');
-            }
-            const processingTimeMs = Date.now() - startTime;
-            sendSuccess(res, {
-                status: 'completed',
-                provider,
-                resultImage: resultImageUrl,
-                originalImage: personImage,
+            // Chạy toàn bộ quy trình AI Agent Pipeline qua AIWorkflowService
+            const workflowResult = await AIWorkflowService.runTryOnWorkflow({
+                personImage,
                 garmentImage: targetGarmentUrl,
-                product: product ? {
-                    id: product.id || product._id,
-                    _id: product._id,
-                    name: product.name,
-                    price: product.price,
-                    originalPrice: product.originalPrice,
-                    category: product.category,
-                    image: product.image
-                } : null,
-                processingTimeMs,
-                meta: {
-                    confidenceScore: 0.985,
-                    bodyPoseMatched: true,
-                    fabricLightingAdjusted: true
+                product,
+                modelGender,
+                vtonModelCaller: async (pImg, gImg, wf, garmDesc, mask, attempt) => {
+                    let resultImageUrl = '';
+                    let provider = 'client-synthesis';
+                    // 1. Tích hợp Fashn.ai nếu có key
+                    if (fashnKey) {
+                        try {
+                            provider = 'fashn';
+                            const runRes = await fetch('https://api.fashn.ai/v1/run', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${fashnKey}`
+                                },
+                                body: JSON.stringify({
+                                    model_image: pImg,
+                                    garment_image: gImg,
+                                    category: category || 'all-body',
+                                    mode: 'performance',
+                                    nsfw_filter: true
+                                })
+                            });
+                            const runData = await runRes.json();
+                            if (runData.id) {
+                                for (let i = 0; i < 30; i++) {
+                                    await new Promise(r => setTimeout(r, 2000));
+                                    const statusRes = await fetch(`https://api.fashn.ai/v1/status/${runData.id}`, {
+                                        headers: { 'Authorization': `Bearer ${fashnKey}` }
+                                    });
+                                    const statusData = await statusRes.json();
+                                    if (statusData.status === 'completed' && statusData.output && statusData.output[0]) {
+                                        resultImageUrl = statusData.output[0];
+                                        break;
+                                    }
+                                    if (statusData.status === 'failed')
+                                        break;
+                                }
+                            }
+                        }
+                        catch (fashnErr) {
+                            console.warn('⚠️ Fashn API error:', fashnErr.message);
+                        }
+                    }
+                    // 2. Tích hợp Replicate IDM-VTON nếu có token
+                    if (!resultImageUrl && replicateKey) {
+                        try {
+                            provider = 'replicate';
+                            const repRes = await fetch('https://api.replicate.com/v1/predictions', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Token ${replicateKey}`
+                                },
+                                body: JSON.stringify({
+                                    version: 'c871bb9b046607b680449ecbae55fd8e6d945e0a1948644bf2361b3d021d3ff4',
+                                    input: {
+                                        human_img: pImg,
+                                        garm_img: gImg,
+                                        garment_des: garmDesc || 'luxury designer outfit'
+                                    }
+                                })
+                            });
+                            const repData = await repRes.json();
+                            if (repData.id) {
+                                for (let i = 0; i < 30; i++) {
+                                    await new Promise(r => setTimeout(r, 2500));
+                                    const stRes = await fetch(`https://api.replicate.com/v1/predictions/${repData.id}`, {
+                                        headers: { 'Authorization': `Token ${replicateKey}` }
+                                    });
+                                    const stData = await stRes.json();
+                                    if (stData.status === 'succeeded' && stData.output) {
+                                        resultImageUrl = Array.isArray(stData.output) ? stData.output[0] : stData.output;
+                                        break;
+                                    }
+                                    if (stData.status === 'failed')
+                                        break;
+                                }
+                            }
+                        }
+                        catch (repErr) {
+                            console.warn('⚠️ Replicate API error:', repErr.message);
+                        }
+                    }
+                    // 3. Tích hợp IDM-VTON AI trực tiếp từ HuggingFace (ZeroGPU)
+                    if (!resultImageUrl && pImg && gImg) {
+                        try {
+                            const hfResult = await callIdmVtonHF(pImg, gImg, garmDesc);
+                            if (hfResult) {
+                                try {
+                                    const dlRes = await fetch(hfResult);
+                                    if (dlRes.ok) {
+                                        const buf = await dlRes.arrayBuffer();
+                                        const saveDir = path.join(process.cwd(), 'public', 'uploads', 'tryon');
+                                        await fs.promises.mkdir(saveDir, { recursive: true });
+                                        const fileName = `tryon_${Date.now()}.png`;
+                                        await fs.promises.writeFile(path.join(saveDir, fileName), Buffer.from(buf));
+                                        resultImageUrl = `/uploads/tryon/${fileName}`;
+                                        console.log('   💾 Đã lưu ảnh kết quả cục bộ:', resultImageUrl);
+                                    }
+                                    else {
+                                        resultImageUrl = hfResult;
+                                    }
+                                }
+                                catch (dlErr) {
+                                    console.warn('   ⚠️ Lỗi cache ảnh IDM-VTON cục bộ:', dlErr.message);
+                                    resultImageUrl = hfResult;
+                                }
+                                provider = 'idm-vton-ai';
+                            }
+                        }
+                        catch (hfErr) {
+                            console.warn('⚠️ HF IDM-VTON error:', hfErr.message);
+                        }
+                    }
+                    return { resultUrl: resultImageUrl, provider };
                 }
-            }, 'AI Thử Đồ Ảo thành công!');
+            });
+            sendSuccess(res, workflowResult, 'AI Virtual Try-On hoàn tất qua quy trình AI Agent Pipeline!');
         }
         catch (error) {
             next(error);
         }
+    }
+    /**
+     * Lấy danh sách các Workflows may đo chuyên biệt trong hệ thống
+     */
+    static async getWorkflows(req, res) {
+        const workflows = [
+            {
+                id: 'tailored_suit_workflow',
+                name: 'Quy trình May đo Vest Hoàng Gia (Haute Couture Suit Pipeline)',
+                category: 'vest_suit',
+                description: 'Tối ưu cho vai đệm, ve áo vest, mô phỏng nếp gấp vải wool và đổ bóng 3D ngực áo.'
+            },
+            {
+                id: 'silk_shirt_workflow',
+                name: 'Quy trình Tơ Lụa Cao Cấp (Mulberry Silk Fluidity Pipeline)',
+                category: 'silk_shirt',
+                description: 'Tối ưu độ rủ tự nhiên của lụa Mulberry, độ ôm sát và đường viền cổ tay áo.'
+            },
+            {
+                id: 'evening_dress_workflow',
+                name: 'Quy trình Đầm Dạ Hội Quý Phái (Royal Evening Gown Pipeline)',
+                category: 'evening_dress',
+                description: 'Tối ưu phom dáng chữ A, eo thon và độ thướt tha của tà váy dài dạ hội.'
+            },
+            {
+                id: 'tailored_pants_workflow',
+                name: 'Quy trình Quần Âu May Đo (Tailored Trousers Pipeline)',
+                category: 'trousers',
+                description: 'Tối ưu đường ly thẳng, tỷ lệ hông - đùi - ống đứng và độ rơi của gấu quần.'
+            }
+        ];
+        sendSuccess(res, workflows, 'Lấy danh sách AI Workflows thành công');
     }
 }
 //# sourceMappingURL=ai.controller.js.map

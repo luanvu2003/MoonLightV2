@@ -1079,3 +1079,264 @@ body.tryon-page {
   border-color: #0a0a0a;
   background: #f1f5f9;
 }
+
+/* ==========================================================================
+   AI AGENT PIPELINE STEPPER HUD & QUALITY AUDIT REPORT STYLES
+   ========================================================================== */
+
+/* Pipeline Stepper HUD in Scanning Overlay */
+.pipeline-stepper {
+  width: 90%;
+  max-width: 480px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  padding: 16px 14px;
+  margin-top: 22px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  animation: fadeInStepper 0.4s ease-out;
+}
+
+@keyframes fadeInStepper {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stepper-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.stepper-step .step-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.stepper-step .step-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+/* Trạng thái đang chạy */
+.stepper-step.active .step-icon {
+  background: linear-gradient(135deg, #dfba73, #b48518);
+  border-color: #fef08a;
+  color: #0f172a;
+  transform: scale(1.18);
+  box-shadow: 0 0 14px rgba(223, 186, 115, 0.7);
+  animation: pulseIcon 1.5s infinite;
+}
+
+.stepper-step.active .step-label {
+  color: #fef08a;
+  font-weight: 700;
+}
+
+/* Trạng thái đã hoàn thành */
+.stepper-step.completed .step-icon {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.stepper-step.completed .step-label {
+  color: #cbd5e1;
+}
+
+@keyframes pulseIcon {
+  0%, 100% { box-shadow: 0 0 10px rgba(223, 186, 115, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(223, 186, 115, 0.9); }
+}
+
+.stepper-connector {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: -14px 2px 0 2px;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.stepper-connector.completed {
+  background: linear-gradient(90deg, #10b981, #dfba73);
+}
+
+.pipeline-step-desc {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+}
+
+.step-badge-mini {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--tryon-gold);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* AI Quality Pill overlay on comparison container */
+.ai-quality-pill {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 15;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 20px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.ai-quality-pill i {
+  color: #10b981;
+}
+
+/* AI Audit Card in Result Panel */
+.ai-audit-card {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.audit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+
+.audit-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.audit-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--tryon-gold);
+  letter-spacing: 0.8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.audit-title-group strong {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.audit-score-group {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-score-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fef08a;
+  line-height: 1;
+}
+
+.audit-score-lbl {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.audit-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+
+@media (max-width: 600px) {
+  .audit-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audit-metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+}
+
+.audit-metric-item .m-label {
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.audit-metric-item .m-label i {
+  color: var(--tryon-gold);
+  font-size: 10px;
+}
+
+.audit-metric-item .m-val {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.audit-metric-item .m-pass {
+  color: #34d399;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
