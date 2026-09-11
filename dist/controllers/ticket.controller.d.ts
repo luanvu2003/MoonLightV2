@@ -22,5 +22,6 @@ export declare const uploadTicketAttachment: (req: Request, res: Response) => Pr
 export declare const addTicketMessage: (req: Request, res: Response) => Promise<void>;
 export declare const closeCustomerTicket: (req: Request, res: Response) => Promise<void>;
 export declare const reopenCustomerTicket: (req: Request, res: Response) => Promise<void>;
+export declare const rateCustomerTicket: (req: Request, res: Response) => Promise<void>;
 export declare const getAllTickets: (req: Request, res: Response) => Promise<void>;
 export declare const replyTicket: (req: Request, res: Response) => Promise<void>;

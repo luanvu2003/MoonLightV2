@@ -4768,6 +4768,11 @@ async function renderAdminTickets() {
                                             <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; background: ${sm.bg}; color: ${sm.color}; border: 1px solid ${sm.border};">
                                                 <i class="fas ${sm.icon}"></i> ${sm.label}
                                             </span>
+                                            ${(t.rating && t.rating.score) ? `
+                                                <div style="font-size: 11px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px; font-weight: 700;" title="${escapeAdminHtml(t.rating.comment || 'Đã đánh giá')}">
+                                                    <i class="fas fa-star"></i> ${t.rating.score}/5 sao
+                                                </div>
+                                            ` : ''}
                                         </td>
                                         <td style="padding: 14px 18px; vertical-align: middle; color: #94a3b8; font-size: 11.5px; white-space: nowrap;">
                                             ${dateStr}
@@ -5347,6 +5352,26 @@ function renderAdminChatThreadOnly(ticket) {
             <span id="admTypingText">Khách hàng đang nhập tin nhắn...</span>
         </div>
     `;
+
+    if (ticket.rating && ticket.rating.score) {
+        html += `
+            <div style="margin: 14px 4px 6px 4px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <span style="font-size: 12.5px; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-star"></i> Đánh giá chất lượng hỗ trợ:
+                    </span>
+                    <span style="font-size: 13px; font-weight: 800; color: #f59e0b;">
+                        ${ticket.rating.score}/5 sao
+                    </span>
+                </div>
+                ${ticket.rating.comment ? `
+                    <div style="margin-top: 8px; font-size: 12.5px; color: #f1f5f9; font-style: italic; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                        “${escapeAdminHtml(ticket.rating.comment)}”
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
 
     threadEl.innerHTML = html;
 

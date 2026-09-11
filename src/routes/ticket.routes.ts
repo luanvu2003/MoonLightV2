@@ -10,6 +10,7 @@ import {
   addTicketMessage,
   closeCustomerTicket,
   reopenCustomerTicket,
+  rateCustomerTicket,
   getAllTickets,
   replyTicket
 } from '../controllers/ticket.controller.js';
@@ -29,6 +30,7 @@ router.put('/:id/seen', authenticate, markTicketSeen);
 router.post('/:id/messages', authenticate, addTicketMessage);
 router.put('/:id/close', authenticate, closeCustomerTicket);
 router.put('/:id/reopen', authenticate, reopenCustomerTicket);
+router.post('/:id/rating', authenticate, rateCustomerTicket);
 
 // Routes dành cho Quản trị viên & Nhân viên CSKH
 router.get('/', authenticate, requireRole(Role.Admin, Role.Staff, Role.Owner), getAllTickets);

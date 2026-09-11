@@ -3763,6 +3763,149 @@ input.input-locked {
     color: #000000 !important;
 }
 
+/* Ticket Closed Notice & Service Rating Styling */
+.ticket-closed-notice {
+    margin-top: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 12.5px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ticket-closed-notice i {
+    color: #94a3b8;
+    font-size: 13.5px;
+}
+
+.ticket-rating-card {
+    margin-top: 14px;
+    border-radius: 16px;
+    padding: 16px 20px;
+    transition: all 0.25s ease;
+}
+
+.ticket-rating-card.unrated {
+    background: linear-gradient(135deg, #fffdf5 0%, #fef8e7 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.35);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1);
+}
+
+.ticket-rating-card.rated {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.rating-prompt-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.rating-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+.rating-prompt-title {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #78350f;
+}
+
+.rating-prompt-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #92400e;
+}
+
+.rating-interactive-stars {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 12px;
+}
+
+.rating-interactive-stars .star-btn {
+    font-size: 24px;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s;
+    user-select: none;
+}
+
+.rating-interactive-stars .star-btn:hover {
+    transform: scale(1.22);
+}
+
+.rating-interactive-stars .star-btn.active,
+.rating-interactive-stars .star-btn.hover {
+    color: #f59e0b;
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.45));
+}
+
+.star-rating-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #b45309;
+    margin-left: 8px;
+}
+
+.rating-comment-box textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    resize: none;
+    background: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rating-comment-box textarea:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.rating-comment-quote {
+    font-size: 13px;
+    font-style: italic;
+    color: #334155;
+    background: #ffffff;
+    border-left: 3px solid #f59e0b;
+    padding: 8px 14px;
+    border-radius: 0 8px 8px 0;
+    margin: 8px 0 10px 0;
+}
+
+.rating-thankyou {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
 
 
 

@@ -372,6 +372,10 @@ export const addTicketMessage = async (req, res) => {
             sendError(res, 'Bạn không có quyền gửi tin nhắn trong yêu cầu này', 403, 'FORBIDDEN');
             return;
         }
+        if (ticket.status === 'closed' && !isAdminOrStaff) {
+            sendError(res, 'Yêu cầu hỗ trợ này đã được đóng, quý khách chỉ có thể xem lại lịch sử tin nhắn.', 400, 'TICKET_CLOSED');
+            return;
+        }
         ensureTicketMessages(ticket);
         const senderRole = isAdminOrStaff
             ? (userRole === 'Staff' ? 'staff' : 'admin')
@@ -459,8 +463,8 @@ export const reopenCustomerTicket = async (req, res) => {
             return;
         }
         const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(req.user?.role);
-        if (ticket.userId.toString() !== userId && !isAdminOrStaff) {
-            sendError(res, 'Bạn không có quyền thao tác trên ticket này', 403, 'FORBIDDEN');
+        if (!isAdminOrStaff) {
+            sendError(res, 'Phiếu hỗ trợ đã đóng không thể mở lại. Nếu cần trợ giúp thêm, quý khách vui lòng tạo phiếu hỗ trợ mới.', 400, 'CANNOT_REOPEN_CLOSED_TICKET');
             return;
         }
         ticket.status = 'pending';
@@ -469,6 +473,42 @@ export const reopenCustomerTicket = async (req, res) => {
     }
     catch (err) {
         sendError(res, `Lỗi khi mở lại ticket: ${err.message}`, 500, 'REOPEN_TICKET_ERROR');
+    }
+};
+export const rateCustomerTicket = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const ticketId = req.params.id;
+        const { score, comment } = req.body;
+        const numScore = Math.round(Number(score));
+        if (isNaN(numScore) || numScore < 1 || numScore > 5) {
+            sendError(res, 'Vui lòng chọn đánh giá từ 1 đến 5 sao', 400, 'INVALID_SCORE');
+            return;
+        }
+        const ticket = await Ticket.findById(ticketId);
+        if (!ticket) {
+            sendError(res, 'Không tìm thấy yêu cầu hỗ trợ này', 404, 'NOT_FOUND');
+            return;
+        }
+        if (ticket.userId.toString() !== userId) {
+            sendError(res, 'Bạn không có quyền đánh giá yêu cầu này', 403, 'FORBIDDEN');
+            return;
+        }
+        if (ticket.status !== 'closed' && ticket.status !== 'resolved') {
+            sendError(res, 'Chỉ có thể đánh giá sau khi phiếu hỗ trợ đã đóng hoặc hoàn tất', 400, 'TICKET_NOT_CLOSED');
+            return;
+        }
+        ticket.rating = {
+            score: numScore,
+            comment: typeof comment === 'string' ? comment.trim() : '',
+            createdAt: new Date()
+        };
+        await ticket.save();
+        ensureTicketMessages(ticket);
+        sendSuccess(res, ticket, 'Cảm ơn quý khách đã gửi đánh giá dịch vụ hỗ trợ!');
+    }
+    catch (err) {
+        sendError(res, `Lỗi khi đánh giá hỗ trợ: ${err.message}`, 500, 'RATE_TICKET_ERROR');
     }
 };
 // ================= ADMIN & STAFF APIS =================

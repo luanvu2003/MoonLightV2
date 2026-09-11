@@ -90,6 +90,11 @@ const TicketSchema = new Schema({
         type: TicketReplySchema,
         default: null
     },
+    rating: {
+        score: { type: Number, min: 1, max: 5 },
+        comment: { type: String, trim: true, default: '' },
+        createdAt: { type: Date, default: Date.now }
+    },
     customerLastSeenAt: {
         type: Date,
         default: Date.now

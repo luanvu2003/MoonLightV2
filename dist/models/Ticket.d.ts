@@ -21,6 +21,11 @@ export interface ITicketReply {
     repliedBy: string;
     repliedAt: Date;
 }
+export interface ITicketRating {
+    score: number;
+    comment?: string;
+    createdAt: Date;
+}
 export interface ITicket extends Document {
     ticketCode: string;
     userId: mongoose.Types.ObjectId;
@@ -37,6 +42,7 @@ export interface ITicket extends Document {
     priority: 'normal' | 'urgent';
     status: 'pending' | 'processing' | 'replied' | 'resolved' | 'closed';
     reply?: ITicketReply;
+    rating?: ITicketRating;
     createdAt: Date;
     updatedAt: Date;
 }

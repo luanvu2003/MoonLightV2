@@ -25,6 +25,12 @@ export interface ITicketReply {
   repliedAt: Date;
 }
 
+export interface ITicketRating {
+  score: number;
+  comment?: string;
+  createdAt: Date;
+}
+
 export interface ITicket extends Document {
   ticketCode: string;
   userId: mongoose.Types.ObjectId;
@@ -41,6 +47,7 @@ export interface ITicket extends Document {
   priority: 'normal' | 'urgent';
   status: 'pending' | 'processing' | 'replied' | 'resolved' | 'closed';
   reply?: ITicketReply;
+  rating?: ITicketRating;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -144,6 +151,11 @@ const TicketSchema = new Schema<ITicket>(
     reply: {
       type: TicketReplySchema,
       default: null
+    },
+    rating: {
+      score: { type: Number, min: 1, max: 5 },
+      comment: { type: String, trim: true, default: '' },
+      createdAt: { type: Date, default: Date.now }
     },
     customerLastSeenAt: {
       type: Date,

@@ -1311,12 +1311,54 @@ function renderCustomerTickets(filterStatus = 'all') {
               </div>
             </form>
           ` : `
-            <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 14px; font-size:12px; color:#64748b; flex-wrap:wrap; gap:8px;">
-              <span><i class="fas fa-lock"></i> Phiếu hỗ trợ này đã hoàn tất/đóng.</span>
-              <button type="button" class="btn-order-action" onclick="handleReopenCustomerTicket('${t._id}')" style="font-size:11.5px; padding:4px 12px; border-color:#cbd5e1; background:#f8fafc;">
-                <i class="fas fa-rotate-left"></i> Mở lại cuộc trò chuyện này
-              </button>
+            <div class="ticket-closed-notice">
+              <i class="fas fa-lock"></i>
+              <span>Phiếu hỗ trợ này đã hoàn tất và đóng lại. Quý khách có thể xem lại toàn bộ lịch sử tin nhắn bên trên.</span>
             </div>
+
+            ${(t.rating && t.rating.score) ? `
+              <div class="ticket-rating-card rated">
+                <div class="rating-prompt-header">
+                  <div class="rating-badge-icon" style="background:#10b981; box-shadow:0 4px 10px rgba(16,185,129,0.28);"><i class="fas fa-check"></i></div>
+                  <div>
+                    <h5 class="rating-prompt-title" style="color:#065f46;">Đánh giá của bạn về dịch vụ hỗ trợ</h5>
+                    <p class="rating-prompt-subtitle" style="color:#047857;">Cảm ơn quý khách đã dành thời gian gửi phản hồi.</p>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; margin:6px 0 8px;">
+                  ${renderStarScoreHtml(t.rating.score)}
+                  <strong style="color:#f59e0b; font-size:13px; margin-left:4px;">${t.rating.score}/5 sao</strong>
+                </div>
+                ${t.rating.comment ? `<div class="rating-comment-quote">“${escapeHtml(t.rating.comment)}”</div>` : ''}
+              </div>
+            ` : `
+              <div class="ticket-rating-card unrated" id="ticketRatingCard-${t._id}">
+                <div class="rating-prompt-header">
+                  <div class="rating-badge-icon"><i class="fas fa-award"></i></div>
+                  <div>
+                    <h5 class="rating-prompt-title">Đánh giá chất lượng phục vụ của chuyên viên</h5>
+                    <p class="rating-prompt-subtitle">Đánh giá của bạn sẽ giúp đội ngũ CSKH MoonLight hoàn thiện hơn mỗi ngày.</p>
+                  </div>
+                </div>
+                <div class="rating-interactive-stars" id="ratingStars-${t._id}">
+                  <span class="star-btn active" data-star="1" onclick="selectTicketStar('${t._id}', 1)" onmouseover="hoverTicketStar('${t._id}', 1)" onmouseout="resetTicketStar('${t._id}')" title="1 sao"><i class="fas fa-star"></i></span>
+                  <span class="star-btn active" data-star="2" onclick="selectTicketStar('${t._id}', 2)" onmouseover="hoverTicketStar('${t._id}', 2)" onmouseout="resetTicketStar('${t._id}')" title="2 sao"><i class="fas fa-star"></i></span>
+                  <span class="star-btn active" data-star="3" onclick="selectTicketStar('${t._id}', 3)" onmouseover="hoverTicketStar('${t._id}', 3)" onmouseout="resetTicketStar('${t._id}')" title="3 sao"><i class="fas fa-star"></i></span>
+                  <span class="star-btn active" data-star="4" onclick="selectTicketStar('${t._id}', 4)" onmouseover="hoverTicketStar('${t._id}', 4)" onmouseout="resetTicketStar('${t._id}')" title="4 sao"><i class="fas fa-star"></i></span>
+                  <span class="star-btn active" data-star="5" onclick="selectTicketStar('${t._id}', 5)" onmouseover="hoverTicketStar('${t._id}', 5)" onmouseout="resetTicketStar('${t._id}')" title="5 sao"><i class="fas fa-star"></i></span>
+                  <span class="star-rating-label" id="starRatingLabel-${t._id}">5/5 sao - Rất hài lòng</span>
+                </div>
+                <input type="hidden" id="starRatingValue-${t._id}" value="5">
+                <div class="rating-comment-box">
+                  <textarea id="ratingComment-${t._id}" rows="2" placeholder="Góp ý thêm cho chuyên viên tư vấn (tùy chọn)..."></textarea>
+                </div>
+                <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                  <button type="button" class="btn-primary" onclick="handleSubmitTicketRating('${t._id}')" style="padding:8px 18px; font-size:12.5px; border-radius:10px; font-weight:700;">
+                    <i class="fas fa-paper-plane"></i> Gửi đánh giá
+                  </button>
+                </div>
+              </div>
+            `}
           `}
         </div>
 
@@ -1326,7 +1368,7 @@ function renderCustomerTickets(filterStatus = 'all') {
               <i class="fas fa-check"></i> Đã giải quyết xong / Đóng ticket
             </button>
           ` : `
-            <span style="font-size:12px; color:#94a3b8;"><i class="fas fa-lock"></i> Phiếu đã đóng</span>
+            <span style="font-size:12px; color:#94a3b8; display:inline-flex; align-items:center; gap:5px;"><i class="fas fa-lock"></i> Phiếu đã đóng (Chỉ xem lịch sử)</span>
           `}
         </div>
       </div>
@@ -2062,80 +2104,93 @@ async function handleSendCustomerMessage(event, ticketId) {
   }
 }
 
-async function handleReopenCustomerTicket(ticketId) {
-  try {
-    const res = await MoonlightAPI.reopenMyTicket(ticketId);
-    if (res && (res.success || res.data)) {
-      await loadCustomerTickets();
+// ==========================================
+// ĐÁNH GIÁ CHẤT LƯỢNG DỊCH VỤ HỖ TRỢ (TICKET RATING)
+// ==========================================
+const ticketStarLabels = {
+  1: '1/5 sao - Rất không hài lòng',
+  2: '2/5 sao - Chưa hài lòng',
+  3: '3/5 sao - Bình thường',
+  4: '4/5 sao - Hài lòng',
+  5: '5/5 sao - Rất hài lòng'
+};
+
+function renderStarScoreHtml(score) {
+  let s = Math.min(5, Math.max(1, Math.round(score || 5)));
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= s) {
+      html += '<i class="fas fa-star" style="color:#f59e0b; margin-right:2px;"></i>';
+    } else {
+      html += '<i class="far fa-star" style="color:#cbd5e1; margin-right:2px;"></i>';
     }
-  } catch (err) {
-    console.error('Lỗi khi mở lại ticket:', err);
   }
+  return html;
 }
 
-// Polling kiểm tra trạng thái live (Typing + Đã xem + Tin nhắn mới) trên trang Profile
-let custLivePollTimer = null;
+function selectTicketStar(ticketId, score) {
+  const container = document.getElementById(`ratingStars-${ticketId}`);
+  const valInput = document.getElementById(`starRatingValue-${ticketId}`);
+  const labelEl = document.getElementById(`starRatingLabel-${ticketId}`);
+  if (!container || !valInput) return;
 
-function startCustomerTicketLiveSync() {
-  if (custLivePollTimer) clearInterval(custLivePollTimer);
+  valInput.value = score;
+  if (labelEl) labelEl.textContent = ticketStarLabels[score] || `${score}/5 sao`;
 
-  custLivePollTimer = setInterval(async () => {
-    const paneTickets = document.getElementById('paneTickets');
-    if (!paneTickets || paneTickets.style.display === 'none') return;
-    if (!currentTicketsList || currentTicketsList.length === 0) return;
+  container.querySelectorAll('.star-btn').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-star'), 10);
+    btn.classList.toggle('active', s <= score);
+    btn.classList.remove('hover');
+  });
+}
 
-    for (const t of currentTicketsList) {
-      const ticketId = t._id || t.id;
-      const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
-      if (!scrollEl) continue; // Chỉ kiểm tra ticket đang hiển thị
+function hoverTicketStar(ticketId, score) {
+  const container = document.getElementById(`ratingStars-${ticketId}`);
+  const labelEl = document.getElementById(`starRatingLabel-${ticketId}`);
+  if (!container) return;
 
-      try {
-        const res = await MoonlightAPI.getTicketLive(ticketId);
-        if (res && res.success && res.data) {
-          const liveData = res.data;
-          const liveTicket = liveData.ticket || liveData;
-          const adminTyping = liveData.typing?.admin;
+  if (labelEl) labelEl.textContent = ticketStarLabels[score] || `${score}/5 sao`;
 
-          // 1. Cập nhật typing indicator
-          const typingEl = document.getElementById(`custTypingIndicator-${ticketId}`);
-          const typingText = document.getElementById(`custTypingText-${ticketId}`);
-          if (typingEl && typingText) {
-            if (adminTyping && adminTyping.isTyping) {
-              typingText.innerText = `${adminTyping.name || 'CSKH MoonLight'} đang nhập tin nhắn...`;
-              typingEl.style.display = 'inline-flex';
-            } else {
-              typingEl.style.display = 'none';
-            }
-          }
+  container.querySelectorAll('.star-btn').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-star'), 10);
+    btn.classList.toggle('hover', s <= score);
+  });
+}
 
-          // 2. Kiểm tra nếu có tin nhắn mới từ CSKH
-          const currentCount = scrollEl.querySelectorAll('.cust-chat-msg-item').length;
-          const serverMsgs = liveTicket.messages || [];
-          if (serverMsgs.length > currentCount) {
-            // Có tin nhắn mới từ CSKH -> CHỈ cập nhật khung chat, KHÔNG re-render cả trang và KHÔNG đụng vào input!
-            const idx = currentTicketsList.findIndex(item => String(item._id || item.id) === String(ticketId));
-            if (idx !== -1) {
-              currentTicketsList[idx] = liveTicket;
-            }
-            renderCustomerChatThreadOnly(liveTicket);
-          } else {
-            // Cập nhật trạng thái 'Đã xem' cho các tin nhắn của khách nếu admin đã xem
-            const adminSeenTime = liveTicket.adminLastSeenAt ? new Date(liveTicket.adminLastSeenAt).getTime() : 0;
-            if (adminSeenTime > 0) {
-              const statusTags = scrollEl.querySelectorAll('.msg-status-tag');
-              statusTags.forEach(tag => {
-                if (!tag.innerHTML.includes('Đã xem') && !tag.innerHTML.includes('Lỗi')) {
-                  tag.outerHTML = renderCustomerMessageStatus('seen');
-                }
-              });
-            }
-          }
-        }
-      } catch (e) {
-        // Lỗi polling ngầm không làm gián đoạn người dùng
-      }
+function resetTicketStar(ticketId) {
+  const container = document.getElementById(`ratingStars-${ticketId}`);
+  const valInput = document.getElementById(`starRatingValue-${ticketId}`);
+  const labelEl = document.getElementById(`starRatingLabel-${ticketId}`);
+  if (!container || !valInput) return;
+
+  const currentScore = parseInt(valInput.value, 10) || 5;
+  if (labelEl) labelEl.textContent = ticketStarLabels[currentScore] || `${currentScore}/5 sao`;
+
+  container.querySelectorAll('.star-btn').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-star'), 10);
+    btn.classList.toggle('active', s <= currentScore);
+    btn.classList.remove('hover');
+  });
+}
+
+async function handleSubmitTicketRating(ticketId) {
+  const valInput = document.getElementById(`starRatingValue-${ticketId}`);
+  const commentInput = document.getElementById(`ratingComment-${ticketId}`);
+  const score = parseInt(valInput?.value, 10) || 5;
+  const comment = (commentInput?.value || '').trim();
+
+  try {
+    const res = await MoonlightAPI.rateMyTicket(ticketId, score, comment);
+    if (res && (res.success || res.data)) {
+      showToast({ title: 'Thành công', message: 'Cảm ơn quý khách đã gửi đánh giá dịch vụ hỗ trợ!', type: 'success' });
+      await loadCustomerTickets();
+    } else {
+      showToast({ title: 'Lỗi', message: res?.message || 'Không thể gửi đánh giá lúc này.', type: 'danger' });
     }
-  }, 2500);
+  } catch (err) {
+    console.error('Lỗi khi gửi đánh giá:', err);
+    showToast({ title: 'Lỗi', message: err.message || 'Lỗi kết nối khi gửi đánh giá.', type: 'danger' });
+  }
 }
 
 // Bắt đầu live polling khi tải xong
@@ -2143,7 +2198,6 @@ startCustomerTicketLiveSync();
 
 // Gán hàm vào window để gọi được từ inline onclick
 window.handleSendCustomerMessage = handleSendCustomerMessage;
-window.handleReopenCustomerTicket = handleReopenCustomerTicket;
 window.handleCloseCustomerTicket = handleCloseCustomerTicket;
 window.handleCustTicketTyping = handleCustTicketTyping;
 window.handleCustTextareaInput = handleCustTextareaInput;
@@ -2162,5 +2216,10 @@ window.handleCustomerChatScroll = handleCustomerChatScroll;
 window.showCustomConfirmModal = showCustomConfirmModal;
 window.showCustomPromptModal = showCustomPromptModal;
 window.closeCustConfirmModal = closeCustConfirmModal;
+window.selectTicketStar = selectTicketStar;
+window.hoverTicketStar = hoverTicketStar;
+window.resetTicketStar = resetTicketStar;
+window.handleSubmitTicketRating = handleSubmitTicketRating;
+window.renderStarScoreHtml = renderStarScoreHtml;
 
 

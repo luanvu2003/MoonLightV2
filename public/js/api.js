@@ -405,6 +405,13 @@ const MoonlightAPI = {
     });
   },
 
+  async rateMyTicket(id, score, comment = '') {
+    return this.request(`/tickets/${id}/rating`, {
+      method: 'POST',
+      body: JSON.stringify({ score, comment })
+    });
+  },
+
   async reopenMyTicket(id) {
     return this.request(`/tickets/${id}/reopen`, {
       method: 'PUT'
