@@ -7,6 +7,8 @@
 const API_BASE_URL = '/api/v1';
 
 const MoonlightAPI = {
+  BASE_URL: API_BASE_URL,
+
   // 1. Quản lý Token
   getToken() {
     return localStorage.getItem('moonlight_token') || '';
@@ -417,7 +419,8 @@ const MoonlightAPI = {
     return new Promise((resolve, reject) => {
       const token = this.getToken();
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${this.BASE_URL}/tickets/upload`);
+      xhr.withCredentials = true;
+      xhr.open('POST', `${API_BASE_URL}/tickets/upload`);
 
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
