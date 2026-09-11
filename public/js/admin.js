@@ -5107,6 +5107,8 @@ function handleRemoveAdminAttach() {
     admSelectedFile = null;
     const fileInput = document.getElementById('admTicketFile');
     if (fileInput) fileInput.value = '';
+    const imgInput = document.getElementById('admTicketImgFile');
+    if (imgInput) imgInput.value = '';
 
     const previewBox = document.getElementById('admAttachPreview');
     if (previewBox) previewBox.style.display = 'none';
@@ -5555,15 +5557,25 @@ async function handleAdminCloseTicketClick() {
 }
 
 async function handleAdminSubmitReply(event) {
-    event.preventDefault();
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
     const btn = document.getElementById('btnAdminSubmitReply');
-    const ticketId = document.getElementById('admModalTicketId')?.value;
+    const ticketId = document.getElementById('admModalTicketId')?.value || currentOpenAdminTicketId;
     const repEl = document.getElementById('admModalReplyMessage');
-    const replyMessage = repEl?.value?.trim();
+    const replyMessage = repEl?.value?.trim() || '';
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
     const file = admSelectedFile;
 
-    if (!replyMessage && !file) return;
+    if (!replyMessage && !file) {
+        showToast("Chưa nhập tin", "Vui lòng nhập tin nhắn hoặc chọn ảnh để gửi!", "warning");
+        return;
+    }
+
+    if (!ticketId) {
+        showToast("Lỗi", "Không tìm thấy mã phiếu hỗ trợ!", "error");
+        return;
+    }
 
     // Hủy typing ngay khi gửi
     if (adminTypingTimers[ticketId]) clearTimeout(adminTypingTimers[ticketId]);
@@ -5694,6 +5706,7 @@ async function handleAdminSubmitReply(event) {
             // Cập nhật lại giao diện bảng ngoài admin
             renderAdminTickets();
         } else {
+            showToast("Lỗi gửi tin", res?.message || 'Không thể gửi phản hồi cho khách hàng.', "error");
             const tempEl = document.getElementById(tempMsgId);
             if (tempEl) {
                 const statusDiv = tempEl.querySelector('.adm-msg-status');
@@ -5704,6 +5717,7 @@ async function handleAdminSubmitReply(event) {
         }
     } catch (err) {
         console.error('Lỗi khi gửi tin nhắn ticket:', err);
+        showToast("Lỗi gửi tin", err.message || 'Có lỗi xảy ra khi gửi tin nhắn phản hồi.', "error");
         const tempEl = document.getElementById(tempMsgId);
         if (tempEl) {
             const statusDiv = tempEl.querySelector('.adm-msg-status');

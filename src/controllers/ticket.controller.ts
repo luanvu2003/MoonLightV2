@@ -404,8 +404,8 @@ export const addTicketMessage = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(userRole);
-    const isOwner = ticket.userId.toString() === userId;
+    const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(userRole).toLowerCase());
+    const isOwner = ticket.userId && String(ticket.userId) === String(userId);
 
     if (!isOwner && !isAdminOrStaff) {
       sendError(res, 'Bạn không có quyền gửi tin nhắn trong yêu cầu này', 403, 'FORBIDDEN');
@@ -420,7 +420,7 @@ export const addTicketMessage = async (req: Request, res: Response): Promise<voi
     ensureTicketMessages(ticket);
 
     const senderRole: 'customer' | 'admin' | 'staff' = isAdminOrStaff
-      ? (userRole === 'Staff' ? 'staff' : 'admin')
+      ? (String(userRole).toLowerCase() === 'staff' ? 'staff' : 'admin')
       : 'customer';
 
     const senderName = isAdminOrStaff

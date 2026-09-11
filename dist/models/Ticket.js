@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 const TicketMessageSchema = new Schema({
-    senderId: { type: Schema.Types.ObjectId, ref: 'User' },
+    senderId: { type: Schema.Types.Mixed, ref: 'User' },
     senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
     senderName: { type: String, required: true, trim: true },
     message: { type: String, default: '', trim: true },

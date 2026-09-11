@@ -9,7 +9,7 @@ export interface ITicketAttachment {
 
 export interface ITicketMessage {
   _id?: mongoose.Types.ObjectId;
-  senderId?: mongoose.Types.ObjectId;
+  senderId?: any;
   senderRole: 'customer' | 'admin' | 'staff';
   senderName: string;
   message: string;
@@ -54,7 +54,7 @@ export interface ITicket extends Document {
 
 const TicketMessageSchema = new Schema<ITicketMessage>(
   {
-    senderId: { type: Schema.Types.ObjectId, ref: 'User' },
+    senderId: { type: Schema.Types.Mixed, ref: 'User' },
     senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
     senderName: { type: String, required: true, trim: true },
     message: { type: String, default: '', trim: true },

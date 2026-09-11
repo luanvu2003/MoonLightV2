@@ -57,7 +57,10 @@ export const requireRole = (...roles: (Role | string)[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRoleStr = String(req.user.role || '').toLowerCase();
+    const hasRole = roles.some(r => String(r).toLowerCase() === userRoleStr);
+
+    if (!hasRole) {
       sendError(
         res,
         `Quyền truy cập bị từ chối. Vai trò của bạn (${req.user.role}) không có quyền thực hiện thao tác này.`,

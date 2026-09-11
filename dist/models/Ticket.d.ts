@@ -7,7 +7,7 @@ export interface ITicketAttachment {
 }
 export interface ITicketMessage {
     _id?: mongoose.Types.ObjectId;
-    senderId?: mongoose.Types.ObjectId;
+    senderId?: any;
     senderRole: 'customer' | 'admin' | 'staff';
     senderName: string;
     message: string;

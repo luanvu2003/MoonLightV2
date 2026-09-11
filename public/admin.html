@@ -803,9 +803,16 @@
                         <form id="adminReplyTicketForm" onsubmit="handleAdminSubmitReply(event)" class="adm-chat-input-form">
                             <input type="hidden" id="admModalTicketId">
 
-                            <label class="adm-btn-attach" title="Đính kèm ảnh (< 5MB) hoặc video (< 500MB)">
-                                <i class="fas fa-paperclip"></i>
-                                <input type="file" id="admTicketFile" accept="image/*,video/*" style="display:none;" onchange="handleAdminFileSelect(event)">
+                            <!-- NÚT 1: THÊM ẢNH -->
+                            <label class="adm-btn-attach" title="Thêm hình ảnh (< 5MB)" style="cursor:pointer;">
+                                <i class="fas fa-image" style="color: #38bdf8;"></i>
+                                <input type="file" id="admTicketImgFile" accept="image/*" style="display:none;" onchange="handleAdminFileSelect(event)">
+                            </label>
+
+                            <!-- NÚT 2: ĐÍNH KÈM TỆP / VIDEO -->
+                            <label class="adm-btn-attach" title="Đính kèm tệp hoặc video (< 500MB)" style="cursor:pointer;">
+                                <i class="fas fa-paperclip" style="color: #f59e0b;"></i>
+                                <input type="file" id="admTicketFile" accept="video/*,image/*" style="display:none;" onchange="handleAdminFileSelect(event)">
                             </label>
 
                             <textarea id="admModalReplyMessage" class="adm-chat-textarea" rows="1" placeholder="Nhập tin nhắn phản hồi cho khách... (Enter gửi, Shift+Enter xuống dòng)"></textarea>
