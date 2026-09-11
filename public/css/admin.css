@@ -4708,22 +4708,318 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(255, 255, 255, 0.02));
 }
 
-/* Thẻ ca - Nhân sự */
+/* Thẻ ca - Header & Khung giờ */
 .shift-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 6px;
+    gap: 6px;
 }
 
-.shift-staff-info {
+.shift-card-top-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    overflow: hidden;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #ffffff;
 }
 
-.shift-staff-avatar {
+.shift-card-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    width: fit-content;
+}
+
+.shift-card.morning .shift-card-time { color: #fbbf24; }
+.shift-card.evening .shift-card-time { color: #c084fc; }
+.shift-card.full .shift-card-time { color: #34d399; }
+.shift-card.custom .shift-card-time { color: #38bdf8; }
+
+/* Huy hiệu chỉ tiêu số chỗ (Capacity Pill) */
+.shift-capacity-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.shift-capacity-pill.full {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.shift-capacity-pill.open {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+}
+
+.shift-capacity-pill.empty {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border: 1px dashed rgba(148, 163, 184, 0.3);
+}
+
+.shift-card-role {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 6px;
+}
+
+/* Danh sách nhân sự trong ca (Staff Roster) */
+.shift-staff-roster {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px 0;
+}
+
+.shift-roster-member {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.shift-roster-member:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.shift-roster-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary-indigo-dim);
+    color: var(--primary-indigo);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.shift-roster-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.shift-roster-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.shift-roster-role-tag {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.shift-roster-role-tag.Admin { color: var(--gold); background: rgba(212, 175, 55, 0.15); }
+.shift-roster-role-tag.Owner { color: #10b981; background: rgba(16, 185, 129, 0.15); }
+.shift-roster-role-tag.Staff { color: #60a5fa; background: rgba(96, 165, 250, 0.15); }
+
+.roster-remove-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    padding: 0 4px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.15s;
+}
+
+.roster-remove-btn:hover {
+    color: #f87171;
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+/* Slot trống chờ nhân viên đăng ký */
+.shift-roster-empty-slot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.shift-roster-empty-slot i {
+    font-size: 9.5px;
+    color: var(--gold);
+    opacity: 0.8;
+}
+
+/* Nút tự đăng ký ca của nhân viên (Quick Self-Register Button) */
+.btn-quick-register {
+    width: 100%;
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(212, 175, 55, 0.15));
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 6px;
+    color: #fbbf24;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-quick-register:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(212, 175, 55, 0.3));
+    border-color: #fbbf24;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Trạng thái đã đăng ký ca này */
+.shift-user-status {
+    width: 100%;
+    margin-top: 6px;
+    padding: 5px 8px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: #34d399;
+}
+
+.shift-user-status .status-text {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.shift-user-status .btn-cancel-reg {
+    background: transparent;
+    border: none;
+    color: #f87171;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 3px;
+    transition: all 0.15s;
+    text-decoration: underline;
+}
+
+.shift-user-status .btn-cancel-reg:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fff;
+    text-decoration: none;
+}
+
+.shift-full-notice {
+    width: 100%;
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.shift-card-note {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 6px;
+    border-radius: 5px;
+    margin-top: 5px;
+    font-style: italic;
+    line-height: 1.3;
+}
+
+/* Checklist nhân sự trong Modal Phân Ca */
+.shift-staff-checklist {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.staff-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.staff-checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.staff-checkbox-item.checked {
+    background: rgba(197, 160, 89, 0.12);
+    border-color: rgba(197, 160, 89, 0.4);
+}
+
+.staff-checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--gold);
+}
+
+.staff-checkbox-avatar {
     width: 26px;
     height: 26px;
     border-radius: 50%;
@@ -4738,53 +5034,28 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     flex-shrink: 0;
 }
 
-.shift-staff-avatar img {
+.staff-checkbox-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.shift-staff-name {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #ffffff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.shift-card-time {
+.staff-checkbox-details {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11.5px;
+    justify-content: space-between;
+}
+
+.staff-checkbox-name {
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 4px;
+    color: #fff;
 }
 
-.shift-card.morning .shift-card-time { color: #fbbf24; }
-.shift-card.evening .shift-card-time { color: #c084fc; }
-.shift-card.full .shift-card-time { color: #34d399; }
-.shift-card.custom .shift-card-time { color: #38bdf8; }
-
-.shift-card-role {
+.staff-checkbox-sub {
     font-size: 11px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 4px;
-}
-
-.shift-card-note {
-    font-size: 10.5px;
     color: var(--text-muted);
-    background: rgba(0, 0, 0, 0.2);
-    padding: 4px 6px;
-    border-radius: 5px;
-    margin-top: 4px;
-    font-style: italic;
-    line-height: 1.3;
 }
 
 /* Actions footer của thẻ ca */
@@ -4827,7 +5098,7 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     border: none;
     color: var(--text-muted);
     font-size: 11px;
-    padding: 2px 4px;
+    padding: 2px 5px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s;

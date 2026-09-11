@@ -6046,6 +6046,15 @@ window.handleAdminCloseTicketClick = handleAdminCloseTicketClick;
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---
 
+function getCurrentStaffAccount() {
+    const user = JSON.parse(localStorage.getItem('moonlight_user')) || { username: 'admin', role: 'Admin' };
+    let acc = accounts.find(a => a.username === user.username || a.id === user.id);
+    if (!acc) {
+        acc = accounts.find(a => a.name === user.name) || accounts[0] || { id: 1, name: 'Quản Trị Viên', role: 'Admin' };
+    }
+    return acc;
+}
+
 function initDefaultSchedulesIfEmpty() {
     if (!moonlightSchedules || !Array.isArray(moonlightSchedules) || moonlightSchedules.length === 0) {
         const now = new Date();
@@ -6065,25 +6074,83 @@ function initDefaultSchedulesIfEmpty() {
             days.push(`${yyyy}-${mm}-${dd}`);
         }
 
-        // Tạo dữ liệu mẫu phân ca cho tuần này
+        // Tạo dữ liệu mẫu phân ca cho tuần này (mỗi ca hỗ trợ 2-3 người và có slot mở)
         moonlightSchedules = [
-            { id: 'shift_init_1', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[0], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Mở két POS, chuẩn bị tiền lẻ showroom', status: 'completed' },
-            { id: 'shift_init_2', staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[0], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Chốt ca và đối soát doanh thu', status: 'completed' },
-            { id: 'shift_init_3', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[1], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Kiểm tra đơn hàng chờ giao', status: 'completed' },
-            { id: 'shift_init_4', staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[1], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Tiếp đón khách hẹn thử đồ VIP', status: 'completed' },
-            { id: 'shift_init_5', staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[2], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Kiểm Kho & Đóng Gói Đơn Online', note: 'Kiểm kê đợt hàng mới về showroom', status: 'active' },
-            { id: 'shift_init_6', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[2], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Trực quầy thu ngân tối', status: 'scheduled' },
-            { id: 'shift_init_7', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[3], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Trực ca sáng chuẩn bị showroom', status: 'scheduled' },
-            { id: 'shift_init_8', staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[3], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Giám sát bán hàng ca tối', status: 'scheduled' },
-            { id: 'shift_init_9', staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[4], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Set up trưng bày mẫu mới cuối tuần', status: 'scheduled' },
-            { id: 'shift_init_10', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[4], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Ca tối cuối tuần', status: 'scheduled' },
-            { id: 'shift_init_11', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[5], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Khách cuối tuần đông, chuẩn bị bao bì', status: 'scheduled' },
-            { id: 'shift_init_12', staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[5], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Điều phối ca cao điểm tối thứ 7', status: 'scheduled' },
-            { id: 'shift_init_13', staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[5], shiftType: 'full', shiftName: 'Cả Ngày', shiftTime: '08:00 - 22:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Tư vấn trực tiếp cho khách VIP', status: 'scheduled' },
-            { id: 'shift_init_14', staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[6], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Kiểm kê bàn giao ca sáng CN', status: 'scheduled' },
-            { id: 'shift_init_15', staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[6], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Tổng kết doanh thu tuần & chốt két', status: 'scheduled' }
+            { id: 'shift_init_1', staffIds: [3, 1], maxStaff: 3, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[0], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Mở két POS, chuẩn bị tiền lẻ showroom', status: 'completed' },
+            { id: 'shift_init_2', staffIds: [1, 2], maxStaff: 2, allowSelfRegister: true, staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[0], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Chốt ca và đối soát doanh thu', status: 'completed' },
+            { id: 'shift_init_3', staffIds: [3], maxStaff: 3, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[1], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Kiểm tra đơn hàng chờ giao', status: 'completed' },
+            { id: 'shift_init_4', staffIds: [2, 1], maxStaff: 3, allowSelfRegister: true, staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[1], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Tiếp đón khách hẹn thử đồ VIP', status: 'completed' },
+            { id: 'shift_init_5', staffIds: [1, 3], maxStaff: 3, allowSelfRegister: true, staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[2], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Kiểm Kho & Đóng Gói Đơn Online', note: 'Kiểm kê đợt hàng mới về showroom', status: 'active' },
+            { id: 'shift_init_6', staffIds: [3], maxStaff: 2, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[2], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Trực quầy thu ngân tối', status: 'scheduled' },
+            { id: 'shift_init_7', staffIds: [3, 2], maxStaff: 3, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[3], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Trực ca sáng chuẩn bị showroom', status: 'scheduled' },
+            { id: 'shift_init_8', staffIds: [1], maxStaff: 2, allowSelfRegister: true, staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[3], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Giám sát bán hàng ca tối', status: 'scheduled' },
+            { id: 'shift_init_9', staffIds: [2, 3], maxStaff: 3, allowSelfRegister: true, staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[4], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Set up trưng bày mẫu mới cuối tuần', status: 'scheduled' },
+            { id: 'shift_init_10', staffIds: [3], maxStaff: 2, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[4], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Ca tối cuối tuần', status: 'scheduled' },
+            { id: 'shift_init_11', staffIds: [3, 1, 2], maxStaff: 3, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[5], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Khách cuối tuần đông, chuẩn bị bao bì', status: 'scheduled' },
+            { id: 'shift_init_12', staffIds: [1, 3], maxStaff: 3, allowSelfRegister: true, staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[5], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Điều phối ca cao điểm tối thứ 7', status: 'scheduled' },
+            { id: 'shift_init_13', staffIds: [2], maxStaff: 2, allowSelfRegister: true, staffId: 2, staffName: 'Chủ Cửa Hàng', role: 'Owner', date: days[5], shiftType: 'full', shiftName: 'Cả Ngày', shiftTime: '08:00 - 22:00', roleTitle: 'Tư Vấn Thời Trang & VIP', note: 'Tư vấn trực tiếp cho khách VIP', status: 'scheduled' },
+            { id: 'shift_init_14', staffIds: [1, 2], maxStaff: 3, allowSelfRegister: true, staffId: 1, staffName: 'Quản Trị Viên', role: 'Admin', date: days[6], shiftType: 'morning', shiftName: 'Ca Sáng', shiftTime: '08:00 - 15:00', roleTitle: 'Quản Lý Showroom & Giám Sát', note: 'Kiểm kê bàn giao ca sáng CN', status: 'scheduled' },
+            { id: 'shift_init_15', staffIds: [3], maxStaff: 2, allowSelfRegister: true, staffId: 3, staffName: 'Thu Ngân 01', role: 'Staff', date: days[6], shiftType: 'evening', shiftName: 'Ca Tối', shiftTime: '15:00 - 22:00', roleTitle: 'Thu Ngân POS & Quầy', note: 'Tổng kết doanh thu tuần & chốt két', status: 'scheduled' }
         ];
 
+        localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
+    }
+}
+
+function ensureSchedulesFormat() {
+    if (!moonlightSchedules || !Array.isArray(moonlightSchedules) || moonlightSchedules.length === 0) {
+        initDefaultSchedulesIfEmpty();
+        return;
+    }
+    let updated = false;
+    moonlightSchedules.forEach(s => {
+        if (!Array.isArray(s.staffIds)) {
+            s.staffIds = s.staffId ? [Number(s.staffId)] : [];
+            updated = true;
+        } else {
+            // Đảm bảo dạng số
+            s.staffIds = s.staffIds.map(Number);
+        }
+        if (!s.maxStaff) {
+            s.maxStaff = Math.max(3, s.staffIds.length);
+            updated = true;
+        }
+        if (s.allowSelfRegister === undefined) {
+            s.allowSelfRegister = true;
+            updated = true;
+        }
+    });
+
+    // Nếu dữ liệu cũ trong máy người dùng chỉ có 1 người/ca, làm giàu thêm 2-3 người vào một số ca
+    const hasMultiple = moonlightSchedules.some(s => s.staffIds && s.staffIds.length > 1);
+    if (!hasMultiple && moonlightSchedules.length >= 5) {
+        if (moonlightSchedules[0] && !moonlightSchedules[0].staffIds.includes(1)) {
+            moonlightSchedules[0].staffIds.push(1);
+            updated = true;
+        }
+        if (moonlightSchedules[1] && !moonlightSchedules[1].staffIds.includes(2)) {
+            moonlightSchedules[1].staffIds.push(2);
+            updated = true;
+        }
+        if (moonlightSchedules[4] && !moonlightSchedules[4].staffIds.includes(3)) {
+            moonlightSchedules[4].staffIds.push(3);
+            updated = true;
+        }
+        if (moonlightSchedules[8] && !moonlightSchedules[8].staffIds.includes(3)) {
+            moonlightSchedules[8].staffIds.push(3);
+            updated = true;
+        }
+        if (moonlightSchedules[10]) {
+            [1, 2].forEach(id => {
+                if (!moonlightSchedules[10].staffIds.includes(id)) {
+                    moonlightSchedules[10].staffIds.push(id);
+                    updated = true;
+                }
+            });
+        }
+    }
+
+    if (updated) {
         localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
     }
 }
@@ -6150,7 +6217,7 @@ function renderAdminStaff() {
     const container = document.getElementById('adminContent');
     if (!container) return;
 
-    initDefaultSchedulesIfEmpty();
+    ensureSchedulesFormat();
 
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { username: 'admin' };
     const isStaffRole = (loggedUser.role || 'Staff') === 'Staff';
@@ -6206,8 +6273,11 @@ function renderAdminStaff() {
                         <i class="far fa-calendar-plus"></i> PHÂN CA MỚI
                     </button>
                 ` : `
+                    <button class="btn-primary" onclick="openShiftModal()" style="font-size:12px; padding:7px 14px;">
+                        <i class="fas fa-calendar-plus"></i> ĐĂNG KÝ CA TRỰC MỚI
+                    </button>
                     <span class="adm-badge" style="background:rgba(96,165,250,0.15); color:#60a5fa; font-size:12px; padding:6px 12px;">
-                        <i class="fas fa-eye"></i> Chế độ xem lịch trực cá nhân
+                        <i class="fas fa-id-badge"></i> Chế độ nhân viên
                     </span>
                 `}
             </div>
@@ -6314,8 +6384,179 @@ function goToStaffPage(page) {
     if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function selectAllShiftStaff(selectAll) {
+    const checkboxes = document.querySelectorAll('#shiftStaffChecklist input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        const parent = cb.closest('.staff-checkbox-item');
+        if (parent) {
+            if (selectAll) parent.classList.add('checked');
+            else parent.classList.remove('checked');
+        }
+    });
+    updateShiftSlotNotice();
+}
+
+function updateShiftSlotNotice() {
+    const checkedCount = document.querySelectorAll('#shiftStaffChecklist input[type="checkbox"]:checked').length;
+    const countEl = document.getElementById('shiftStaffCountNum');
+    if (countEl) countEl.innerText = checkedCount;
+
+    const maxInput = document.getElementById('shiftMaxStaffInput');
+    const maxVal = parseInt(maxInput?.value, 10) || 3;
+    const noticeEl = document.getElementById('shiftSlotRemainingNotice');
+    if (noticeEl) {
+        const remaining = maxVal - checkedCount;
+        if (remaining > 0) {
+            noticeEl.innerHTML = `<i class="fas fa-info-circle"></i> Còn trống ${remaining} chỗ cho nhân viên tự đăng ký`;
+            noticeEl.style.color = '#fbbf24';
+        } else if (remaining === 0) {
+            noticeEl.innerHTML = `<i class="fas fa-check-circle"></i> Đã đủ chỉ tiêu ${maxVal}/${maxVal} nhân sự`;
+            noticeEl.style.color = '#34d399';
+        } else {
+            noticeEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Đang chọn ${checkedCount}/${maxVal} (Vượt quá chỉ tiêu ${Math.abs(remaining)})`;
+            noticeEl.style.color = '#f87171';
+        }
+    }
+}
+
+function handleStaffCheckboxChange(cb) {
+    const parent = cb.closest('.staff-checkbox-item');
+    if (parent) {
+        if (cb.checked) parent.classList.add('checked');
+        else parent.classList.remove('checked');
+    }
+    updateShiftSlotNotice();
+}
+
+function toggleStaffCheckbox(event, accId) {
+    if (event.target.tagName === 'INPUT') return;
+    const cb = document.querySelector(`#shiftStaffChecklist input[value="${accId}"]`);
+    if (cb) {
+        cb.checked = !cb.checked;
+        handleStaffCheckboxChange(cb);
+    }
+}
+
+function registerForShift(shiftId) {
+    const acc = getCurrentStaffAccount();
+    if (!acc) {
+        showToast("Lỗi", "Không xác định được tài khoản nhân sự hiện tại!", "error");
+        return;
+    }
+
+    const shift = (moonlightSchedules || []).find(s => s.id === shiftId);
+    if (!shift) {
+        showToast("Lỗi", "Không tìm thấy thông tin ca trực này!", "error");
+        return;
+    }
+
+    const staffIds = shift.staffIds ? shift.staffIds.map(Number) : (shift.staffId ? [Number(shift.staffId)] : []);
+    const maxStaff = shift.maxStaff || 3;
+
+    // Kiểm tra đã đăng ký chưa
+    if (staffIds.includes(acc.id)) {
+        showToast("Thông báo", "Bạn đã đăng ký trong ca trực này rồi!", "info");
+        return;
+    }
+
+    // Kiểm tra số lượng chỗ
+    if (staffIds.length >= maxStaff) {
+        showToast("Ca đã đủ người", `Ca này đã đủ chỉ tiêu ${maxStaff}/${maxStaff} nhân sự!`, "warning");
+        return;
+    }
+
+    // Kiểm tra trùng ca cùng loại trong ngày
+    const duplicateShift = (moonlightSchedules || []).find(s => 
+        s.id !== shiftId && 
+        s.date === shift.date && 
+        s.shiftType === shift.shiftType &&
+        (s.staffIds || [s.staffId]).map(Number).includes(acc.id)
+    );
+
+    if (duplicateShift) {
+        showToast("Lưu ý", `Bạn đã có lịch ${duplicateShift.shiftName} trong ngày ${shift.date} rồi!`, "warning");
+        return;
+    }
+
+    staffIds.push(acc.id);
+    shift.staffIds = staffIds;
+    if (!shift.staffId) {
+        shift.staffId = acc.id;
+        shift.staffName = acc.name;
+        shift.staffAvatar = acc.avatar;
+    }
+
+    localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
+    logActivity("Đăng ký ca trực", `[${acc.name}] đã đăng ký tham gia ${shift.shiftName} ngày ${shift.date}`);
+    showToast("Đăng ký thành công! 🎉", `Bạn đã đăng ký tham gia ${shift.shiftName} (${shift.shiftTime}) ngày ${shift.date}.`, "success");
+    renderAdminStaff();
+}
+
+function cancelShiftRegistration(shiftId) {
+    const acc = getCurrentStaffAccount();
+    const shift = (moonlightSchedules || []).find(s => s.id === shiftId);
+    if (!shift) return;
+
+    showConfirmDialog({
+        title: "Hủy Đăng Ký Ca Trực",
+        message: `Bạn có muốn hủy đăng ký tham gia ca "${shift.shiftName}" (${shift.shiftTime}) ngày ${shift.date} không? Vị trí này sẽ được mở lại cho đồng nghiệp khác.`,
+        icon: "fa-calendar-xmark",
+        isDanger: true,
+        confirmText: "HỦY ĐĂNG KÝ",
+        cancelText: "GIỮ NGUYÊN",
+        onConfirm: () => {
+            shift.staffIds = (shift.staffIds || []).map(Number).filter(id => id !== acc.id);
+            if (shift.staffId === acc.id) {
+                shift.staffId = shift.staffIds[0] || null;
+                const nextAcc = accounts.find(a => a.id === shift.staffId);
+                shift.staffName = nextAcc ? nextAcc.name : '';
+                shift.staffAvatar = nextAcc ? nextAcc.avatar : '';
+            }
+            localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
+            logActivity("Hủy đăng ký ca", `[${acc.name}] đã hủy đăng ký ${shift.shiftName} ngày ${shift.date}`);
+            showToast("Đã hủy ca", `Bạn đã rút khỏi ${shift.shiftName} ngày ${shift.date}`, "info");
+            renderAdminStaff();
+        }
+    });
+}
+
+function removeStaffFromShift(shiftId, staffId) {
+    const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { role: 'Staff' };
+    if (loggedUser.role === 'Staff') {
+        showToast("Từ chối quyền", "Bạn không có quyền gỡ nhân sự khác khỏi ca!", "error");
+        return;
+    }
+
+    const shift = (moonlightSchedules || []).find(s => s.id === shiftId);
+    if (!shift) return;
+    const targetAcc = accounts.find(a => a.id === staffId) || { name: 'Nhân viên' };
+
+    showConfirmDialog({
+        title: "Gỡ Nhân Sự Khỏi Ca",
+        message: `Bạn có chắc muốn gỡ "${targetAcc.name}" khỏi ca ${shift.shiftName} ngày ${shift.date}?`,
+        icon: "fa-user-minus",
+        isDanger: true,
+        confirmText: "GỠ KHỎI CA",
+        onConfirm: () => {
+            shift.staffIds = (shift.staffIds || []).map(Number).filter(id => id !== staffId);
+            if (shift.staffId === staffId) {
+                shift.staffId = shift.staffIds[0] || null;
+                const nextAcc = accounts.find(a => a.id === shift.staffId);
+                shift.staffName = nextAcc ? nextAcc.name : '';
+                shift.staffAvatar = nextAcc ? nextAcc.avatar : '';
+            }
+            localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
+            logActivity("Gỡ nhân sự ca trực", `Quản lý đã gỡ [${targetAcc.name}] khỏi ${shift.shiftName} ngày ${shift.date}`);
+            showToast("Đã gỡ nhân sự", `Đã gỡ "${targetAcc.name}" khỏi ca trực`, "info");
+            renderAdminStaff();
+        }
+    });
+}
+
 function renderStaffScheduleHTML(days) {
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { role: 'Staff' };
+    const currentAcc = getCurrentStaffAccount();
     const isStaffRole = loggedUser.role === 'Staff';
     const canManageSchedule = !isStaffRole;
 
@@ -6326,7 +6567,8 @@ function renderStaffScheduleHTML(days) {
     const allWeekShifts = (moonlightSchedules || []).filter(s => s.date >= weekStartStr && s.date <= weekEndStr);
     const filteredWeekShifts = allWeekShifts.filter(s => {
         const matchesShift = scheduleShiftFilter === 'all' || s.shiftType === scheduleShiftFilter;
-        const matchesStaff = scheduleStaffFilter === 'all' || String(s.staffId) === String(scheduleStaffFilter);
+        const staffIds = (s.staffIds && s.staffIds.length > 0) ? s.staffIds.map(Number) : (s.staffId ? [Number(s.staffId)] : []);
+        const matchesStaff = scheduleStaffFilter === 'all' || staffIds.map(String).includes(String(scheduleStaffFilter));
         return matchesShift && matchesStaff;
     });
 
@@ -6334,7 +6576,20 @@ function renderStaffScheduleHTML(days) {
     const totalShifts = allWeekShifts.length;
     const morningCount = allWeekShifts.filter(s => s.shiftType === 'morning').length;
     const eveningCount = allWeekShifts.filter(s => s.shiftType === 'evening').length;
-    const staffParticipatingCount = new Set(allWeekShifts.map(s => s.staffId)).size;
+
+    const participatingStaffSet = new Set();
+    allWeekShifts.forEach(s => {
+        const ids = s.staffIds || (s.staffId ? [s.staffId] : []);
+        ids.forEach(id => { if (id) participatingStaffSet.add(String(id)); });
+    });
+    const staffParticipatingCount = participatingStaffSet.size;
+
+    // Tổng số chỗ còn trống trong tuần để đăng ký
+    const totalWeekOpenSlots = allWeekShifts.reduce((acc, s) => {
+        const count = (s.staffIds || (s.staffId ? [s.staffId] : [])).length;
+        const max = s.maxStaff || 3;
+        return acc + Math.max(0, max - count);
+    }, 0);
 
     return `
         <!-- 4 THẺ KPI TỔNG QUAN LỊCH TRỰC TUẦN -->
@@ -6376,7 +6631,7 @@ function renderStaffScheduleHTML(days) {
                 <div class="schedule-kpi-info">
                     <span class="schedule-kpi-label">Nhân Sự Trực Ca</span>
                     <span class="schedule-kpi-val" style="color:#34d399;">${staffParticipatingCount}/${accounts.length}</span>
-                    <span class="schedule-kpi-sub">Nhân viên tham gia tuần này</span>
+                    <span class="schedule-kpi-sub">${totalWeekOpenSlots > 0 ? `Còn <strong>${totalWeekOpenSlots}</strong> chỗ trống để đăng ký` : 'Đã phân bổ đủ nhân sự'}</span>
                 </div>
                 <div class="schedule-kpi-icon emerald">
                     <i class="fas fa-users"></i>
@@ -6425,11 +6680,15 @@ function renderStaffScheduleHTML(days) {
         <div class="schedule-week-grid">
             ${days.map(day => {
                 const dayShifts = filteredWeekShifts.filter(s => s.date === day.dateStr);
-                // Sắp xếp ca sáng trước, ca tối sau
                 dayShifts.sort((a, b) => {
                     const order = { morning: 1, full: 2, custom: 3, evening: 4 };
                     return (order[a.shiftType] || 5) - (order[b.shiftType] || 5);
                 });
+
+                // Tính tổng nhân sự và chỗ trống trong ngày
+                const dayTotalStaff = dayShifts.reduce((acc, s) => acc + ((s.staffIds && s.staffIds.length > 0) ? s.staffIds.length : (s.staffId ? 1 : 0)), 0);
+                const dayTotalCapacity = dayShifts.reduce((acc, s) => acc + (s.maxStaff || 3), 0);
+                const dayOpenSlots = Math.max(0, dayTotalCapacity - dayTotalStaff);
 
                 return `
                     <div class="schedule-day-col ${day.isToday ? 'is-today' : ''}">
@@ -6441,38 +6700,53 @@ function renderStaffScheduleHTML(days) {
                             </div>
                             <div class="schedule-day-date">${day.displayDate}</div>
                             <div class="schedule-day-meta">
-                                <span><i class="far fa-clock"></i> ${dayShifts.length} ca trực</span>
-                                <span>${dayShifts.length > 0 ? '🟢 Đã phân' : '⚪ Trống'}</span>
+                                <span><i class="far fa-clock"></i> ${dayShifts.length} ca</span>
+                                <span><i class="fas fa-users"></i> ${dayTotalStaff}/${dayTotalCapacity} người</span>
+                            </div>
+                            <div style="font-size: 10.5px; font-weight: 600; margin-top: 2px;">
+                                ${dayOpenSlots > 0 ? `<span style="color:#fbbf24;">🟡 Còn ${dayOpenSlots} chỗ trống</span>` : (dayShifts.length > 0 ? `<span style="color:#34d399;">🟢 Đủ nhân sự</span>` : `<span style="color:#94a3b8;">⚪ Chưa xếp ca</span>`)}
                             </div>
                         </div>
 
-                        <!-- Danh Sách Ca Trực -->
+                        <!-- Danh Sách Ca Trực Trong Ngày -->
                         <div class="schedule-shifts-list">
                             ${dayShifts.length === 0 ? `
                                 <div class="schedule-shifts-empty">
                                     <i class="far fa-calendar-xmark"></i>
-                                    <span>Chưa xếp ca</span>
+                                    <span>Chưa mở ca</span>
                                 </div>
                             ` : dayShifts.map(shift => {
-                                const acc = accounts.find(a => String(a.id) === String(shift.staffId)) || {};
-                                const avatar = acc.avatar || shift.staffAvatar;
-                                const staffName = acc.name || shift.staffName;
+                                const staffIds = (shift.staffIds && shift.staffIds.length > 0) ? shift.staffIds.map(Number) : (shift.staffId ? [Number(shift.staffId)] : []);
+                                const maxStaff = shift.maxStaff || 3;
+                                const assignedCount = staffIds.length;
+                                const isFull = assignedCount >= maxStaff;
+                                const isCurrentUserInShift = currentAcc && staffIds.includes(currentAcc.id);
+                                const allowSelfReg = shift.allowSelfRegister !== false;
+                                const emptySlotsCount = Math.max(0, maxStaff - assignedCount);
 
                                 let statusLabel = 'Đã lên lịch';
                                 if (shift.status === 'active') statusLabel = '🟢 Đang trực';
                                 else if (shift.status === 'completed') statusLabel = '✅ Hoàn thành';
                                 else if (shift.status === 'off') statusLabel = '⛔ Nghỉ phép';
 
+                                // Huy hiệu chỉ tiêu số chỗ
+                                let capacityBadge = '';
+                                if (isFull) {
+                                    capacityBadge = `<span class="shift-capacity-pill full" title="Đã đủ ${assignedCount}/${maxStaff} nhân sự"><i class="fas fa-check-circle"></i> Đủ ${assignedCount}/${maxStaff}</span>`;
+                                } else if (assignedCount > 0) {
+                                    capacityBadge = `<span class="shift-capacity-pill open" title="Còn ${emptySlotsCount} chỗ trống"><i class="fas fa-user-plus"></i> Còn ${emptySlotsCount}/${maxStaff} chỗ</span>`;
+                                } else {
+                                    capacityBadge = `<span class="shift-capacity-pill empty" title="Chưa có ai nhận ca"><i class="far fa-circle"></i> Trống 0/${maxStaff}</span>`;
+                                }
+
                                 return `
                                     <div class="shift-card ${shift.shiftType || 'morning'}">
-                                        <!-- Header thẻ ca -->
+                                        <!-- Header thẻ ca & Trạng thái chỗ -->
                                         <div class="shift-card-header">
-                                            <div class="shift-staff-info">
-                                                <div class="shift-staff-avatar">
-                                                    ${avatar ? `<img src="${avatar}" alt="${staffName}">` : staffName.charAt(0).toUpperCase()}
-                                                </div>
-                                                <span class="shift-staff-name" title="${staffName}">${staffName}</span>
+                                            <div class="shift-card-top-title">
+                                                <span>${shift.shiftName || 'Ca Trực'}</span>
                                             </div>
+                                            ${capacityBadge}
                                         </div>
 
                                         <!-- Giờ ca trực -->
@@ -6487,8 +6761,53 @@ function renderStaffScheduleHTML(days) {
                                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${shift.roleTitle || 'Thu Ngân POS'}</span>
                                         </div>
 
+                                        <!-- Danh Sách Nhân Viên Tham Gia Ca (Roster) -->
+                                        <div class="shift-staff-roster">
+                                            ${staffIds.map(stId => {
+                                                const acc = accounts.find(a => a.id === stId) || { name: 'Nhân viên #' + stId, role: 'Staff' };
+                                                return `
+                                                    <div class="shift-roster-member">
+                                                        <div class="shift-roster-avatar">
+                                                            ${acc.avatar ? `<img src="${acc.avatar}" alt="${acc.name}">` : acc.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <span class="shift-roster-name" title="${acc.name}">${acc.name}</span>
+                                                        <span class="shift-roster-role-tag ${acc.role}">${acc.role}</span>
+                                                        ${canManageSchedule ? `
+                                                            <button type="button" class="roster-remove-btn" onclick="removeStaffFromShift('${shift.id}', ${acc.id})" title="Gỡ ${acc.name} khỏi ca">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                `;
+                                            }).join('')}
+
+                                            <!-- Các vị trí còn trống -->
+                                            ${Array.from({ length: emptySlotsCount }).map((_, sIdx) => `
+                                                <div class="shift-roster-empty-slot">
+                                                    <i class="fas fa-user-plus"></i>
+                                                    <span>Chỗ trống #${assignedCount + sIdx + 1}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+
                                         <!-- Ghi chú nếu có -->
                                         ${shift.note ? `<div class="shift-card-note">${shift.note}</div>` : ''}
+
+                                        <!-- Nút Đăng Ký Ca / Trạng Thái Cá Nhân -->
+                                        ${isCurrentUserInShift ? `
+                                            <div class="shift-user-status">
+                                                <span class="status-text"><i class="fas fa-check-circle"></i> Bạn đang trực ca này</span>
+                                                <button type="button" class="btn-cancel-reg" onclick="cancelShiftRegistration('${shift.id}')">Hủy ca</button>
+                                            </div>
+                                        ` : (!isFull && allowSelfReg) ? `
+                                            <button type="button" class="btn-quick-register" onclick="registerForShift('${shift.id}')" title="Nhấp để đăng ký tham gia ca này">
+                                                <i class="fas fa-user-plus"></i> ĐĂNG KÝ CA NÀY
+                                            </button>
+                                        ` : isFull ? `
+                                            <div class="shift-full-notice">
+                                                <i class="fas fa-lock"></i> Ca đã đủ nhân sự
+                                            </div>
+                                        ` : ''}
 
                                         <!-- Footer thẻ ca -->
                                         <div class="shift-card-footer">
@@ -6512,13 +6831,11 @@ function renderStaffScheduleHTML(days) {
                         </div>
 
                         <!-- Footer thêm ca nhanh cho ngày -->
-                        ${canManageSchedule ? `
-                            <div class="schedule-day-footer">
-                                <button class="btn-add-day-shift" onclick="openShiftModal('${day.dateStr}')" title="Thêm ca trực cho ${day.name}">
-                                    <i class="fas fa-plus"></i> Thêm ca
-                                </button>
-                            </div>
-                        ` : ''}
+                        <div class="schedule-day-footer">
+                            <button class="btn-add-day-shift" onclick="openShiftModal('${day.dateStr}')" title="${canManageSchedule ? 'Thêm ca trực mới' : 'Đăng ký ca mới'} cho ${day.name}">
+                                <i class="fas fa-plus"></i> ${canManageSchedule ? 'Thêm ca' : 'Đăng ký ca'}
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('')}
@@ -6558,18 +6875,10 @@ function handleShiftTypeChange() {
 
 function openShiftModal(dateStr = '', shiftId = '') {
     const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { role: 'Staff' };
-    if (loggedUser.role === 'Staff') {
-        showToast("Từ chối quyền", "Nhân viên thu ngân không có quyền phân ca hoặc chỉnh sửa lịch trực!", "error");
-        return;
-    }
+    const currentAcc = getCurrentStaffAccount();
+    const isStaff = loggedUser.role === 'Staff';
 
-    const staffSelect = document.getElementById('shiftStaffSelect');
-    if (staffSelect) {
-        staffSelect.innerHTML = accounts.map(acc => `
-            <option value="${acc.id}">${acc.name} (${acc.role}) - @${acc.username}</option>
-        `).join('');
-    }
-
+    const checklistContainer = document.getElementById('shiftStaffChecklist');
     const editIdInput = document.getElementById('shiftEditId');
     const modalTitle = document.getElementById('shiftModalTitle');
     const dateInput = document.getElementById('shiftDateInput');
@@ -6577,18 +6886,24 @@ function openShiftModal(dateStr = '', shiftId = '') {
     const roleSelect = document.getElementById('shiftRoleSelect');
     const statusSelect = document.getElementById('shiftStatusSelect');
     const noteInput = document.getElementById('shiftNoteInput');
+    const maxStaffInput = document.getElementById('shiftMaxStaffInput');
+    const allowRegisterSelect = document.getElementById('shiftAllowRegisterSelect');
+
+    let selectedStaffIds = [];
 
     if (shiftId) {
         const shift = (moonlightSchedules || []).find(s => s.id === shiftId);
         if (shift) {
             if (editIdInput) editIdInput.value = shift.id;
             if (modalTitle) modalTitle.innerHTML = `<i class="fas fa-calendar-check" style="color:var(--gold);"></i> CHỈNH SỬA CA TRỰC NHÂN VIÊN`;
-            if (staffSelect) staffSelect.value = shift.staffId;
+            selectedStaffIds = (shift.staffIds && shift.staffIds.length > 0) ? shift.staffIds.map(Number) : (shift.staffId ? [Number(shift.staffId)] : []);
             if (dateInput) dateInput.value = shift.date;
             if (typeSelect) typeSelect.value = shift.shiftType || 'morning';
             if (roleSelect) roleSelect.value = shift.roleTitle || 'Thu Ngân POS & Quầy';
             if (statusSelect) statusSelect.value = shift.status || 'scheduled';
             if (noteInput) noteInput.value = shift.note || '';
+            if (maxStaffInput) maxStaffInput.value = shift.maxStaff || 3;
+            if (allowRegisterSelect) allowRegisterSelect.value = shift.allowSelfRegister === false ? 'no' : 'yes';
 
             if (shift.shiftType === 'custom' && shift.shiftTime) {
                 const parts = shift.shiftTime.split('-');
@@ -6602,7 +6917,7 @@ function openShiftModal(dateStr = '', shiftId = '') {
         }
     } else {
         if (editIdInput) editIdInput.value = '';
-        if (modalTitle) modalTitle.innerHTML = `<i class="far fa-calendar-plus" style="color:var(--gold);"></i> PHÂN CÔNG CA TRỰC NHÂN VIÊN`;
+        if (modalTitle) modalTitle.innerHTML = `<i class="far fa-calendar-plus" style="color:var(--gold);"></i> ${isStaff ? 'ĐĂNG KÝ CA TRỰC MỚI' : 'PHÂN CÔNG CA TRỰC NHÂN VIÊN'}`;
         if (dateInput) {
             const todayStr = new Date().toISOString().split('T')[0];
             dateInput.value = dateStr || todayStr;
@@ -6611,9 +6926,39 @@ function openShiftModal(dateStr = '', shiftId = '') {
         if (roleSelect) roleSelect.value = 'Thu Ngân POS & Quầy';
         if (statusSelect) statusSelect.value = 'scheduled';
         if (noteInput) noteInput.value = '';
+        if (maxStaffInput) maxStaffInput.value = 3;
+        if (allowRegisterSelect) allowRegisterSelect.value = 'yes';
+
+        // Nếu là nhân viên mở form, tự động tích chọn chính mình
+        if (isStaff && currentAcc) {
+            selectedStaffIds = [currentAcc.id];
+        }
+    }
+
+    // Render danh sách checklist tài khoản
+    if (checklistContainer) {
+        checklistContainer.innerHTML = accounts.map(acc => {
+            const isChecked = selectedStaffIds.includes(acc.id);
+            return `
+                <label class="staff-checkbox-item ${isChecked ? 'checked' : ''}" onclick="toggleStaffCheckbox(event, ${acc.id})">
+                    <input type="checkbox" name="shiftStaffCb" value="${acc.id}" ${isChecked ? 'checked' : ''} onchange="handleStaffCheckboxChange(this)">
+                    <div class="staff-checkbox-avatar">
+                        ${acc.avatar ? `<img src="${acc.avatar}" alt="${acc.name}">` : acc.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="staff-checkbox-details">
+                        <div>
+                            <span class="staff-checkbox-name">${acc.name}</span>
+                            <span class="staff-checkbox-sub">(@${acc.username})</span>
+                        </div>
+                        <span class="shift-roster-role-tag ${acc.role}">${acc.role}</span>
+                    </div>
+                </label>
+            `;
+        }).join('');
     }
 
     handleShiftTypeChange();
+    updateShiftSlotNotice();
     document.getElementById('shiftScheduleModal')?.classList.add('open');
 }
 
@@ -6625,18 +6970,17 @@ function saveShiftSchedule(e) {
     e.preventDefault();
 
     const editId = document.getElementById('shiftEditId')?.value;
-    const staffId = document.getElementById('shiftStaffSelect')?.value;
     const date = document.getElementById('shiftDateInput')?.value;
     const shiftType = document.getElementById('shiftTypeSelect')?.value || 'morning';
     const roleTitle = document.getElementById('shiftRoleSelect')?.value || 'Thu Ngân POS & Quầy';
     const status = document.getElementById('shiftStatusSelect')?.value || 'scheduled';
     const note = document.getElementById('shiftNoteInput')?.value.trim() || '';
+    const maxStaff = Math.max(1, parseInt(document.getElementById('shiftMaxStaffInput')?.value, 10) || 3);
+    const allowSelfRegister = document.getElementById('shiftAllowRegisterSelect')?.value !== 'no';
 
-    const staff = accounts.find(a => String(a.id) === String(staffId));
-    if (!staff) {
-        showToast("Lỗi", "Không tìm thấy thông tin nhân sự được chọn!", "error");
-        return;
-    }
+    // Lấy danh sách ID các nhân viên được chọn
+    const checkedBoxes = document.querySelectorAll('#shiftStaffChecklist input[name="shiftStaffCb"]:checked');
+    const staffIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10));
 
     let shiftName = 'Ca Sáng';
     let shiftTime = '08:00 - 15:00';
@@ -6653,30 +6997,23 @@ function saveShiftSchedule(e) {
         shiftTime = `${start} - ${end}`;
     }
 
-    // Kiểm tra trùng ca trong cùng ngày của nhân viên
-    const isDuplicate = (moonlightSchedules || []).some(s => 
-        s.id !== editId && 
-        String(s.staffId) === String(staffId) && 
-        s.date === date && 
-        s.shiftType === shiftType
-    );
-
-    if (isDuplicate) {
-        showToast("Lưu ý", `Nhân viên ${staff.name} đã có ${shiftName} trong ngày ${date}! Vui lòng chọn ca khác.`, "warning");
-        return;
-    }
-
     if (!moonlightSchedules) moonlightSchedules = [];
+
+    // Tìm thông tin nhân viên chính (để backwards compatibility)
+    const primaryStaff = accounts.find(a => a.id === staffIds[0]) || accounts[0] || {};
 
     if (editId) {
         const idx = moonlightSchedules.findIndex(s => s.id === editId);
         if (idx !== -1) {
             moonlightSchedules[idx] = {
                 ...moonlightSchedules[idx],
-                staffId: staff.id,
-                staffName: staff.name,
-                staffAvatar: staff.avatar,
-                role: staff.role,
+                staffIds,
+                maxStaff,
+                allowSelfRegister,
+                staffId: primaryStaff.id || null,
+                staffName: primaryStaff.name || 'Nhiều nhân sự',
+                staffAvatar: primaryStaff.avatar || '',
+                role: primaryStaff.role || 'Staff',
                 date,
                 shiftType,
                 shiftName,
@@ -6685,16 +7022,19 @@ function saveShiftSchedule(e) {
                 status,
                 note
             };
-            logActivity("Cập nhật lịch trực", `Chỉnh sửa ca ${shiftName} (${date}) của [${staff.name}]`);
-            showToast("Thành công", `Đã cập nhật ca trực cho "${staff.name}"`, "success");
+            logActivity("Cập nhật lịch trực", `Chỉnh sửa ${shiftName} (${date}) với ${staffIds.length}/${maxStaff} nhân sự`);
+            showToast("Thành công", `Đã cập nhật ${shiftName} (${date})`, "success");
         }
     } else {
         const newShift = {
             id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-            staffId: staff.id,
-            staffName: staff.name,
-            staffAvatar: staff.avatar,
-            role: staff.role,
+            staffIds,
+            maxStaff,
+            allowSelfRegister,
+            staffId: primaryStaff.id || null,
+            staffName: primaryStaff.name || 'Nhiều nhân sự',
+            staffAvatar: primaryStaff.avatar || '',
+            role: primaryStaff.role || 'Staff',
             date,
             shiftType,
             shiftName,
@@ -6704,8 +7044,8 @@ function saveShiftSchedule(e) {
             note
         };
         moonlightSchedules.push(newShift);
-        logActivity("Phân công ca trực", `Xếp ca ${shiftName} (${date}) cho [${staff.name}] vị trí ${roleTitle}`);
-        showToast("Thành công", `Đã phân công ${shiftName} (${date}) cho "${staff.name}"`, "success");
+        logActivity("Phân công ca trực", `Tạo ${shiftName} (${date}) với ${staffIds.length}/${maxStaff} nhân sự`);
+        showToast("Thành công", `Đã tạo ${shiftName} (${date}) thành công!`, "success");
     }
 
     localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
@@ -6725,15 +7065,15 @@ function deleteShiftSchedule(id) {
 
     showConfirmDialog({
         title: "Xác Nhận Xóa Ca Trực",
-        message: `Bạn có chắc muốn hủy ca trực "${shift.shiftName}" ngày ${shift.date} của nhân viên "${shift.staffName}" không?`,
+        message: `Bạn có chắc muốn hủy ca trực "${shift.shiftName}" ngày ${shift.date} không?`,
         icon: "fa-calendar-xmark",
         isDanger: true,
         confirmText: "XÓA CA TRỰC",
         onConfirm: () => {
             moonlightSchedules = moonlightSchedules.filter(s => s.id !== id);
             localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
-            logActivity("Hủy ca trực", `Đã hủy ca ${shift.shiftName} ngày ${shift.date} của [${shift.staffName}]`);
-            showToast("Đã xóa", `Đã gỡ ca trực của "${shift.staffName}"`, "info");
+            logActivity("Hủy ca trực", `Đã hủy ca ${shift.shiftName} ngày ${shift.date}`);
+            showToast("Đã xóa", `Đã gỡ ca trực ngày ${shift.date}`, "info");
             renderAdminStaff();
         }
     });
@@ -6765,7 +7105,7 @@ function cycleShiftStatus(id) {
 
     shift.status = flow[shift.status] || 'scheduled';
     localStorage.setItem('moonlight_schedules', JSON.stringify(moonlightSchedules));
-    showToast("Đổi trạng thái ca", `${shift.staffName} (${shift.shiftName}): ${statusNames[shift.status]}`, "info");
+    showToast("Đổi trạng thái ca", `${shift.shiftName}: ${statusNames[shift.status]}`, "info");
     renderAdminStaff();
 }
 
@@ -6784,7 +7124,7 @@ function autoGenerateWeekSchedule() {
 
     showConfirmDialog({
         title: "Tự Động Phân Ca Cho Tuần",
-        message: `Hệ thống sẽ tự động xếp luân phiên Ca Sáng (08:00 - 15:00) và Ca Tối (15:00 - 22:00) cho toàn bộ 7 ngày từ ${days[0].displayDate} đến ${days[6].displayDate}. Các ca hiện tại của tuần này sẽ được làm mới. Bạn có đồng ý không?`,
+        message: `Hệ thống sẽ tự động xếp mỗi ca 2 nhân sự (chỉ tiêu 3 người, chừa 1 chỗ trống cho tự đăng ký) cho toàn bộ 7 ngày từ ${days[0].displayDate} đến ${days[6].displayDate}. Các ca hiện tại của tuần này sẽ được làm mới. Bạn có đồng ý không?`,
         icon: "fa-wand-magic-sparkles",
         isDanger: false,
         confirmText: "TỰ ĐỘNG PHÂN CA",
@@ -6792,7 +7132,6 @@ function autoGenerateWeekSchedule() {
             const weekStartStr = days[0].dateStr;
             const weekEndStr = days[6].dateStr;
 
-            // Xóa các ca cũ của tuần này
             if (!moonlightSchedules) moonlightSchedules = [];
             moonlightSchedules = moonlightSchedules.filter(s => s.date < weekStartStr || s.date > weekEndStr);
 
@@ -6800,48 +7139,63 @@ function autoGenerateWeekSchedule() {
             let accIdx = 0;
 
             days.forEach((day, dIdx) => {
-                // Ca sáng
-                const morningStaff = staffList[accIdx % staffList.length];
+                // Ca sáng: 2 nhân viên, chỉ tiêu 3 người
+                const morningStaff1 = staffList[accIdx % staffList.length];
                 accIdx++;
+                const morningStaff2 = staffList[accIdx % staffList.length];
+                accIdx++;
+
                 moonlightSchedules.push({
                     id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                    staffId: morningStaff.id,
-                    staffName: morningStaff.name,
-                    staffAvatar: morningStaff.avatar,
-                    role: morningStaff.role,
+                    staffIds: [morningStaff1.id, morningStaff2.id],
+                    maxStaff: 3,
+                    allowSelfRegister: true,
+                    staffId: morningStaff1.id,
+                    staffName: morningStaff1.name,
+                    staffAvatar: morningStaff1.avatar,
+                    role: morningStaff1.role,
                     date: day.dateStr,
                     shiftType: 'morning',
                     shiftName: 'Ca Sáng',
                     shiftTime: '08:00 - 15:00',
-                    roleTitle: morningStaff.role === 'Admin' ? 'Quản Lý Showroom & Giám Sát' : 'Thu Ngân POS & Quầy',
-                    note: 'Mở ca showroom & kiểm tra thiết bị',
+                    roleTitle: 'Thu Ngân POS & Showroom',
+                    note: 'Mở ca showroom & kiểm tra két bán lẻ',
                     status: day.isToday ? 'active' : 'scheduled'
                 });
 
-                // Ca tối
-                const eveningStaff = staffList[accIdx % staffList.length];
+                // Ca tối: 2 nhân viên, chỉ tiêu 3 người
+                const eveningStaff1 = staffList[accIdx % staffList.length];
                 accIdx++;
+                const eveningStaff2 = staffList[accIdx % staffList.length];
+                accIdx++;
+
                 moonlightSchedules.push({
                     id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                    staffId: eveningStaff.id,
-                    staffName: eveningStaff.name,
-                    staffAvatar: eveningStaff.avatar,
-                    role: eveningStaff.role,
+                    staffIds: [eveningStaff1.id, eveningStaff2.id],
+                    maxStaff: 3,
+                    allowSelfRegister: true,
+                    staffId: eveningStaff1.id,
+                    staffName: eveningStaff1.name,
+                    staffAvatar: eveningStaff1.avatar,
+                    role: eveningStaff1.role,
                     date: day.dateStr,
                     shiftType: 'evening',
                     shiftName: 'Ca Tối',
                     shiftTime: '15:00 - 22:00',
-                    roleTitle: eveningStaff.role === 'Owner' ? 'Tư Vấn Thời Trang & VIP' : 'Thu Ngân POS & Quầy',
-                    note: 'Bán hàng ca tối & chốt két tiền',
+                    roleTitle: 'Tư Vấn VIP & Chốt Két',
+                    note: 'Bán hàng ca tối & kiểm kê doanh thu',
                     status: 'scheduled'
                 });
 
-                // Cuối tuần (T7 hoặc CN): Thêm 1 ca hỗ trợ nếu có đủ nhân sự
-                if ((dIdx === 5 || dIdx === 6) && staffList.length >= 3) {
+                // Cuối tuần (T7 hoặc CN): Thêm 1 ca hỗ trợ cả ngày
+                if ((dIdx === 5 || dIdx === 6) && staffList.length >= 2) {
                     const extraStaff = staffList[accIdx % staffList.length];
                     accIdx++;
                     moonlightSchedules.push({
                         id: 'shift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        staffIds: [extraStaff.id],
+                        maxStaff: 2,
+                        allowSelfRegister: true,
                         staffId: extraStaff.id,
                         staffName: extraStaff.name,
                         staffAvatar: extraStaff.avatar,
@@ -6851,7 +7205,7 @@ function autoGenerateWeekSchedule() {
                         shiftName: 'Cả Ngày',
                         shiftTime: '08:00 - 22:00',
                         roleTitle: 'Hỗ Trợ Bán Hàng Tổng Hợp',
-                        note: 'Tăng cường cuối tuần cao điểm khách đông',
+                        note: 'Tăng cường cuối tuần đón tiếp khách',
                         status: 'scheduled'
                     });
                 }
@@ -6863,7 +7217,7 @@ function autoGenerateWeekSchedule() {
             showResultModal({
                 type: 'success',
                 title: 'Tự Động Phân Ca Hoàn Tất!',
-                message: `Hệ thống đã phân công tự động các ca sáng, ca tối và hỗ trợ cuối tuần cho toàn bộ nhân sự tuần từ ${days[0].fullDisplayDate} đến ${days[6].fullDisplayDate}.`
+                message: `Hệ thống đã xếp luân phiên mỗi ca 2 nhân sự và chừa chỗ trống để các nhân viên tự đăng ký cho tuần từ ${days[0].fullDisplayDate} đến ${days[6].fullDisplayDate}.`
             });
             renderAdminStaff();
         }
@@ -6890,7 +7244,7 @@ function exportScheduleCSV() {
     weekShifts.sort((a, b) => a.date.localeCompare(b.date));
 
     let csvContent = "\uFEFF"; // UTF-8 BOM
-    csvContent += "Ngày Trực,Thứ,Họ Tên Nhân Sự,Tài Khoản,Vai Trò,Ca Trực,Khung Giờ,Vị Trí Phụ Trách,Trạng Thái,Ghi Chú\n";
+    csvContent += "Ngày Trực,Thứ,Số Lượng Nhân Sự,Chỉ Tiêu Ca,Họ Tên Nhân Sự,Tài Khoản,Vai Trò,Ca Trực,Khung Giờ,Vị Trí Phụ Trách,Trạng Thái,Ghi Chú\n";
 
     const dayNameMap = {
         '0': 'Chủ Nhật', '1': 'Thứ Hai', '2': 'Thứ Ba', '3': 'Thứ Tư', '4': 'Thứ Năm', '5': 'Thứ Sáu', '6': 'Thứ Bảy'
@@ -6906,12 +7260,19 @@ function exportScheduleCSV() {
             off: 'Nghỉ phép'
         };
 
+        const staffIds = (s.staffIds && s.staffIds.length > 0) ? s.staffIds.map(Number) : (s.staffId ? [Number(s.staffId)] : []);
+        const staffNames = staffIds.map(id => accounts.find(a => a.id === id)?.name || id).join('; ');
+        const staffUsernames = staffIds.map(id => accounts.find(a => a.id === id)?.username || id).join('; ');
+        const staffRoles = staffIds.map(id => accounts.find(a => a.id === id)?.role || '').join('; ');
+
         const row = [
             `"${s.date}"`,
             `"${dayOfWeekStr}"`,
-            `"${(s.staffName || '').replace(/"/g, '""')}"`,
-            `"${(accounts.find(a => String(a.id) === String(s.staffId))?.username || '')}"`,
-            `"${(s.role || '').replace(/"/g, '""')}"`,
+            `"${staffIds.length}"`,
+            `"${s.maxStaff || 3}"`,
+            `"${staffNames.replace(/"/g, '""')}"`,
+            `"${staffUsernames.replace(/"/g, '""')}"`,
+            `"${staffRoles.replace(/"/g, '""')}"`,
             `"${(s.shiftName || '').replace(/"/g, '""')}"`,
             `"${(s.shiftTime || '').replace(/"/g, '""')}"`,
             `"${(s.roleTitle || '').replace(/"/g, '""')}"`,

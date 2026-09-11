@@ -394,12 +394,44 @@
                 <input type="hidden" id="shiftEditId" value="">
                 <div class="modal-body" style="padding: 22px 24px; max-height: 75vh; overflow-y: auto;">
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
-                            Nhân viên phụ trách *
-                        </label>
-                        <select id="shiftStaffSelect" required style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
-                            <!-- Populated dynamically from accounts -->
-                        </select>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); margin: 0;">
+                                Nhân viên tham gia ca (Chọn 1 hoặc nhiều người) *
+                            </label>
+                            <div style="display: flex; gap: 10px; font-size: 11.5px;">
+                                <a href="javascript:void(0)" onclick="selectAllShiftStaff(true)" style="color: var(--gold); text-decoration: none; font-weight: 600;">Chọn tất cả</a>
+                                <span style="color: rgba(255,255,255,0.2);">|</span>
+                                <a href="javascript:void(0)" onclick="selectAllShiftStaff(false)" style="color: var(--text-muted); text-decoration: none;">Bỏ chọn</a>
+                            </div>
+                        </div>
+                        <div id="shiftStaffChecklist" class="shift-staff-checklist" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+                            <!-- Populated dynamically from accounts with checkboxes -->
+                        </div>
+                        <div id="shiftStaffSelectedCount" style="margin-top: 6px; font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                            <span>Đã chọn: <strong style="color: var(--gold);" id="shiftStaffCountNum">0</strong> nhân viên</span>
+                            <span id="shiftSlotRemainingNotice" style="color: #34d399;"></span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Số nhân viên tối đa cho ca *
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="number" id="shiftMaxStaffInput" min="1" max="10" value="3" required onchange="updateShiftSlotNotice()" style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700;">
+                                <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">người / ca</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary);">
+                                Cho phép nhân viên tự đăng ký
+                            </label>
+                            <select id="shiftAllowRegisterSelect" style="width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 14px;">
+                                <option value="yes" selected>✅ Bật (Nhân viên tự đăng ký slot trống)</option>
+                                <option value="no">🔒 Khóa (Chỉ quản lý chỉ định)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
