@@ -18,6 +18,7 @@ export declare const markTicketSeen: (req: Request, res: Response) => Promise<vo
  * Lấy dữ liệu live thời gian thực của ticket (Tin nhắn, Typing, Đã xem)
  */
 export declare const getTicketLive: (req: Request, res: Response) => Promise<void>;
+export declare const uploadTicketAttachment: (req: Request, res: Response) => Promise<void>;
 export declare const addTicketMessage: (req: Request, res: Response) => Promise<void>;
 export declare const closeCustomerTicket: (req: Request, res: Response) => Promise<void>;
 export declare const reopenCustomerTicket: (req: Request, res: Response) => Promise<void>;

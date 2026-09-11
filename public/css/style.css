@@ -3165,6 +3165,259 @@ input.input-locked {
     background: #c59f2e;
 }
 
+/* ==========================================================================
+   TICKET CHAT THREAD ENHANCEMENTS (SCROLLBAR, TEXTAREA, ATTACHMENTS, MEDIA)
+   ========================================================================== */
+
+/* Sleek custom scrollbar - Prevents scrollbar from overlapping chat bubbles */
+.ticket-messages-scroll,
+#admModalChatThread {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+    padding-right: 14px !important;
+    padding-left: 4px !important;
+    box-sizing: border-box;
+}
+
+.ticket-messages-scroll::-webkit-scrollbar,
+#admModalChatThread::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ticket-messages-scroll::-webkit-scrollbar-track,
+#admModalChatThread::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ticket-messages-scroll::-webkit-scrollbar-thumb,
+#admModalChatThread::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.45);
+    border-radius: 8px;
+}
+
+.ticket-messages-scroll::-webkit-scrollbar-thumb:hover,
+#admModalChatThread::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.75);
+}
+
+/* Ensure message items have breathing room on the right */
+.cust-chat-msg-item,
+.adm-msg-item {
+    margin-right: 4px;
+}
+
+/* Chat media styling (Images, Videos, Links) */
+.chat-media-attachment-wrap {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-media-image {
+    max-width: 260px;
+    max-height: 220px;
+    border-radius: 10px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    display: block;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.chat-media-image:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.chat-media-video {
+    max-width: 100%;
+    width: 320px;
+    max-height: 260px;
+    border-radius: 10px;
+    background: #0f172a;
+    display: block;
+    outline: none;
+}
+
+.chat-link {
+    color: #38bdf8;
+    text-decoration: underline;
+    word-break: break-all;
+    font-weight: 500;
+}
+
+.chat-link:hover {
+    color: #7dd3fc;
+}
+
+/* Chat input form with auto-expanding textarea */
+.ticket-chat-form-box {
+    margin-top: 14px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 18px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.ticket-chat-form-box:focus-within {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.cust-ticket-textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 13.5px;
+    background: transparent;
+    padding: 4px 2px;
+    color: #0f172a;
+    font-family: inherit;
+    resize: none;
+    min-height: 38px;
+    max-height: 140px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.ticket-form-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    margin-top: 4px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ticket-form-tools-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-ticket-attach {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.btn-ticket-attach:hover {
+    background: #f1f5f9;
+    color: #0284c7;
+    border-color: #bae6fd;
+}
+
+.btn-ticket-send {
+    padding: 7px 16px;
+    border-radius: 20px;
+    background: var(--gold, #d4af37);
+    color: #000000;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-ticket-send:hover {
+    background: #c59f2e;
+    transform: translateY(-1px);
+}
+
+.btn-ticket-send:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Attachment Preview Chip in Input */
+.ticket-attach-preview-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 10px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #0369a1;
+}
+
+.ticket-attach-preview-chip strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 240px;
+}
+
+.ticket-attach-remove-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    line-height: 1;
+}
+
+.ticket-attach-remove-btn:hover {
+    color: #dc2626;
+}
+
+/* Upload Progress Bar */
+.ticket-upload-progress-box {
+    margin-bottom: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11.5px;
+    color: #475569;
+}
+
+.ticket-upload-progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.ticket-upload-progress-track {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.ticket-upload-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    transition: width 0.15s ease;
+    border-radius: 6px;
+}
+
+
 
 
 

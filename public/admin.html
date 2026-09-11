@@ -794,15 +794,52 @@
                     </div>
 
                     <div style="margin-bottom: 14px;">
-                        <label style="display: block; font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 5px;">Nội dung tin nhắn phản hồi tới khách hàng *</label>
-                        <textarea id="admModalReplyMessage" rows="3" required placeholder="Nhập tin nhắn phản hồi tiếp tới khách hàng... (Nhấn Gửi hoặc Enter để gửi)" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; outline: none; font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #cbd5e1;">Nội dung tin nhắn phản hồi tới khách hàng</label>
+                            <span style="font-size: 11px; color: #94a3b8;">Ảnh &lt; 5MB · Video &lt; 500MB</span>
+                        </div>
+
+                        <!-- KHỐI XEM TRƯỚC TỆP ĐÍNH KÈM ADMIN -->
+                        <div id="admAttachPreview" style="display:none; margin-bottom:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); border-radius:8px; padding:6px 12px; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                                <i id="admAttachIcon" class="fas fa-paperclip" style="color:var(--gold, #d4af37);"></i>
+                                <div style="display:flex; flex-direction:column; overflow:hidden;">
+                                    <strong id="admAttachName" style="font-size:12px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;"></strong>
+                                    <span id="admAttachSize" style="font-size:10.5px; color:#94a3b8;"></span>
+                                </div>
+                            </div>
+                            <button type="button" onclick="handleRemoveAdminAttach()" style="background:none; border:none; color:#f87171; cursor:pointer; font-size:14px;" title="Bỏ đính kèm">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- THANH TIẾN TRÌNH UPLOAD ADMIN -->
+                        <div id="admUploadProgressBox" style="display:none; margin-bottom:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; font-size:11.5px; color:#cbd5e1;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:600;">
+                                <span id="admUploadStatusText"><i class="fas fa-cloud-arrow-up fa-fade"></i> Đang tải lên...</span>
+                                <span id="admUploadPercent">0%</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden;">
+                                <div id="admUploadBarFill" style="height:100%; width:0%; background:linear-gradient(90deg, #d4af37, #f59e0b); border-radius:6px; transition:width 0.15s ease;"></div>
+                            </div>
+                        </div>
+
+                        <textarea id="admModalReplyMessage" rows="3" placeholder="Nhập tin nhắn phản hồi tiếp tới khách hàng... (Nhấn Gửi hoặc Enter để gửi, Shift+Enter để xuống dòng)" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; outline: none; font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                        <button type="button" class="btn-outline" onclick="closeReplyTicketModal()" style="padding: 9px 20px; font-size: 12.5px; border-radius: 8px;">Đóng</button>
-                        <button type="submit" id="btnAdminSubmitReply" class="btn-primary" style="padding: 9px 24px; font-size: 12.5px; border-radius: 8px; display: flex; align-items: center; gap: 8px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer;">
-                            <i class="fas fa-paper-plane"></i> GỬI TIN NHẮN PHẢN HỒI
-                        </button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #cbd5e1; font-size: 12px; cursor: pointer; transition: 0.2s;" title="Đính kèm ảnh (< 5MB) hoặc video (< 500MB)">
+                                <i class="fas fa-paperclip"></i> <span>Đính kèm tệp</span>
+                                <input type="file" id="admTicketFile" accept="image/*,video/*" style="display:none;" onchange="handleAdminFileSelect(event)">
+                            </label>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" class="btn-outline" onclick="closeReplyTicketModal()" style="padding: 9px 20px; font-size: 12.5px; border-radius: 8px;">Đóng</button>
+                            <button type="submit" id="btnAdminSubmitReply" class="btn-primary" style="padding: 9px 24px; font-size: 12.5px; border-radius: 8px; display: flex; align-items: center; gap: 8px; background: var(--gold, #d4af37); color: #000; font-weight: 700; border: none; cursor: pointer;">
+                                <i class="fas fa-paper-plane"></i> GỬI TIN NHẮN PHẢN HỒI
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

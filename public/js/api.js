@@ -413,10 +413,62 @@ const MoonlightAPI = {
     return this.request(`/tickets/${id}`);
   },
 
-  async sendTicketMessage(id, message, status) {
+  uploadTicketFile(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const token = this.getToken();
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${this.BASE_URL}/tickets/upload`);
+
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      xhr.setRequestHeader('x-file-name', encodeURIComponent(file.name));
+      xhr.setRequestHeader('x-file-type', file.type || 'application/octet-stream');
+      xhr.setRequestHeader('x-file-size', String(file.size));
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+      if (xhr.upload && typeof onProgress === 'function') {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+            onProgress({
+              loaded: event.loaded,
+              total: event.total,
+              percent
+            });
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300 && (res.success || res.data)) {
+            resolve(res);
+          } else {
+            reject(new Error(res.message || `Tải tệp thất bại (${xhr.status})`));
+          }
+        } catch (e) {
+          reject(new Error(`Phản hồi máy chủ không hợp lệ (${xhr.status})`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Lỗi kết nối mạng khi tải tệp lên.'));
+      };
+
+      xhr.onabort = () => {
+        reject(new Error('Quá trình tải tệp bị hủy.'));
+      };
+
+      xhr.send(file);
+    });
+  },
+
+  async sendTicketMessage(id, message, attachments = [], status) {
     return this.request(`/tickets/${id}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ message, status })
+      body: JSON.stringify({ message, attachments, status })
     });
   },
 

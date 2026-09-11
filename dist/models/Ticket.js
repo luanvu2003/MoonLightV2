@@ -3,7 +3,15 @@ const TicketMessageSchema = new Schema({
     senderId: { type: Schema.Types.ObjectId, ref: 'User' },
     senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
     senderName: { type: String, required: true, trim: true },
-    message: { type: String, required: true, trim: true },
+    message: { type: String, default: '', trim: true },
+    attachments: [
+        {
+            type: { type: String, enum: ['image', 'video', 'file'], default: 'image' },
+            url: { type: String, required: true },
+            name: { type: String, default: '' },
+            size: { type: Number, default: 0 }
+        }
+    ],
     status: { type: String, enum: ['sending', 'sent', 'delivered', 'seen'], default: 'sent' },
     seenAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }

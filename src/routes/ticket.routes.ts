@@ -6,6 +6,7 @@ import {
   getTicketLive,
   setTypingStatus,
   markTicketSeen,
+  uploadTicketAttachment,
   addTicketMessage,
   closeCustomerTicket,
   reopenCustomerTicket,
@@ -18,6 +19,7 @@ import { Role } from '../types/enums.js';
 const router = Router();
 
 // Routes dành cho Khách hàng & Người dùng tham gia ticket
+router.post('/upload', authenticate, uploadTicketAttachment);
 router.post('/', authenticate, createTicket);
 router.get('/my-tickets', authenticate, getMyTickets);
 router.get('/:id', authenticate, getTicketById);

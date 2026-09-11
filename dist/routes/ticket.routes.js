@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { createTicket, getMyTickets, getTicketById, getTicketLive, setTypingStatus, markTicketSeen, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
+import { createTicket, getMyTickets, getTicketById, getTicketLive, setTypingStatus, markTicketSeen, uploadTicketAttachment, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { Role } from '../types/enums.js';
 const router = Router();
 // Routes dành cho Khách hàng & Người dùng tham gia ticket
+router.post('/upload', authenticate, uploadTicketAttachment);
 router.post('/', authenticate, createTicket);
 router.get('/my-tickets', authenticate, getMyTickets);
 router.get('/:id', authenticate, getTicketById);

@@ -1030,17 +1030,63 @@ function renderCustomerTickets(filterStatus = 'all') {
             <span style="font-size:11px; font-weight:normal; color:#64748b;"><i class="fas fa-circle" style="color:#10b981; font-size:8px; margin-right:4px;"></i>Hỗ trợ trực tuyến</span>
           </div>
 
-          <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+          <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
             ${renderCustomerChatMessagesHtml(t._id, msgList, !hasAdminReplied && !isClosed)}
           </div>
 
-          <!-- INPUT GỬI TIN NHẮN PHẢN HỒI TIẾP -->
+          <!-- INPUT GỬI TIN NHẮN PHẢN HỒI TIẾP (TEXTAREA & ATTACHMENTS) -->
           ${!isClosed ? `
-            <form onsubmit="handleSendCustomerMessage(event, '${t._id}')" style="margin-top:14px; display:flex; gap:8px; align-items:center; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:24px; padding:3px 6px 3px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-              <input type="text" id="custTicketInput-${t._id}" oninput="handleCustTicketTyping('${t._id}')" placeholder="Nhập tin nhắn phản hồi tiếp cho nhân viên tư vấn..." required style="flex:1; border:none; outline:none; font-size:13px; background:transparent; padding:6px 0; color:#0f172a; font-family:inherit;">
-              <button type="submit" id="btnCustSend-${t._id}" style="width:34px; height:34px; border-radius:50%; background:var(--gold,#d4af37); color:#000; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px;" title="Gửi tin nhắn">
-                <i class="fas fa-paper-plane"></i>
-              </button>
+            <form onsubmit="handleSendCustomerMessage(event, '${t._id}')" class="ticket-chat-form-box">
+              <!-- KHỐI XEM TRƯỚC TỆP ĐÍNH KÈM (ATTACHMENT PREVIEW CHIP) -->
+              <div id="custAttachPreview-${t._id}" style="display:none;" class="ticket-attach-preview-chip">
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                  <i id="custAttachIcon-${t._id}" class="fas fa-paperclip" style="font-size:14px; color:#0284c7;"></i>
+                  <div style="display:flex; flex-direction:column; overflow:hidden;">
+                    <strong id="custAttachName-${t._id}"></strong>
+                    <span id="custAttachSize-${t._id}"></span>
+                  </div>
+                </div>
+                <button type="button" class="ticket-attach-remove-btn" onclick="handleRemoveCustAttach('${t._id}')" title="Bỏ đính kèm">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <!-- THANH TIẾN TRÌNH UPLOAD FILE (REAL-TIME PROGRESS) -->
+              <div id="custUploadProgressBox-${t._id}" style="display:none;" class="ticket-upload-progress-box">
+                <div class="ticket-upload-progress-header">
+                  <span id="custUploadStatusText-${t._id}"><i class="fas fa-cloud-arrow-up fa-fade"></i> Đang tải lên...</span>
+                  <span id="custUploadPercent-${t._id}">0%</span>
+                </div>
+                <div class="ticket-upload-progress-track">
+                  <div id="custUploadBarFill-${t._id}" class="ticket-upload-progress-fill"></div>
+                </div>
+              </div>
+
+              <!-- TEXTAREA NHIỀU DÒNG TỰ CO GIÃN -->
+              <textarea id="custTicketInput-${t._id}"
+                class="cust-ticket-textarea"
+                rows="1"
+                placeholder="Nhập tin nhắn... (Shift+Enter để xuống dòng, Enter để gửi)"
+                oninput="handleCustTextareaInput('${t._id}')"
+                onkeydown="handleCustTextareaKeydown(event, '${t._id}')"></textarea>
+
+              <div class="ticket-form-bottom-row">
+                <div class="ticket-form-tools-left">
+                  <!-- Nút đính kèm ảnh / video -->
+                  <label class="btn-ticket-attach" title="Đính kèm ảnh (< 5MB) hoặc video (< 500MB)">
+                    <i class="fas fa-paperclip"></i>
+                    <input type="file" id="custTicketFile-${t._id}" accept="image/*,video/*" style="display:none;" onchange="handleCustFileSelect(event, '${t._id}')">
+                  </label>
+                  <label class="btn-ticket-attach" title="Đính kèm ảnh từ thiết bị" onclick="document.getElementById('custTicketFile-${t._id}').click();">
+                    <i class="fas fa-image"></i>
+                  </label>
+                  <span id="custFileHint-${t._id}" style="font-size:11px; color:#94a3b8;">Ảnh &lt; 5MB · Video &lt; 500MB</span>
+                </div>
+                <button type="submit" id="btnCustSend-${t._id}" class="btn-ticket-send" title="Gửi tin nhắn (Enter)">
+                  <span>Gửi</span>
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
             </form>
           ` : `
             <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 14px; font-size:12px; color:#64748b; flex-wrap:wrap; gap:8px;">
@@ -1155,6 +1201,71 @@ async function handleCloseCustomerTicket(ticketId) {
   }
 }
 
+// Tự động nhận diện và biến đổi URL thành clickable links
+function formatChatContent(rawText) {
+  if (!rawText) return '';
+  const escaped = escapeHtml(rawText);
+  // Regex tìm URL http:// hoặc https://
+  const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+  return escaped.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
+  });
+}
+
+// Render ảnh hoặc video đính kèm trong tin nhắn
+function renderMessageAttachments(attachments, isCust) {
+  if (!Array.isArray(attachments) || attachments.length === 0) return '';
+
+  return `<div class="chat-media-attachment-wrap">` + attachments.map(att => {
+    if (att.type === 'video' || (att.url && att.url.match(/\.(mp4|webm|mov|mkv)$/i))) {
+      return `
+        <div style="max-width:100%; margin-top:4px;">
+          <video controls preload="metadata" class="chat-media-video">
+            <source src="${escapeHtml(att.url)}" type="video/mp4">
+            Trình duyệt không hỗ trợ phát video này.
+          </video>
+          ${att.name ? `<div style="font-size:11px; color:#64748b; margin-top:3px;"><i class="fas fa-file-video"></i> ${escapeHtml(att.name)}</div>` : ''}
+        </div>
+      `;
+    } else if (att.type === 'image' || (att.url && att.url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i))) {
+      return `
+        <div style="margin-top:4px;">
+          <img src="${escapeHtml(att.url)}" alt="${escapeHtml(att.name || 'Ảnh đính kèm')}" class="chat-media-image" onclick="openChatImageLightbox('${escapeHtml(att.url)}')">
+        </div>
+      `;
+    } else {
+      return `
+        <div style="margin-top:4px;">
+          <a href="${escapeHtml(att.url)}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#0284c7; text-decoration:none; background:#f1f5f9; padding:6px 12px; border-radius:8px;">
+            <i class="fas fa-paperclip"></i> <span>${escapeHtml(att.name || 'Tệp đính kèm')}</span>
+          </a>
+        </div>
+      `;
+    }
+  }).join('') + `</div>`;
+}
+
+// Lightbox phóng to ảnh khi nhấp vào
+function openChatImageLightbox(imgUrl) {
+  let modal = document.getElementById('chatImageLightbox');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'chatImageLightbox';
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; cursor:zoom-out; backdrop-filter:blur(4px);";
+    modal.onclick = () => { modal.style.display = 'none'; };
+    modal.innerHTML = `
+      <div style="position:relative; max-width:90vw; max-height:90vh; display:flex; align-items:center; justify-content:center;">
+        <img id="chatLightboxImg" src="" style="max-width:100%; max-height:90vh; border-radius:8px; box-shadow:0 20px 50px rgba(0,0,0,0.5); object-fit:contain;">
+        <button type="button" style="position:absolute; top:-14px; right:-14px; width:32px; height:32px; border-radius:50%; background:#fff; color:#000; border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.3);">&times;</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  const img = document.getElementById('chatLightboxImg');
+  if (img) img.src = imgUrl;
+  modal.style.display = 'flex';
+}
+
 function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
   return msgList.map(m => {
     const isCust = m.senderRole === 'customer';
@@ -1167,7 +1278,8 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
             <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
           </div>
           <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-            ${escapeHtml(m.message)}
+            ${m.message ? formatChatContent(m.message) : ''}
+            ${renderMessageAttachments(m.attachments, true)}
           </div>
           ${renderCustomerMessageStatus(m.status)}
         </div>
@@ -1182,7 +1294,8 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
             <span>${mTime}</span>
           </div>
           <div style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
-            ${escapeHtml(m.message)}
+            ${m.message ? formatChatContent(m.message) : ''}
+            ${renderMessageAttachments(m.attachments, false)}
           </div>
         </div>
       `;
@@ -1286,20 +1399,154 @@ function handleCustTicketTyping(ticketId) {
   }, 2500);
 }
 
+// Xử lý tự co giãn textarea nhiều dòng
+function handleCustTextareaInput(ticketId) {
+  const textarea = document.getElementById(`custTicketInput-${ticketId}`);
+  if (textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+  }
+  handleCustTicketTyping(ticketId);
+}
+
+// Nhấn Enter để gửi, Shift+Enter để xuống dòng
+function handleCustTextareaKeydown(event, ticketId) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    const form = event.target.closest('form');
+    if (form) form.requestSubmit();
+  }
+}
+
+// Quản lý file đính kèm phía Khách hàng
+const custSelectedFiles = {};
+
+function handleCustFileSelect(event, ticketId) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+
+  if (!isImage && !isVideo) {
+    showToast({ title: 'Không hỗ trợ', message: 'Vui lòng chọn tệp hình ảnh hoặc video.', type: 'warning' });
+    event.target.value = '';
+    return;
+  }
+
+  const maxImgBytes = 5 * 1024 * 1024; // 5MB
+  const maxVideoBytes = 500 * 1024 * 1024; // 500MB
+
+  if (isImage && file.size > maxImgBytes) {
+    showToast({
+      title: 'Tệp ảnh quá lớn',
+      message: `Ảnh "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) vượt quá giới hạn 5MB cho phép.`,
+      type: 'danger'
+    });
+    event.target.value = '';
+    return;
+  }
+
+  if (isVideo && file.size > maxVideoBytes) {
+    showToast({
+      title: 'Video quá lớn',
+      message: `Video "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) vượt quá giới hạn 500MB cho phép.`,
+      type: 'danger'
+    });
+    event.target.value = '';
+    return;
+  }
+
+  custSelectedFiles[ticketId] = file;
+
+  const previewBox = document.getElementById(`custAttachPreview-${ticketId}`);
+  const nameEl = document.getElementById(`custAttachName-${ticketId}`);
+  const sizeEl = document.getElementById(`custAttachSize-${ticketId}`);
+  const iconEl = document.getElementById(`custAttachIcon-${ticketId}`);
+
+  if (previewBox && nameEl && sizeEl) {
+    nameEl.innerText = file.name;
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+    sizeEl.innerText = `${isImage ? 'Ảnh' : 'Video'} · ${sizeMb} MB`;
+    if (iconEl) {
+      iconEl.className = isImage ? 'fas fa-image' : 'fas fa-video';
+      iconEl.style.color = isImage ? '#10b981' : '#f59e0b';
+    }
+    previewBox.style.display = 'flex';
+  }
+}
+
+function handleRemoveCustAttach(ticketId) {
+  delete custSelectedFiles[ticketId];
+  const fileInput = document.getElementById(`custTicketFile-${ticketId}`);
+  if (fileInput) fileInput.value = '';
+
+  const previewBox = document.getElementById(`custAttachPreview-${ticketId}`);
+  if (previewBox) previewBox.style.display = 'none';
+
+  const progressBox = document.getElementById(`custUploadProgressBox-${ticketId}`);
+  if (progressBox) progressBox.style.display = 'none';
+}
+
 async function handleSendCustomerMessage(event, ticketId) {
   event.preventDefault();
   const input = document.getElementById(`custTicketInput-${ticketId}`);
   const btn = document.getElementById(`btnCustSend-${ticketId}`);
   const text = input ? input.value.trim() : '';
-  if (!text) return;
+  const file = custSelectedFiles[ticketId];
+
+  if (!text && !file) return;
 
   // Hủy trạng thái typing ngay khi gửi
   if (custTypingTimers[ticketId]) clearTimeout(custTypingTimers[ticketId]);
   custTypingSent[ticketId] = false;
   MoonlightAPI.setTicketTyping(ticketId, false).catch(() => {});
 
-  // Xóa nội dung trong ô nhập ngay lập tức
-  if (input) input.value = '';
+  if (btn) btn.disabled = true;
+
+  let attachments = [];
+
+  // Nếu có file đính kèm, thực hiện upload lên server với thanh tiến trình
+  if (file) {
+    const progressBox = document.getElementById(`custUploadProgressBox-${ticketId}`);
+    const statusText = document.getElementById(`custUploadStatusText-${ticketId}`);
+    const percentText = document.getElementById(`custUploadPercent-${ticketId}`);
+    const barFill = document.getElementById(`custUploadBarFill-${ticketId}`);
+
+    if (progressBox) progressBox.style.display = 'block';
+
+    try {
+      const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
+        if (percentText) percentText.innerText = `${progress.percent}%`;
+        if (barFill) barFill.style.width = `${progress.percent}%`;
+        if (statusText) {
+          const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
+          const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
+          statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
+        }
+      });
+
+      if (upRes && (upRes.success || upRes.data)) {
+        attachments.push(upRes.data);
+        if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
+      } else {
+        throw new Error(upRes?.message || 'Tải file thất bại.');
+      }
+    } catch (uploadErr) {
+      console.error('Lỗi upload file ticket:', uploadErr);
+      showToast({ title: 'Lỗi tải tệp', message: uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', type: 'danger' });
+      if (btn) btn.disabled = false;
+      if (progressBox) progressBox.style.display = 'none';
+      return;
+    }
+  }
+
+  // Xóa nội dung trong ô nhập ngay lập tức và reset độ cao textarea
+  if (input) {
+    input.value = '';
+    input.style.height = 'auto';
+  }
+  handleRemoveCustAttach(ticketId);
 
   // Chèn trực tiếp tin nhắn tạm thời với trạng thái 'Đang gửi...' vào khung chat
   const scrollContainer = document.getElementById(`custMsgScroll-${ticketId}`);
@@ -1318,11 +1565,11 @@ async function handleSendCustomerMessage(event, ticketId) {
         <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
       </div>
       <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-        ${escapeHtml(text)}
+        ${text ? formatChatContent(text) : ''}
+        ${renderMessageAttachments(attachments, true)}
       </div>
       ${renderCustomerMessageStatus('sending')}
     `;
-    // Chèn trước typing indicator
     const typingInd = document.getElementById(`custTypingIndicator-${ticketId}`);
     if (typingInd) {
       scrollContainer.insertBefore(tempEl, typingInd);
@@ -1333,10 +1580,7 @@ async function handleSendCustomerMessage(event, ticketId) {
   }
 
   try {
-    if (btn) {
-      btn.disabled = true;
-    }
-    const res = await MoonlightAPI.sendTicketMessage(ticketId, text);
+    const res = await MoonlightAPI.sendTicketMessage(ticketId, text, attachments);
     if (res && (res.success || res.data)) {
       // Cập nhật trạng thái từ 'Đang gửi...' sang 'Đã nhận'
       const tempEl = document.getElementById(tempMsgId);
@@ -1347,7 +1591,6 @@ async function handleSendCustomerMessage(event, ticketId) {
         }
       }
 
-      // Cập nhật dữ liệu danh sách ticket
       const updatedTicket = res.data;
       if (updatedTicket) {
         const idx = currentTicketsList.findIndex(t => String(t._id || t.id) === String(ticketId));
@@ -1374,9 +1617,7 @@ async function handleSendCustomerMessage(event, ticketId) {
       }
     }
   } finally {
-    if (btn) {
-      btn.disabled = false;
-    }
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -1464,6 +1705,13 @@ window.handleSendCustomerMessage = handleSendCustomerMessage;
 window.handleReopenCustomerTicket = handleReopenCustomerTicket;
 window.handleCloseCustomerTicket = handleCloseCustomerTicket;
 window.handleCustTicketTyping = handleCustTicketTyping;
+window.handleCustTextareaInput = handleCustTextareaInput;
+window.handleCustTextareaKeydown = handleCustTextareaKeydown;
+window.handleCustFileSelect = handleCustFileSelect;
+window.handleRemoveCustAttach = handleRemoveCustAttach;
+window.formatChatContent = formatChatContent;
+window.renderMessageAttachments = renderMessageAttachments;
+window.openChatImageLightbox = openChatImageLightbox;
 window.renderCustomerMessageStatus = renderCustomerMessageStatus;
 window.renderCustomerChatMessagesHtml = renderCustomerChatMessagesHtml;
 window.renderCustomerChatThreadOnly = renderCustomerChatThreadOnly;

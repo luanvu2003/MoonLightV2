@@ -5020,30 +5020,156 @@ function renderAdminChatThreadOnly(ticket) {
     const countEl = document.getElementById('admModalMsgCount');
     if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
+// Tự động nhận diện URL cho chat Admin
+function formatAdminChatContent(rawText) {
+    if (!rawText) return '';
+    const escaped = escapeAdminHtml(rawText);
+    const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+    return escaped.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link" style="color:#38bdf8; text-decoration:underline;"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
+    });
+}
+
+// Render ảnh hoặc video đính kèm cho chat Admin
+function renderAdminMessageAttachments(attachments) {
+    if (!Array.isArray(attachments) || attachments.length === 0) return '';
+
+    return `<div class="chat-media-attachment-wrap" style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">` + attachments.map(att => {
+        if (att.type === 'video' || (att.url && att.url.match(/\.(mp4|webm|mov|mkv)$/i))) {
+            return `
+                <div style="max-width:100%; margin-top:4px;">
+                    <video controls preload="metadata" style="max-width:100%; width:300px; max-height:220px; border-radius:8px; background:#000;">
+                        <source src="${escapeAdminHtml(att.url)}" type="video/mp4">
+                        Trình duyệt không hỗ trợ xem video.
+                    </video>
+                    ${att.name ? `<div style="font-size:11px; color:#94a3b8; margin-top:2px;"><i class="fas fa-file-video"></i> ${escapeAdminHtml(att.name)}</div>` : ''}
+                </div>
+            `;
+        } else if (att.type === 'image' || (att.url && att.url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i))) {
+            return `
+                <div style="margin-top:4px;">
+                    <img src="${escapeAdminHtml(att.url)}" alt="${escapeAdminHtml(att.name || 'Ảnh')}" style="max-width:240px; max-height:200px; border-radius:8px; object-fit:cover; cursor:pointer; border:1px solid rgba(255,255,255,0.2);" onclick="window.open('${escapeAdminHtml(att.url)}', '_blank')">
+                </div>
+            `;
+        } else {
+            return `
+                <div style="margin-top:4px;">
+                    <a href="${escapeAdminHtml(att.url)}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#38bdf8; text-decoration:none; background:rgba(255,255,255,0.08); padding:5px 10px; border-radius:6px;">
+                        <i class="fas fa-paperclip"></i> <span>${escapeAdminHtml(att.name || 'Tệp đính kèm')}</span>
+                    </a>
+                </div>
+            `;
+        }
+    }).join('') + `</div>`;
+}
+
+// Quản lý file đính kèm phía Admin
+let admSelectedFile = null;
+
+function handleAdminFileSelect(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+        showToast("Lỗi", "Vui lòng chọn tệp hình ảnh hoặc video.", "error");
+        event.target.value = '';
+        return;
+    }
+
+    const maxImgBytes = 5 * 1024 * 1024; // 5MB
+    const maxVideoBytes = 500 * 1024 * 1024; // 500MB
+
+    if (isImage && file.size > maxImgBytes) {
+        showToast("Tệp quá lớn", `Ảnh "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) vượt quá giới hạn 5MB cho phép.`, "error");
+        event.target.value = '';
+        return;
+    }
+
+    if (isVideo && file.size > maxVideoBytes) {
+        showToast("Video quá lớn", `Video "${file.name}" (${(file.size / (1024*1024)).toFixed(1)}MB) vượt quá giới hạn 500MB cho phép.`, "error");
+        event.target.value = '';
+        return;
+    }
+
+    admSelectedFile = file;
+
+    const previewBox = document.getElementById('admAttachPreview');
+    const nameEl = document.getElementById('admAttachName');
+    const sizeEl = document.getElementById('admAttachSize');
+    const iconEl = document.getElementById('admAttachIcon');
+
+    if (previewBox && nameEl && sizeEl) {
+        nameEl.innerText = file.name;
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        sizeEl.innerText = `${isImage ? 'Ảnh' : 'Video'} · ${sizeMb} MB`;
+        if (iconEl) {
+            iconEl.className = isImage ? 'fas fa-image' : 'fas fa-video';
+            iconEl.style.color = isImage ? '#10b981' : '#f59e0b';
+        }
+        previewBox.style.display = 'flex';
+    }
+}
+
+function handleRemoveAdminAttach() {
+    admSelectedFile = null;
+    const fileInput = document.getElementById('admTicketFile');
+    if (fileInput) fileInput.value = '';
+
+    const previewBox = document.getElementById('admAttachPreview');
+    if (previewBox) previewBox.style.display = 'none';
+
+    const progressBox = document.getElementById('admUploadProgressBox');
+    if (progressBox) progressBox.style.display = 'none';
+}
+
+function renderAdminChatThreadOnly(ticket) {
+    const threadEl = document.getElementById('admModalChatThread');
+    if (!threadEl) return;
+
+    let msgList = [];
+    if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
+        msgList = ticket.messages;
+    } else if (ticket.message) {
+        msgList.push({
+            senderRole: 'customer',
+            senderName: ticket.customerName || 'Khách hàng',
+            message: ticket.message,
+            createdAt: ticket.createdAt
+        });
+    }
+
+    const countEl = document.getElementById('admModalMsgCount');
+    if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
+
     threadEl.innerHTML = msgList.map(m => {
         const isCust = m.senderRole === 'customer';
         const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
         if (isCust) {
             return `
-                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-start; margin-right: 4px;">
                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
                         <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
                         <span>${mTime}</span>
                     </div>
                     <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">
-                        ${escapeAdminHtml(m.message)}
+                        ${m.message ? formatAdminChatContent(m.message) : ''}
+                        ${renderAdminMessageAttachments(m.attachments)}
                     </div>
                 </div>
             `;
         } else {
             return `
-                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-end;">
+                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;">
                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
                         <span>${mTime}</span>
                         <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
                     </div>
                     <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                        ${escapeAdminHtml(m.message)}
+                        ${m.message ? formatAdminChatContent(m.message) : ''}
+                        ${renderAdminMessageAttachments(m.attachments)}
                     </div>
                     ${renderAdminMessageStatus(m.status)}
                 </div>
@@ -5074,6 +5200,8 @@ function openReplyTicketModal(ticketId) {
         console.error('Không tìm thấy modal #replyTicketModal');
         return;
     }
+
+    handleRemoveAdminAttach();
 
     const categoryNames = {
         order_issue: 'Sự cố đơn hàng',
@@ -5151,6 +5279,7 @@ function openReplyTicketModal(ticketId) {
 
 function closeReplyTicketModal() {
     stopAdminTicketLiveSync();
+    handleRemoveAdminAttach();
     const modal = document.getElementById('replyTicketModal');
     if (modal) {
         modal.classList.remove('open');
@@ -5165,17 +5294,58 @@ async function handleAdminSubmitReply(event) {
     const ticketId = document.getElementById('admModalTicketId')?.value;
     const replyMessage = document.getElementById('admModalReplyMessage')?.value?.trim();
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
+    const file = admSelectedFile;
 
-    if (!replyMessage) return;
+    if (!replyMessage && !file) return;
 
     // Hủy typing ngay khi gửi
     if (adminTypingTimers[ticketId]) clearTimeout(adminTypingTimers[ticketId]);
     adminTypingSent[ticketId] = false;
     MoonlightAPI.setTicketTyping(ticketId, false).catch(() => {});
 
-    // Xóa ô nhập ngay lập tức
+    if (btn) btn.disabled = true;
+
+    let attachments = [];
+
+    // Nếu có file đính kèm, thực hiện upload với progress bar
+    if (file) {
+        const progressBox = document.getElementById('admUploadProgressBox');
+        const statusText = document.getElementById('admUploadStatusText');
+        const percentText = document.getElementById('admUploadPercent');
+        const barFill = document.getElementById('admUploadBarFill');
+
+        if (progressBox) progressBox.style.display = 'block';
+
+        try {
+            const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
+                if (percentText) percentText.innerText = `${progress.percent}%`;
+                if (barFill) barFill.style.width = `${progress.percent}%`;
+                if (statusText) {
+                    const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
+                    const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
+                    statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
+                }
+            });
+
+            if (upRes && (upRes.success || upRes.data)) {
+                attachments.push(upRes.data);
+                if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
+            } else {
+                throw new Error(upRes?.message || 'Tải file thất bại.');
+            }
+        } catch (uploadErr) {
+            console.error('Lỗi upload file admin:', uploadErr);
+            showToast("Lỗi tải tệp", uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', "error");
+            if (btn) btn.disabled = false;
+            if (progressBox) progressBox.style.display = 'none';
+            return;
+        }
+    }
+
+    // Xóa ô nhập ngay lập tức và reset đính kèm
     const repEl = document.getElementById('admModalReplyMessage');
     if (repEl) repEl.value = '';
+    handleRemoveAdminAttach();
 
     // Thêm tin nhắn tạm thời 'Đang gửi...' vào khung chat
     const threadEl = document.getElementById('admModalChatThread');
@@ -5190,14 +5360,15 @@ async function handleAdminSubmitReply(event) {
         const tempEl = document.createElement('div');
         tempEl.id = tempMsgId;
         tempEl.className = 'adm-msg-item';
-        tempEl.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
+        tempEl.style.cssText = "display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;";
         tempEl.innerHTML = `
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
                 <span>${nowStr}</span>
                 <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(staffName)}</strong>
             </div>
             <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                ${escapeAdminHtml(replyMessage)}
+                ${replyMessage ? formatAdminChatContent(replyMessage) : ''}
+                ${renderAdminMessageAttachments(attachments)}
             </div>
             ${renderAdminMessageStatus('sending')}
         `;
@@ -5211,12 +5382,11 @@ async function handleAdminSubmitReply(event) {
     }
 
     try {
-        if (btn) btn.disabled = true;
-
         const res = await MoonlightAPI.replyTicket(ticketId, {
             message: replyMessage,
             replyMessage: replyMessage,
-            status
+            status,
+            attachments
         });
 
         if (res && (res.success || res.data)) {
@@ -5266,6 +5436,8 @@ async function handleAdminSubmitReply(event) {
 window.openReplyTicketModal = openReplyTicketModal;
 window.closeReplyTicketModal = closeReplyTicketModal;
 window.handleAdminSubmitReply = handleAdminSubmitReply;
+window.handleAdminFileSelect = handleAdminFileSelect;
+window.handleRemoveAdminAttach = handleRemoveAdminAttach;
 window.handleAdminTicketSearch = handleAdminTicketSearch;
 window.setAdminTicketCategoryFilter = setAdminTicketCategoryFilter;
 window.filterAdminTickets = filterAdminTickets;

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Ticket } from '../models/Ticket.js';
 import { User } from '../models/User.js';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js';
@@ -265,15 +267,98 @@ export const getTicketLive = async (req, res) => {
         sendError(res, `Lỗi khi lấy live ticket: ${err.message}`, 500, 'LIVE_ERROR');
     }
 };
+export const uploadTicketAttachment = async (req, res) => {
+    try {
+        const rawFileName = req.headers['x-file-name'] ? decodeURIComponent(req.headers['x-file-name']) : 'attachment';
+        const mimeType = req.headers['x-file-type'] || req.headers['content-type'] || 'application/octet-stream';
+        const headerSize = parseInt(req.headers['x-file-size'] || req.headers['content-length'] || '0', 10);
+        const isImage = mimeType.startsWith('image/');
+        const isVideo = mimeType.startsWith('video/');
+        // Giới hạn dung lượng: Ảnh <= 5MB, Video <= 500MB, Khác <= 50MB
+        const maxBytes = isVideo
+            ? 500 * 1024 * 1024
+            : (isImage ? 5 * 1024 * 1024 : 50 * 1024 * 1024);
+        if (headerSize > maxBytes) {
+            sendError(res, `Dung lượng tệp vượt quá giới hạn cho phép (${isImage ? '5MB cho ảnh' : '500MB cho video'})`, 413, 'FILE_TOO_LARGE');
+            return;
+        }
+        const ext = path.extname(rawFileName) || (isImage ? '.jpg' : (isVideo ? '.mp4' : '.bin'));
+        const safeBaseName = path.basename(rawFileName, ext).replace(/[^a-zA-Z0-9_\-\.]/g, '_').substring(0, 30);
+        const uniqueFileName = `ticket_${Date.now()}_${safeBaseName}${ext}`;
+        const saveDir = path.join(process.cwd(), 'public', 'uploads', 'tickets');
+        if (!fs.existsSync(saveDir)) {
+            fs.mkdirSync(saveDir, { recursive: true });
+        }
+        const filePath = path.join(saveDir, uniqueFileName);
+        const writeStream = fs.createWriteStream(filePath);
+        let bytesReceived = 0;
+        let limitExceeded = false;
+        req.on('data', (chunk) => {
+            bytesReceived += chunk.length;
+            if (bytesReceived > maxBytes && !limitExceeded) {
+                limitExceeded = true;
+                req.pause();
+                writeStream.destroy();
+                if (fs.existsSync(filePath)) {
+                    try {
+                        fs.unlinkSync(filePath);
+                    }
+                    catch (_) { }
+                }
+                sendError(res, `Dung lượng tệp vượt quá giới hạn cho phép (${isImage ? '5MB cho ảnh' : '500MB cho video'})`, 413, 'FILE_TOO_LARGE');
+            }
+        });
+        req.on('error', (err) => {
+            if (!limitExceeded) {
+                writeStream.destroy();
+                if (fs.existsSync(filePath)) {
+                    try {
+                        fs.unlinkSync(filePath);
+                    }
+                    catch (_) { }
+                }
+                sendError(res, `Lỗi truyền dữ liệu upload: ${err.message}`, 500, 'UPLOAD_ERROR');
+            }
+        });
+        writeStream.on('error', (err) => {
+            if (!limitExceeded) {
+                if (fs.existsSync(filePath)) {
+                    try {
+                        fs.unlinkSync(filePath);
+                    }
+                    catch (_) { }
+                }
+                sendError(res, `Lỗi ghi tệp lên máy chủ: ${err.message}`, 500, 'WRITE_ERROR');
+            }
+        });
+        writeStream.on('finish', () => {
+            if (!limitExceeded) {
+                const fileUrl = `/uploads/tickets/${uniqueFileName}`;
+                const fileType = isVideo ? 'video' : (isImage ? 'image' : 'file');
+                sendSuccess(res, {
+                    url: fileUrl,
+                    type: fileType,
+                    name: rawFileName,
+                    size: bytesReceived
+                }, 'Tải lên tệp đính kèm thành công');
+            }
+        });
+        req.pipe(writeStream);
+    }
+    catch (err) {
+        sendError(res, `Lỗi khi tải lên tệp: ${err.message}`, 500, 'UPLOAD_EXCEPTION');
+    }
+};
 export const addTicketMessage = async (req, res) => {
     try {
         const ticketId = req.params.id;
         const userId = req.user?.id;
         const userRole = req.user?.role || 'Customer';
-        const { message, replyMessage, status } = req.body;
+        const { message, replyMessage, status, attachments } = req.body;
         const text = (message || replyMessage || '').trim();
-        if (!text) {
-            sendError(res, 'Nội dung tin nhắn không được để trống', 400, 'VALIDATION_ERROR');
+        const attachList = Array.isArray(attachments) ? attachments : [];
+        if (!text && attachList.length === 0) {
+            sendError(res, 'Vui lòng nhập nội dung tin nhắn hoặc đính kèm tệp tin', 400, 'VALIDATION_ERROR');
             return;
         }
         const ticket = await Ticket.findById(ticketId);
@@ -301,6 +386,7 @@ export const addTicketMessage = async (req, res) => {
             senderRole,
             senderName,
             message: text,
+            attachments: attachList,
             status: 'delivered',
             createdAt: now
         });
@@ -316,7 +402,7 @@ export const addTicketMessage = async (req, res) => {
         if (isAdminOrStaff) {
             ticket.adminLastSeenAt = now;
             ticket.reply = {
-                message: text,
+                message: text || (attachList.length > 0 ? `[Đính kèm ${attachList.length} tệp]` : ''),
                 repliedBy: senderName,
                 repliedAt: now
             };

@@ -1,10 +1,17 @@
 import mongoose, { Document, Model } from 'mongoose';
+export interface ITicketAttachment {
+    type: 'image' | 'video' | 'file';
+    url: string;
+    name: string;
+    size?: number;
+}
 export interface ITicketMessage {
     _id?: mongoose.Types.ObjectId;
     senderId?: mongoose.Types.ObjectId;
     senderRole: 'customer' | 'admin' | 'staff';
     senderName: string;
     message: string;
+    attachments?: ITicketAttachment[];
     status?: 'sending' | 'sent' | 'delivered' | 'seen';
     seenAt?: Date;
     createdAt: Date;
