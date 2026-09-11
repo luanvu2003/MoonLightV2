@@ -5416,10 +5416,55 @@ function closeCustomerOrdersModal() {
   if (modal) modal.classList.remove('open');
 }
 
+// Tự động đánh dấu mục active trên Header Menu phù hợp theo trang hiện tại
+function highlightActiveNavMenu() {
+  const menuLinks = document.querySelectorAll('#navbar .menu > a, .menu a');
+  if (!menuLinks || menuLinks.length === 0) return;
+
+  const path = window.location.pathname.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+
+  // Xóa class active cũ
+  menuLinks.forEach(link => link.classList.remove('active'));
+
+  let matchedLink = null;
+
+  if (hash === '#footer') {
+    matchedLink = Array.from(menuLinks).find(l => (l.getAttribute('href') || '').includes('#footer'));
+  } else if (path.includes('try-on')) {
+    matchedLink = Array.from(menuLinks).find(l => (l.getAttribute('href') || '').includes('try-on'));
+  } else if (search.includes('gender=nam')) {
+    matchedLink = Array.from(menuLinks).find(l => (l.getAttribute('href') || '').includes('gender=Nam') || (l.getAttribute('href') || '').includes('gender=nam'));
+  } else if (search.includes('gender=nu')) {
+    matchedLink = Array.from(menuLinks).find(l => (l.getAttribute('href') || '').includes('gender=Nu') || (l.getAttribute('href') || '').includes('gender=nu'));
+  } else if (path.includes('catalog') || path.includes('product')) {
+    matchedLink = Array.from(menuLinks).find(l => {
+      const href = l.getAttribute('href') || '';
+      return href.startsWith('catalog.html') && !href.includes('gender=');
+    });
+  } else if (path.endsWith('/') || path.includes('index.html') || path === '') {
+    matchedLink = Array.from(menuLinks).find(l => {
+      const href = l.getAttribute('href') || '';
+      return href === 'index.html' || href === '/' || href === './index.html';
+    });
+  }
+
+  if (matchedLink) {
+    matchedLink.classList.add('active');
+  }
+}
+
 window.selectCheckoutSavedAddress = selectCheckoutSavedAddress;
 window.renderCheckoutAddressPicker = renderCheckoutAddressPicker;
+window.highlightActiveNavMenu = highlightActiveNavMenu;
 
 // Khởi chạy ngay lập tức nếu DOM đã sẵn sàng
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initCustomerAuthUI();
+  highlightActiveNavMenu();
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    highlightActiveNavMenu();
+  });
 }

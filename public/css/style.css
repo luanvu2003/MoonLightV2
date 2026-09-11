@@ -37,15 +37,81 @@ body:not(.home-page) #navbar .logo h1 a { color: #0a0a0a !important; }
 .highlight { color: var(--gold); }
 
 /* MENU */
-.menu { display: flex; align-items: center; height: 100%; }
-.menu>a, .dropdown-toggle { text-decoration: none; color: #fff; margin: 0 14px; font-weight: 600; font-size: 13px; text-transform: uppercase; transition: 0.3s; padding: 10px 0; display: inline-block; letter-spacing: 0.5px; }
+.menu { display: flex; align-items: center; height: 100%; gap: 2px; }
+.menu>a, .dropdown-toggle {
+  position: relative;
+  text-decoration: none;
+  color: #fff;
+  margin: 0 12px;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  transition: color 0.25s ease, transform 0.2s ease;
+  padding: 10px 4px;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+/* Vạch sáng chỉ báo menu khi hover và khi active */
+.menu>a::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background: linear-gradient(90deg, #dfba73, #f59e0b);
+  border-radius: 99px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+/* Màu chữ cơ bản khi navbar cuộn hoặc trên các trang có nền sáng */
 #navbar.scrolled .menu>a, #navbar.scrolled .dropdown-toggle,
 #navbar.navbar-solid .menu>a, #navbar.navbar-solid .dropdown-toggle,
-body:not(.home-page) #navbar .menu>a, body:not(.home-page) #navbar .dropdown-toggle { color: #0a0a0a !important; }
-.menu>a:hover, .dropdown-toggle:hover,
-.menu>a.active { color: var(--gold) !important; }
-.nav-tryon { position: relative; display: inline-flex !important; align-items: center; gap: 5px; }
-.ai-badge { background: linear-gradient(135deg, #d4af37, #f59e0b); color: #000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 999px; line-height: 1; letter-spacing: 0.5px; }
+body:not(.home-page) #navbar .menu>a, body:not(.home-page) #navbar .dropdown-toggle {
+  color: #0a0a0a;
+}
+
+/* Trạng thái HOVER và ACTIVE - BẮT BUỘC ƯU TIÊN CAO NHẤT TRÊN MỌI TRANG VÀ MỌI TRẠNG THÁI CUỘN */
+#navbar .menu>a:hover,
+#navbar .menu>a.active,
+#navbar .dropdown-toggle:hover,
+#navbar.scrolled .menu>a:hover,
+#navbar.scrolled .menu>a.active,
+#navbar.scrolled .dropdown-toggle:hover,
+#navbar.navbar-solid .menu>a:hover,
+#navbar.navbar-solid .menu>a.active,
+#navbar.navbar-solid .dropdown-toggle:hover,
+body:not(.home-page) #navbar .menu>a:hover,
+body:not(.home-page) #navbar .menu>a.active,
+body:not(.home-page) #navbar .dropdown-toggle:hover,
+body.home-page #navbar .menu>a:hover,
+body.home-page #navbar .menu>a.active {
+  color: var(--gold, #dfba73) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 10px rgba(223, 186, 115, 0.3);
+}
+
+#navbar .menu>a:hover::after,
+#navbar .menu>a.active::after,
+#navbar.scrolled .menu>a:hover::after,
+#navbar.scrolled .menu>a.active::after,
+#navbar.navbar-solid .menu>a:hover::after,
+#navbar.navbar-solid .menu>a.active::after,
+body:not(.home-page) #navbar .menu>a:hover::after,
+body:not(.home-page) #navbar .menu>a.active::after {
+  transform: scaleX(1) !important;
+  box-shadow: 0 0 10px rgba(223, 186, 115, 0.8) !important;
+}
+
+.nav-tryon { position: relative; display: inline-flex !important; align-items: center; gap: 6px; }
+.nav-tryon i { transition: transform 0.25s ease, color 0.25s ease; }
+.nav-tryon:hover i, .nav-tryon.active i { transform: rotate(15deg) scale(1.2); color: var(--gold, #dfba73) !important; }
+.ai-badge { background: linear-gradient(135deg, #d4af37, #f59e0b); color: #000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 999px; line-height: 1; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4); }
 
 /* ICONS */
 .nav-icons { display: flex; gap: 20px; color: #fff; cursor: pointer; align-items: center; }
@@ -1841,22 +1907,39 @@ footer { background: #111; color: #fff; padding: 70px 0 20px; margin-top: 50px; 
         height: 100vh;
         background: #0f1117;
         flex-direction: column;
-        padding: 70px 24px 24px 24px;
-        transition: left 0.35s ease;
+        padding: 70px 20px 24px 20px;
+        transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 5000;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
-        gap: 15px;
+        gap: 8px;
+        align-items: stretch !important;
     }
     .menu.open { left: 0; }
-    .menu a {
-        color: #f1f5f9;
-        font-size: 15px;
+    .menu > a,
+    body:not(.home-page) #navbar .menu > a {
+        color: #f1f5f9 !important;
+        font-size: 14px;
         font-weight: 600;
-        padding: 10px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        display: block;
+        padding: 12px 14px;
+        margin: 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        border-radius: 8px;
+        transition: all 0.2s ease;
     }
-    .menu a.active { color: var(--gold); }
+    .menu > a::after {
+        display: none !important;
+    }
+    .menu > a:hover,
+    .menu > a.active,
+    body:not(.home-page) #navbar .menu > a:hover,
+    body:not(.home-page) #navbar .menu > a.active {
+        color: var(--gold, #dfba73) !important;
+        background: rgba(223, 186, 115, 0.12) !important;
+        border-bottom-color: rgba(223, 186, 115, 0.25) !important;
+        padding-left: 18px;
+        font-weight: 700 !important;
+    }
     .nav-item.dropdown .dropdown-menu {
         position: static;
         box-shadow: none;
