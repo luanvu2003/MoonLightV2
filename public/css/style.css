@@ -752,35 +752,67 @@ body:not(.home-page) #navbar .mobile-toggle { color: #0a0a0a !important; }
 
 .address-preview-card {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  margin-top: 12px;
-  background: linear-gradient(135deg, rgba(223, 186, 115, 0.12) 0%, rgba(223, 186, 115, 0.03) 100%);
-  border: 1px dashed rgba(223, 186, 115, 0.6);
-  border-radius: 6px;
-  animation: fadeInAddress 0.3s ease;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  margin-top: 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #faf8f5 100%);
+  border: 1.5px solid #e8dfcf;
+  border-left: 4px solid var(--gold, #dfba73);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(223, 186, 115, 0.08);
+  animation: fadeInAddress 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
 }
+
+.address-preview-card:hover {
+  border-color: #dfba73;
+  box-shadow: 0 6px 20px rgba(223, 186, 115, 0.14);
+}
+
 @keyframes fadeInAddress {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
 .address-preview-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--gold, #dfba73);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(223, 186, 115, 0.16);
+  border: 1px solid rgba(223, 186, 115, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
-  font-size: 11px;
+  color: #b48518;
+  font-size: 13.5px;
   flex-shrink: 0;
-  margin-top: 2px;
 }
-.address-preview-body { display: flex; flex-direction: column; gap: 3px; }
-.address-preview-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #856404; }
-.address-preview-text { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.45; }
+
+.address-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.address-preview-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #856404;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.address-preview-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.5;
+}
 
 @media (max-width: 768px) {
   .address-select-grid { grid-template-columns: 1fr; gap: 8px; }
