@@ -754,8 +754,8 @@ async function loadCustomerOrders() {
       // Fallback tìm đơn qua số điện thoại nếu DB chưa đồng bộ user id
       const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
       if (user && user.phone) {
-        const localOrders = JSON.parse(localStorage.getItem('moonlight_all_orders') || '[]');
-        orders = localOrders.filter(o => o.customer?.phone === user.phone);
+        const localOrders = JSON.parse(localStorage.getItem('moonlight_orders') || localStorage.getItem('moonlight_all_orders') || '[]');
+        orders = localOrders.filter(o => o.customer?.phone === user.phone || (o.customerId && String(o.customerId) === String(user.id || user._id)));
       }
     }
 

@@ -57,11 +57,16 @@ export class ReviewController {
   static async getByProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { productId } = req.params;
-      const reviews = await Review.find({ productId }).sort({ createdAt: -1 });
+      let reviews: any[] = [];
+      try {
+        reviews = await Review.find({ productId }).sort({ createdAt: -1 });
+      } catch (dbErr: any) {
+        console.warn('⚠️ Lỗi truy vấn Review từ MongoDB:', dbErr.message);
+      }
 
       // Đối với trang khách hàng công khai: ẩn tên nhân viên nội bộ, hiển thị thương hiệu "MoonLight"
       const publicReviews = reviews.map((r) => {
-        const obj = r.toObject();
+        const obj = r.toObject ? r.toObject() : r;
         if (obj.shopReply) {
           obj.shopReplyBy = 'MoonLight';
           obj.shopReplyRole = 'Thương hiệu';

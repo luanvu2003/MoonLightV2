@@ -99,12 +99,32 @@ app.get('/login', (_req: Request, res: Response) => {
   res.sendFile(path.join(publicDir, 'login.html'));
 });
 
+app.get('/catalog', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'catalog.html'));
+});
+
+app.get('/profile', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'profile.html'));
+});
+
+app.get('/cart', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'checkout.html'));
+});
+
 app.get('/checkout', (_req: Request, res: Response) => {
   res.sendFile(path.join(publicDir, 'checkout.html'));
 });
 
 app.get('/product', (_req: Request, res: Response) => {
   res.sendFile(path.join(publicDir, 'product.html'));
+});
+
+app.get('/register', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'login.html'));
+});
+
+app.get('/pos', (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, 'staff.html'));
 });
 
 // Trang chủ và client-side routing

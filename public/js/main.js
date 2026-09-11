@@ -417,21 +417,8 @@ function quickAdd(id) {
     }
 }
 
-// Yêu thích
-function toggleWishlist(btn, id) {
-    btn.classList.toggle('active');
-    const icon = btn.querySelector('i');
-    if (btn.classList.contains('active')) {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        if (!wishlist.includes(id)) wishlist.push(id);
-    } else {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        wishlist = wishlist.filter(item => item !== id);
-    }
-    localStorage.setItem('moonlight_wishlist', JSON.stringify(wishlist));
-}
+// Yêu thích (đã được định nghĩa đầy đủ ở phần dưới)
+
 
 // Helper Format số đã bán
 function formatSold(num) {
@@ -756,15 +743,7 @@ function switchTab(tabName) {
         renderAdminStaff();
     }
 }
-function deleteReview(reviewId) {
-    if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
-        let allReviews = JSON.parse(localStorage.getItem('moonlight_all_reviews')) || [];
-        allReviews = allReviews.filter(r => r.id !== reviewId);
-        localStorage.setItem('moonlight_all_reviews', JSON.stringify(allReviews));
-        renderAdminReviews(); // Load lại bảng
-        showToast({ title: 'Đã xóa', message: 'Đánh giá đã được loại bỏ.', type: 'info' });
-    }
-}
+
 
 // Scroll Effect
 function setupScrollEffects() {
@@ -1619,18 +1598,6 @@ function showAddStaffForm() {
 
 function closeStaffModal() {
     document.getElementById('staffModal').classList.remove('open');
-}
-
-// Cập nhật luôn cho Modal Sản Phẩm (Nếu chưa có)
-function showAddProductForm() {
-    document.getElementById('productForm').reset();
-    document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').innerText = 'Thêm sản phẩm mới';
-    document.getElementById('productModal').classList.add('open');
-}
-
-function closeModal() {
-    document.getElementById('productModal').classList.remove('open');
 }
 
 function handleSaveStaff(e) {

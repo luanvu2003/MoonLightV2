@@ -5219,6 +5219,11 @@ function handleCustomerLogout() {
     message: 'Bạn đã đăng xuất tài khoản an toàn.',
     type: 'info'
   });
+  if (window.location.pathname.includes('profile') || window.location.pathname.includes('admin')) {
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 500);
+  }
 }
 
 // Tải Google Client ID từ backend và thiết lập Google Sign-In
@@ -5505,11 +5510,11 @@ async function legacyCustomerOrdersModal() {
 
     if (orders.length === 0) {
       // Tìm trong localStorage fallback
-      const localOrders = JSON.parse(localStorage.getItem('moonlight_all_orders') || '[]');
+      const localOrders = JSON.parse(localStorage.getItem('moonlight_orders') || localStorage.getItem('moonlight_all_orders') || '[]');
       orders = localOrders.filter((o) => {
         const cPhone = o.customer?.phone || '';
         const cName = o.customer?.name || '';
-        return (user.phone && cPhone === user.phone) || (user.name && cName.includes(user.name));
+        return (user.phone && cPhone === user.phone) || (user.name && cName.includes(user.name)) || (o.customerId && String(o.customerId) === String(user.id || user._id));
       });
     }
 

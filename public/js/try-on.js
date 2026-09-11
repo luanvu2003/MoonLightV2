@@ -368,6 +368,10 @@
   }
 
   function getFallbackProducts() {
+    try {
+      const stored = JSON.parse(localStorage.getItem('moonlight_products') || 'null');
+      if (Array.isArray(stored) && stored.length > 0) return stored;
+    } catch (e) {}
     return [
       {
         id: 1,
