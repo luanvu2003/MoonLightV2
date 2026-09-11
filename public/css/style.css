@@ -3200,10 +3200,31 @@ input.input-locked {
     background: rgba(148, 163, 184, 0.75);
 }
 
-/* Ensure message items have breathing room on the right */
+/* Ensure message items have breathing room and wrap properly */
 .cust-chat-msg-item,
 .adm-msg-item {
     margin-right: 4px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Word-break and text wrapping for chat bubbles and text */
+.chat-msg-bubble {
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    word-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    max-width: 80% !important;
+}
+
+.chat-msg-text {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    word-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    line-height: 1.55;
 }
 
 /* Chat media styling (Images, Videos, Links) */

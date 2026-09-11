@@ -5087,14 +5087,15 @@ function renderAdminChatThreadOnly(ticket) {
     const countEl = document.getElementById('admModalMsgCount');
     if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
-// Tự động nhận diện URL cho chat Admin
+// Tự động nhận diện URL và chuyển đổi xuống dòng cho chat Admin
 function formatAdminChatContent(rawText) {
     if (!rawText) return '';
     const escaped = escapeAdminHtml(rawText);
     const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-    return escaped.replace(urlRegex, (url) => {
+    const withLinks = escaped.replace(urlRegex, (url) => {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link" style="color:#38bdf8; text-decoration:underline;"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
     });
+    return withLinks.replace(/\r?\n/g, '<br>');
 }
 
 // Render ảnh hoặc video đính kèm cho chat Admin
@@ -5221,8 +5222,8 @@ function renderAdminChatThreadOnly(ticket) {
                         <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
                         <span>${mTime}</span>
                     </div>
-                    <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">
-                        ${m.message ? formatAdminChatContent(m.message) : ''}
+                    <div class="chat-msg-bubble" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">
+                        ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
                         ${renderAdminMessageAttachments(m.attachments)}
                     </div>
                 </div>
@@ -5234,8 +5235,8 @@ function renderAdminChatThreadOnly(ticket) {
                         <span>${mTime}</span>
                         <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
                     </div>
-                    <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                        ${m.message ? formatAdminChatContent(m.message) : ''}
+                    <div class="chat-msg-bubble" style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                        ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
                         ${renderAdminMessageAttachments(m.attachments)}
                     </div>
                     ${renderAdminMessageStatus(m.status)}
@@ -5433,8 +5434,8 @@ async function handleAdminSubmitReply(event) {
                 <span>${nowStr}</span>
                 <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(staffName)}</strong>
             </div>
-            <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                ${replyMessage ? formatAdminChatContent(replyMessage) : ''}
+            <div class="chat-msg-bubble" style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                ${replyMessage ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>` : ''}
                 ${renderAdminMessageAttachments(attachments)}
             </div>
             ${renderAdminMessageStatus('sending')}

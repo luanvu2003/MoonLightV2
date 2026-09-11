@@ -1222,15 +1222,16 @@ async function handleCloseCustomerTicket(ticketId) {
   }
 }
 
-// Tự động nhận diện và biến đổi URL thành clickable links
+// Tự động nhận diện và biến đổi URL thành clickable links kèm chuyển đổi xuống dòng
 function formatChatContent(rawText) {
   if (!rawText) return '';
   const escaped = escapeHtml(rawText);
   // Regex tìm URL http:// hoặc https://
   const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-  return escaped.replace(urlRegex, (url) => {
+  const withLinks = escaped.replace(urlRegex, (url) => {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
   });
+  return withLinks.replace(/\r?\n/g, '<br>');
 }
 
 // Render ảnh hoặc video đính kèm trong tin nhắn
@@ -1298,8 +1299,8 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
             <span>${mTime}</span>
             <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
           </div>
-          <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-            ${m.message ? formatChatContent(m.message) : ''}
+          <div class="chat-msg-bubble" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+            ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, true)}
           </div>
           ${renderCustomerMessageStatus(m.status)}
@@ -1314,8 +1315,8 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
             </strong>
             <span>${mTime}</span>
           </div>
-          <div style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
-            ${m.message ? formatChatContent(m.message) : ''}
+          <div class="chat-msg-bubble" style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+            ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, false)}
           </div>
         </div>
@@ -1659,8 +1660,8 @@ async function handleSendCustomerMessage(event, ticketId) {
         <span>${nowStr}</span>
         <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
       </div>
-      <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-        ${text ? formatChatContent(text) : ''}
+      <div class="chat-msg-bubble" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+        ${text ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>` : ''}
         ${renderMessageAttachments(attachments, true)}
       </div>
       ${renderCustomerMessageStatus('sending')}
