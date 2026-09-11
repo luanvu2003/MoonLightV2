@@ -420,6 +420,23 @@ const MoonlightAPI = {
     });
   },
 
+  async setTicketTyping(id, isTyping) {
+    return this.request(`/tickets/${id}/typing`, {
+      method: 'POST',
+      body: JSON.stringify({ isTyping })
+    });
+  },
+
+  async markTicketSeen(id) {
+    return this.request(`/tickets/${id}/seen`, {
+      method: 'PUT'
+    });
+  },
+
+  async getTicketLive(id) {
+    return this.request(`/tickets/${id}/live`);
+  },
+
   async getAllTickets(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/tickets${qs ? '?' + qs : ''}`);

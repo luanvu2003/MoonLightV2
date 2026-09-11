@@ -4884,50 +4884,236 @@ function openReplyTicketModal(ticketId) {
         }
     }
 
+function renderAdminMessageStatus(status) {
+    if (status === 'sending') {
+        return `<div class="adm-msg-status" style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: #94a3b8; margin-top: 3px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 9.5px;"></i> <span>Đang gửi...</span>
+        </div>`;
+    } else if (status === 'sent') {
+        return `<div class="adm-msg-status" style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: #94a3b8; margin-top: 3px;">
+            <i class="fas fa-check" style="font-size: 10px;"></i> <span>Đã gửi</span>
+        </div>`;
+    } else if (status === 'seen') {
+        return `<div class="adm-msg-status" style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--gold, #d4af37); font-weight: 600; margin-top: 3px;">
+            <i class="fas fa-check-double" style="font-size: 10px; color: var(--gold, #d4af37);"></i> <span>Đã xem</span>
+        </div>`;
+    } else {
+        return `<div class="adm-msg-status" style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: #94a3b8; margin-top: 3px;">
+            <i class="fas fa-check-double" style="font-size: 10px;"></i> <span>Đã nhận</span>
+        </div>`;
+    }
+}
+
+// Xử lý gửi trạng thái typing của Admin
+let adminTypingTimers = {};
+let adminTypingSent = {};
+
+function handleAdminTicketTyping(ticketId) {
+    if (!adminTypingSent[ticketId]) {
+        adminTypingSent[ticketId] = true;
+        MoonlightAPI.setTicketTyping(ticketId, true).catch(() => {});
+    }
+
+    if (adminTypingTimers[ticketId]) {
+        clearTimeout(adminTypingTimers[ticketId]);
+    }
+
+    adminTypingTimers[ticketId] = setTimeout(() => {
+        adminTypingSent[ticketId] = false;
+        MoonlightAPI.setTicketTyping(ticketId, false).catch(() => {});
+    }, 2500);
+}
+
+// Live Polling cho Admin Modal khi đang mở
+let adminLivePollTimer = null;
+let currentOpenAdminTicketId = null;
+
+function startAdminTicketLiveSync(ticketId) {
+    stopAdminTicketLiveSync();
+    currentOpenAdminTicketId = ticketId;
+
+    // Đánh dấu đã xem ngay lập tức
+    MoonlightAPI.markTicketSeen(ticketId).catch(() => {});
+
+    adminLivePollTimer = setInterval(async () => {
+        const modal = document.getElementById('replyTicketModal');
+        if (!modal || !modal.classList.contains('open') || currentOpenAdminTicketId !== ticketId) {
+            stopAdminTicketLiveSync();
+            return;
+        }
+
+        try {
+            const res = await MoonlightAPI.getTicketLive(ticketId);
+            if (res && res.success && res.data) {
+                const liveData = res.data;
+                const liveTicket = liveData.ticket || liveData;
+                const custTyping = liveData.typing?.customer;
+
+                // 1. Cập nhật typing indicator
+                const typingEl = document.getElementById('admTypingIndicator');
+                const typingText = document.getElementById('admTypingText');
+                if (typingEl && typingText) {
+                    if (custTyping && custTyping.isTyping) {
+                        typingText.innerText = `${custTyping.name || 'Khách hàng'} đang nhập tin nhắn...`;
+                        typingEl.style.display = 'inline-flex';
+                    } else {
+                        typingEl.style.display = 'none';
+                    }
+                }
+
+                // 2. Kiểm tra nếu có tin nhắn mới từ khách
+                const threadEl = document.getElementById('admModalChatThread');
+                if (threadEl) {
+                    const currentCount = threadEl.querySelectorAll('.adm-msg-status').length;
+                    const serverMsgs = liveTicket.messages || [];
+                    if (serverMsgs.length > currentCount) {
+                        // Cập nhật ticket trong allAdminTickets
+                        const idx = allAdminTickets.findIndex(item => String(item._id || item.id) === String(ticketId));
+                        if (idx !== -1) {
+                            allAdminTickets[idx] = liveTicket;
+                        }
+                        renderAdminChatThreadOnly(liveTicket);
+                    } else {
+                        // Cập nhật trạng thái 'Đã xem' nếu khách đã xem tin nhắn của admin
+                        const custSeenTime = liveTicket.customerLastSeenAt ? new Date(liveTicket.customerLastSeenAt).getTime() : 0;
+                        if (custSeenTime > 0) {
+                            const statusTags = threadEl.querySelectorAll('.adm-msg-status');
+                            statusTags.forEach(tag => {
+                                if (!tag.innerHTML.includes('Đã xem') && !tag.innerHTML.includes('Lỗi')) {
+                                    tag.outerHTML = renderAdminMessageStatus('seen');
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Không làm gián đoạn admin
+        }
+    }, 2500);
+}
+
+function stopAdminTicketLiveSync() {
+    if (adminLivePollTimer) {
+        clearInterval(adminLivePollTimer);
+        adminLivePollTimer = null;
+    }
+    currentOpenAdminTicketId = null;
+}
+
+function renderAdminChatThreadOnly(ticket) {
+    const threadEl = document.getElementById('admModalChatThread');
+    if (!threadEl) return;
+
+    let msgList = [];
+    if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
+        msgList = ticket.messages;
+    } else if (ticket.message) {
+        msgList.push({
+            senderRole: 'customer',
+            senderName: ticket.customerName || 'Khách hàng',
+            message: ticket.message,
+            createdAt: ticket.createdAt
+        });
+    }
+
     const countEl = document.getElementById('admModalMsgCount');
     if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
-    const threadEl = document.getElementById('admModalChatThread');
-    if (threadEl) {
-        threadEl.innerHTML = msgList.map(m => {
-            const isCust = m.senderRole === 'customer';
-            const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
-            if (isCust) {
-                return `
-                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
-                            <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
-                            <span>${mTime}</span>
-                        </div>
-                        <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">
-                            ${escapeAdminHtml(m.message)}
-                        </div>
+    threadEl.innerHTML = msgList.map(m => {
+        const isCust = m.senderRole === 'customer';
+        const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+        if (isCust) {
+            return `
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
+                        <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
+                        <span>${mTime}</span>
                     </div>
-                `;
-            } else {
-                return `
-                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
-                            <span>${mTime}</span>
-                            <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
-                        </div>
-                        <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                            ${escapeAdminHtml(m.message)}
-                        </div>
+                    <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">
+                        ${escapeAdminHtml(m.message)}
                     </div>
-                `;
-            }
-        }).join('');
+                </div>
+            `;
+        } else {
+            return `
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
+                        <span>${mTime}</span>
+                        <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
+                    </div>
+                    <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                        ${escapeAdminHtml(m.message)}
+                    </div>
+                    ${renderAdminMessageStatus(m.status)}
+                </div>
+            `;
+        }
+    }).join('') + `
+        <!-- KHỐI HIỂN THỊ KHÁCH ĐANG NHẬP -->
+        <div id="admTypingIndicator" style="display: none; align-items: center; gap: 6px; font-size: 11.5px; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px dashed rgba(56,189,248,0.35); padding: 5px 12px; border-radius: 12px; width: fit-content; margin-top: 4px;">
+            <i class="fas fa-pen-nib fa-bounce"></i>
+            <span id="admTypingText">Khách hàng đang nhập tin nhắn...</span>
+        </div>
+    `;
 
-        setTimeout(() => {
-            threadEl.scrollTop = threadEl.scrollHeight;
-        }, 50);
+    setTimeout(() => {
+        threadEl.scrollTop = threadEl.scrollHeight;
+    }, 50);
+}
+
+function openReplyTicketModal(ticketId) {
+    const ticket = allAdminTickets.find(t => String(t._id || t.id) === String(ticketId));
+    if (!ticket) {
+        showToast("Lỗi", "Không tìm thấy thông tin phiếu hỗ trợ!", "error");
+        return;
     }
 
-    // Reset textarea
+    const modal = document.getElementById('replyTicketModal');
+    if (!modal) {
+        console.error('Không tìm thấy modal #replyTicketModal');
+        return;
+    }
+
+    const categoryNames = {
+        order_issue: 'Sự cố đơn hàng',
+        size_advice: 'Tư vấn may đo / Size',
+        return_refund: 'Đổi trả / Hoàn tiền',
+        payment: 'Thanh toán / Chuyển khoản',
+        other: 'Yêu cầu khác'
+    };
+
+    const idEl = document.getElementById('admModalTicketId');
+    if (idEl) idEl.value = ticket._id || ticket.id;
+
+    const codeEl = document.getElementById('admModalTicketCode');
+    if (codeEl) codeEl.innerText = '#' + (ticket.ticketCode || 'TK-000000');
+
+    const nameEl = document.getElementById('admModalCustomerName');
+    if (nameEl) nameEl.innerText = ticket.customerName || 'Khách hàng';
+
+    const contactEl = document.getElementById('admModalCustomerContact');
+    if (contactEl) contactEl.innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
+
+    const catEl = document.getElementById('admModalTicketCategory');
+    if (catEl) catEl.innerText = `${categoryNames[ticket.category] || ticket.category || 'Yêu cầu khác'} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
+
+    const dateEl = document.getElementById('admModalTicketDate');
+    if (dateEl) dateEl.innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
+
+    const subjEl = document.getElementById('admModalTicketSubject');
+    if (subjEl) subjEl.innerText = ticket.subject || '';
+
+    // Render khung tin nhắn
+    renderAdminChatThreadOnly(ticket);
+
+    // Reset textarea và gán sự kiện gõ phím
     const repEl = document.getElementById('admModalReplyMessage');
     if (repEl) {
         repEl.value = '';
+        repEl.oninput = () => {
+            handleAdminTicketTyping(ticketId);
+        };
         repEl.onkeydown = (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -4950,6 +5136,9 @@ function openReplyTicketModal(ticketId) {
     modal.classList.add('active');
     modal.style.display = 'flex';
 
+    // Bắt đầu live polling đồng bộ tin nhắn và trạng thái typing
+    startAdminTicketLiveSync(ticketId);
+
     // Click outside backdrop to close
     modal.onclick = (e) => {
         if (e.target === modal) closeReplyTicketModal();
@@ -4961,6 +5150,7 @@ function openReplyTicketModal(ticketId) {
 }
 
 function closeReplyTicketModal() {
+    stopAdminTicketLiveSync();
     const modal = document.getElementById('replyTicketModal');
     if (modal) {
         modal.classList.remove('open');
@@ -4976,16 +5166,51 @@ async function handleAdminSubmitReply(event) {
     const replyMessage = document.getElementById('admModalReplyMessage')?.value?.trim();
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
 
-    if (!replyMessage) {
-        showToast("Thiếu nội dung", "Vui lòng nhập tin nhắn phản hồi cho khách hàng!", "warning");
-        return;
+    if (!replyMessage) return;
+
+    // Hủy typing ngay khi gửi
+    if (adminTypingTimers[ticketId]) clearTimeout(adminTypingTimers[ticketId]);
+    adminTypingSent[ticketId] = false;
+    MoonlightAPI.setTicketTyping(ticketId, false).catch(() => {});
+
+    // Xóa ô nhập ngay lập tức
+    const repEl = document.getElementById('admModalReplyMessage');
+    if (repEl) repEl.value = '';
+
+    // Thêm tin nhắn tạm thời 'Đang gửi...' vào khung chat
+    const threadEl = document.getElementById('admModalChatThread');
+    const tempMsgId = 'adm-temp-msg-' + Date.now();
+    const nowStr = new Date().toLocaleString('vi-VN');
+
+    // Lấy thông tin nhân viên đang đăng nhập
+    const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { name: 'Quản Trị Viên' };
+    const staffName = loggedUser.name || loggedUser.username || 'CSKH MoonLight';
+
+    if (threadEl) {
+        const tempEl = document.createElement('div');
+        tempEl.id = tempMsgId;
+        tempEl.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
+        tempEl.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
+                <span>${nowStr}</span>
+                <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(staffName)}</strong>
+            </div>
+            <div style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                ${escapeAdminHtml(replyMessage)}
+            </div>
+            ${renderAdminMessageStatus('sending')}
+        `;
+        const typingInd = document.getElementById('admTypingIndicator');
+        if (typingInd) {
+            threadEl.insertBefore(tempEl, typingInd);
+        } else {
+            threadEl.appendChild(tempEl);
+        }
+        threadEl.scrollTop = threadEl.scrollHeight;
     }
 
     try {
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi tin...';
-        }
+        if (btn) btn.disabled = true;
 
         const res = await MoonlightAPI.replyTicket(ticketId, {
             message: replyMessage,
@@ -4994,34 +5219,45 @@ async function handleAdminSubmitReply(event) {
         });
 
         if (res && (res.success || res.data)) {
-            showToast("Thành công", "Đã gửi tin nhắn phản hồi cho khách hàng!", "success");
-            
+            // Cập nhật trạng thái từ 'Đang gửi...' sang 'Đã nhận'
+            const tempEl = document.getElementById(tempMsgId);
+            if (tempEl) {
+                const statusDiv = tempEl.querySelector('.adm-msg-status');
+                if (statusDiv) {
+                    statusDiv.outerHTML = renderAdminMessageStatus('delivered');
+                }
+            }
+
             const updatedTicket = res.data;
             if (updatedTicket) {
                 const idx = allAdminTickets.findIndex(t => String(t._id || t.id) === String(ticketId));
                 if (idx !== -1) {
                     allAdminTickets[idx] = updatedTicket;
                 }
-            } else {
-                await fetchAdminTickets();
             }
 
-            // Tự động re-render lại modal để thấy tin nhắn mới nhất trong khung chat
-            openReplyTicketModal(ticketId);
-
-            // Cập nhật lại giao diện bảng ticket ngoài admin
+            // Cập nhật lại giao diện bảng ngoài admin
             renderAdminTickets();
         } else {
-            showToast("Lỗi", res?.message || "Không thể gửi tin nhắn lúc này.", "error");
+            const tempEl = document.getElementById(tempMsgId);
+            if (tempEl) {
+                const statusDiv = tempEl.querySelector('.adm-msg-status');
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<span style="color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Lỗi gửi</span>`;
+                }
+            }
         }
     } catch (err) {
         console.error('Lỗi khi gửi tin nhắn ticket:', err);
-        showToast("Lỗi", err.message || "Không thể kết nối đến máy chủ.", "error");
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI TIN NHẮN PHẢN HỒI';
+        const tempEl = document.getElementById(tempMsgId);
+        if (tempEl) {
+            const statusDiv = tempEl.querySelector('.adm-msg-status');
+            if (statusDiv) {
+                statusDiv.innerHTML = `<span style="color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Lỗi gửi</span>`;
+            }
         }
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
 
@@ -5033,6 +5269,8 @@ window.handleAdminTicketSearch = handleAdminTicketSearch;
 window.setAdminTicketCategoryFilter = setAdminTicketCategoryFilter;
 window.filterAdminTickets = filterAdminTickets;
 window.refreshAdminTickets = refreshAdminTickets;
+window.renderAdminMessageStatus = renderAdminMessageStatus;
+window.handleAdminTicketTyping = handleAdminTicketTyping;
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---
 

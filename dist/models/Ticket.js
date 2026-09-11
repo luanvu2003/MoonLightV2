@@ -4,6 +4,8 @@ const TicketMessageSchema = new Schema({
     senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
     senderName: { type: String, required: true, trim: true },
     message: { type: String, required: true, trim: true },
+    status: { type: String, enum: ['sending', 'sent', 'delivered', 'seen'], default: 'sent' },
+    seenAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 }, { _id: true });
 const TicketReplySchema = new Schema({
@@ -78,6 +80,14 @@ const TicketSchema = new Schema({
     },
     reply: {
         type: TicketReplySchema,
+        default: null
+    },
+    customerLastSeenAt: {
+        type: Date,
+        default: Date.now
+    },
+    adminLastSeenAt: {
+        type: Date,
         default: null
     }
 }, {

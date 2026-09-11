@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import { createTicket, getMyTickets, getTicketById, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
+import { createTicket, getMyTickets, getTicketById, getTicketLive, setTypingStatus, markTicketSeen, addTicketMessage, closeCustomerTicket, reopenCustomerTicket, getAllTickets, replyTicket } from '../controllers/ticket.controller.js';
 import { authenticate, requireRole } from '../middleware/auth.middleware.js';
 import { Role } from '../types/enums.js';
 const router = Router();
-// Routes dành cho Khách hàng (yêu cầu đăng nhập)
+// Routes dành cho Khách hàng & Người dùng tham gia ticket
 router.post('/', authenticate, createTicket);
 router.get('/my-tickets', authenticate, getMyTickets);
 router.get('/:id', authenticate, getTicketById);
+router.get('/:id/live', authenticate, getTicketLive);
+router.post('/:id/typing', authenticate, setTypingStatus);
+router.put('/:id/seen', authenticate, markTicketSeen);
 router.post('/:id/messages', authenticate, addTicketMessage);
 router.put('/:id/close', authenticate, closeCustomerTicket);
 router.put('/:id/reopen', authenticate, reopenCustomerTicket);

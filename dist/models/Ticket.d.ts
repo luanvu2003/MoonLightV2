@@ -5,6 +5,8 @@ export interface ITicketMessage {
     senderRole: 'customer' | 'admin' | 'staff';
     senderName: string;
     message: string;
+    status?: 'sending' | 'sent' | 'delivered' | 'seen';
+    seenAt?: Date;
     createdAt: Date;
 }
 export interface ITicketReply {
@@ -23,6 +25,8 @@ export interface ITicket extends Document {
     subject: string;
     message: string;
     messages: ITicketMessage[];
+    customerLastSeenAt?: Date | null;
+    adminLastSeenAt?: Date | null;
     priority: 'normal' | 'urgent';
     status: 'pending' | 'processing' | 'replied' | 'resolved' | 'closed';
     reply?: ITicketReply;

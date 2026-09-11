@@ -6,6 +6,8 @@ export interface ITicketMessage {
   senderRole: 'customer' | 'admin' | 'staff';
   senderName: string;
   message: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'seen';
+  seenAt?: Date;
   createdAt: Date;
 }
 
@@ -26,6 +28,8 @@ export interface ITicket extends Document {
   subject: string;
   message: string;
   messages: ITicketMessage[];
+  customerLastSeenAt?: Date | null;
+  adminLastSeenAt?: Date | null;
   priority: 'normal' | 'urgent';
   status: 'pending' | 'processing' | 'replied' | 'resolved' | 'closed';
   reply?: ITicketReply;
@@ -39,6 +43,8 @@ const TicketMessageSchema = new Schema<ITicketMessage>(
     senderRole: { type: String, enum: ['customer', 'admin', 'staff'], required: true },
     senderName: { type: String, required: true, trim: true },
     message: { type: String, required: true, trim: true },
+    status: { type: String, enum: ['sending', 'sent', 'delivered', 'seen'], default: 'sent' },
+    seenAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
   },
   { _id: true }
@@ -121,6 +127,14 @@ const TicketSchema = new Schema<ITicket>(
     },
     reply: {
       type: TicketReplySchema,
+      default: null
+    },
+    customerLastSeenAt: {
+      type: Date,
+      default: Date.now
+    },
+    adminLastSeenAt: {
+      type: Date,
       default: null
     }
   },
