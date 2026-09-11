@@ -180,6 +180,105 @@ const MoonlightAPI = {
     return res;
   },
 
+  // Sổ địa chỉ giao hàng
+  async getMyAddresses() {
+    return this.request('/auth/addresses');
+  },
+
+  async addAddress(data) {
+    const res = await this.request('/auth/addresses', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    if (res?.data?.addresses) {
+      try {
+        const u = JSON.parse(localStorage.getItem('moonlight_user') || '{}');
+        u.addresses = res.data.addresses;
+        const defaultAddr = res.data.addresses.find(a => a.isDefault);
+        if (defaultAddr) {
+          u.address = defaultAddr.fullAddress;
+          u.province = defaultAddr.province;
+          u.district = defaultAddr.district;
+          u.ward = defaultAddr.ward;
+          u.street = defaultAddr.street;
+          if (defaultAddr.phone) u.phone = defaultAddr.phone;
+        }
+        localStorage.setItem('moonlight_user', JSON.stringify(u));
+      } catch (e) {}
+    }
+    return res;
+  },
+
+  async updateAddress(id, data) {
+    const res = await this.request(`/auth/addresses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    if (res?.data?.addresses) {
+      try {
+        const u = JSON.parse(localStorage.getItem('moonlight_user') || '{}');
+        u.addresses = res.data.addresses;
+        const defaultAddr = res.data.addresses.find(a => a.isDefault);
+        if (defaultAddr) {
+          u.address = defaultAddr.fullAddress;
+          u.province = defaultAddr.province;
+          u.district = defaultAddr.district;
+          u.ward = defaultAddr.ward;
+          u.street = defaultAddr.street;
+          if (defaultAddr.phone) u.phone = defaultAddr.phone;
+        }
+        localStorage.setItem('moonlight_user', JSON.stringify(u));
+      } catch (e) {}
+    }
+    return res;
+  },
+
+  async deleteAddress(id) {
+    const res = await this.request(`/auth/addresses/${id}`, {
+      method: 'DELETE'
+    });
+    if (res?.data?.addresses) {
+      try {
+        const u = JSON.parse(localStorage.getItem('moonlight_user') || '{}');
+        u.addresses = res.data.addresses;
+        const defaultAddr = res.data.addresses.find(a => a.isDefault);
+        if (defaultAddr) {
+          u.address = defaultAddr.fullAddress;
+          u.province = defaultAddr.province;
+          u.district = defaultAddr.district;
+          u.ward = defaultAddr.ward;
+          u.street = defaultAddr.street;
+          if (defaultAddr.phone) u.phone = defaultAddr.phone;
+        }
+        localStorage.setItem('moonlight_user', JSON.stringify(u));
+      } catch (e) {}
+    }
+    return res;
+  },
+
+  async setDefaultAddress(id) {
+    const res = await this.request(`/auth/addresses/${id}/default`, {
+      method: 'PATCH'
+    });
+    if (res?.data?.addresses) {
+      try {
+        const u = JSON.parse(localStorage.getItem('moonlight_user') || '{}');
+        u.addresses = res.data.addresses;
+        const defaultAddr = res.data.addresses.find(a => a.isDefault);
+        if (defaultAddr) {
+          u.address = defaultAddr.fullAddress;
+          u.province = defaultAddr.province;
+          u.district = defaultAddr.district;
+          u.ward = defaultAddr.ward;
+          u.street = defaultAddr.street;
+          if (defaultAddr.phone) u.phone = defaultAddr.phone;
+        }
+        localStorage.setItem('moonlight_user', JSON.stringify(u));
+      } catch (e) {}
+    }
+    return res;
+  },
+
   // 3. Products
   async getProducts(params = {}) {
     const query = new URLSearchParams(params).toString();

@@ -4552,6 +4552,236 @@ input.input-locked {
     }
 }
 
+/* ==========================================================================
+   ADDRESS BOOK & CHECKOUT ADDRESS PICKER
+   ========================================================================== */
+.address-book-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-add-address-trigger {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 50px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.btn-add-address-trigger:hover {
+    background: linear-gradient(135deg, var(--gold, #dfba73) 0%, #c99b42 100%);
+    color: #0a0a0a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(223, 186, 115, 0.35);
+}
+
+.address-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.address-card-item {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.address-card-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.address-card-item.is-default {
+    border-color: rgba(223, 186, 115, 0.7);
+    background: #fffdfa;
+    box-shadow: 0 4px 16px rgba(223, 186, 115, 0.08);
+}
+
+.address-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.address-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.address-card-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.address-card-phone {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.badge-addr-default {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.badge-addr-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.address-card-full-text {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.55;
+    margin-bottom: 10px;
+}
+
+.address-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px dashed #f1f5f9;
+    padding-top: 10px;
+}
+
+.btn-addr-action {
+    background: none;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.btn-addr-action.set-default {
+    color: #0284c7;
+}
+
+.btn-addr-action.set-default:hover {
+    background: #f0f9ff;
+    color: #0369a1;
+}
+
+.btn-addr-action.edit {
+    color: #475569;
+}
+
+.btn-addr-action.edit:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.btn-addr-action.delete {
+    color: #ef4444;
+}
+
+.btn-addr-action.delete:hover {
+    background: #fef2f2;
+}
+
+/* CHECKOUT ADDRESS SELECTOR */
+.checkout-address-picker-wrap {
+    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.checkout-address-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.checkout-address-picker-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.checkout-address-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkout-addr-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #f8fafc;
+}
+
+.checkout-addr-option:hover {
+    background: #ffffff;
+    border-color: var(--gold, #dfba73);
+}
+
+.checkout-addr-option.selected {
+    border-color: var(--gold, #dfba73);
+    background: #fffdf7;
+    box-shadow: 0 2px 8px rgba(223, 186, 115, 0.15);
+}
+
+.checkout-addr-radio {
+    margin-top: 3px;
+    accent-color: var(--gold, #dfba73);
+    cursor: pointer;
+}
+
 
 
 

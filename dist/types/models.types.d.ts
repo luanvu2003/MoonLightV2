@@ -1,4 +1,20 @@
 import { Role, OrderStatus, PaymentMethod, CustomerTier, ShiftType, ShiftStatus, GenderCategory } from './enums.js';
+export interface IUserAddress {
+    _id?: any;
+    recipientName?: string;
+    phone?: string;
+    province: string;
+    provinceCode?: string;
+    district: string;
+    districtCode?: string;
+    ward: string;
+    wardCode?: string;
+    street: string;
+    fullAddress: string;
+    isDefault?: boolean;
+    label?: string;
+    createdAt?: Date;
+}
 export interface IUser {
     _id?: any;
     name: string;
@@ -10,6 +26,7 @@ export interface IUser {
     district?: string;
     ward?: string;
     street?: string;
+    addresses?: IUserAddress[];
     isEmailVerified?: boolean;
     googleId?: string;
     password?: string;

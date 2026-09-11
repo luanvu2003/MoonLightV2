@@ -2967,6 +2967,139 @@ const VN_PROVINCES_FALLBACK = [
   { code: 15, name: "Tỉnh Yên Bái" }
 ];
 
+// Helper escape HTML cho shop
+function escapeHtmlShop(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+let checkoutSavedAddresses = [];
+let currentSelectedCheckoutAddressId = null;
+
+// Hiển thị danh sách địa chỉ đã lưu của khách hàng tại trang thanh toán (checkout)
+function renderCheckoutAddressPicker(addresses) {
+  checkoutSavedAddresses = addresses || [];
+  const container = document.getElementById('checkoutAddressPickerList');
+  if (!container) return;
+
+  if (checkoutSavedAddresses.length === 0) {
+    container.innerHTML = `
+      <div style="font-size:12.5px; color:#64748b; padding:4px 0;">
+        <i class="fas fa-info-circle"></i> Bạn chưa có địa chỉ nhận hàng trong sổ địa chỉ. Hãy điền thông tin bên dưới hoặc <a href="profile.html?tab=profile" target="_blank" style="color:var(--gold,#dfba73); font-weight:600; text-decoration:none;">thêm địa chỉ tại đây</a>.
+      </div>
+    `;
+    return;
+  }
+
+  // Sắp xếp: Địa chỉ mặc định lên đầu
+  const sorted = [...checkoutSavedAddresses].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+  checkoutSavedAddresses = sorted;
+
+  // Nếu chưa chọn địa chỉ nào thì ưu tiên chọn địa chỉ mặc định
+  if (!currentSelectedCheckoutAddressId) {
+    const defaultAddr = sorted.find(a => a.isDefault) || sorted[0];
+    currentSelectedCheckoutAddressId = defaultAddr ? String(defaultAddr._id) : 'custom';
+  }
+
+  container.innerHTML = sorted.map(addr => {
+    const isSelected = String(addr._id) === String(currentSelectedCheckoutAddressId);
+    const isDef = !!addr.isDefault;
+    const labelText = addr.label || 'Nhà riêng';
+    const labelIcon = labelText === 'Văn phòng' ? 'fa-building' : (labelText === 'Khác' ? 'fa-map-pin' : 'fa-home');
+    const displayAddr = addr.fullAddress || [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(', ');
+
+    return `
+      <label class="checkout-addr-option ${isSelected ? 'selected' : ''}" data-addr-id="${addr._id}" onclick="selectCheckoutSavedAddress('${addr._id}')">
+        <input type="radio" name="checkoutAddressSelectRadio" value="${addr._id}" ${isSelected ? 'checked' : ''} class="checkout-addr-radio">
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+            <strong style="font-size:13.5px; color:#0f172a;">${escapeHtmlShop(addr.recipientName || 'Người nhận')}</strong>
+            <span style="font-size:12.5px; color:#64748b; font-weight:600;"><i class="fas fa-phone-alt" style="font-size:11px; margin-right:3px;"></i>${escapeHtmlShop(addr.phone || '')}</span>
+            <span class="badge-addr-label" style="font-size:10.5px; padding:1px 6px;"><i class="fas ${labelIcon}"></i> ${escapeHtmlShop(labelText)}</span>
+            ${isDef ? `<span class="badge-addr-default" style="font-size:10.5px; padding:1px 6px;"><i class="fas fa-check-circle"></i> Mặc định</span>` : ''}
+          </div>
+          <div style="font-size:12.5px; color:#334155; line-height:1.45;">
+            ${escapeHtmlShop(displayAddr)}
+          </div>
+        </div>
+      </label>
+    `;
+  }).join('') + `
+    <label class="checkout-addr-option ${currentSelectedCheckoutAddressId === 'custom' ? 'selected' : ''}" data-addr-id="custom" onclick="selectCheckoutSavedAddress('custom')">
+      <input type="radio" name="checkoutAddressSelectRadio" value="custom" ${currentSelectedCheckoutAddressId === 'custom' ? 'checked' : ''} class="checkout-addr-radio">
+      <div style="flex:1;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <strong style="font-size:13px; color:#0f172a;"><i class="fas fa-plus-circle" style="color:var(--gold,#dfba73);"></i> Giao đến địa chỉ mới khác</strong>
+        </div>
+        <p style="font-size:11.5px; color:#64748b; margin:2px 0 0 0;">Nhập số điện thoại và địa chỉ nhận hàng riêng cho đơn này bên dưới</p>
+      </div>
+    </label>
+  `;
+
+  // Điền dữ liệu cho lần đầu tải trang
+  applySelectedCheckoutAddress(currentSelectedCheckoutAddressId, false);
+}
+
+// Xử lý khi khách bấm chọn một địa chỉ
+function selectCheckoutSavedAddress(addrId) {
+  currentSelectedCheckoutAddressId = String(addrId);
+
+  // Đồng bộ giao diện radio & class selected
+  document.querySelectorAll('#checkoutAddressPickerList .checkout-addr-option').forEach(opt => {
+    const isThis = opt.getAttribute('data-addr-id') === String(addrId);
+    opt.classList.toggle('selected', isThis);
+    const radio = opt.querySelector('input[type="radio"]');
+    if (radio) radio.checked = isThis;
+  });
+
+  applySelectedCheckoutAddress(addrId, true);
+}
+
+// Áp dụng dữ liệu địa chỉ đã chọn vào form thanh toán
+function applySelectedCheckoutAddress(addrId, showNotification = true) {
+  const phoneInput = document.getElementById('cusPhone');
+  const streetInput = document.getElementById('cusStreet');
+  const provEl = document.getElementById('cusProvince');
+
+  if (addrId === 'custom') {
+    if (streetInput) streetInput.value = '';
+    if (provEl) {
+      provEl.value = '';
+      provEl.dispatchEvent(new Event('change'));
+    }
+    if (typeof updateCheckoutAddressValue === 'function') updateCheckoutAddressValue();
+    if (showNotification && typeof showToast === 'function') {
+      showToast({ title: 'Nhập địa chỉ mới', message: 'Vui lòng điền thông tin địa chỉ nhận hàng bên dưới.', type: 'info' });
+    }
+    return;
+  }
+
+  const addr = checkoutSavedAddresses.find(a => String(a._id) === String(addrId));
+  if (!addr) return;
+
+  if (phoneInput && addr.phone) {
+    phoneInput.value = addr.phone;
+  }
+  if (streetInput && addr.street) {
+    streetInput.value = addr.street;
+  }
+
+  restoreCheckoutAddress(addr);
+
+  if (showNotification && typeof showToast === 'function') {
+    showToast({
+      title: 'Đã chọn địa chỉ',
+      message: `Đã áp dụng địa chỉ giao hàng của ${addr.recipientName || 'bạn'}.`,
+      type: 'success'
+    });
+  }
+}
+
 // Chuyển đổi trạng thái dùng thông tin tài khoản đã lưu khi checkout
 function toggleUseSavedCustomerProfile(useSaved) {
   const loggedUser = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
@@ -3285,18 +3418,41 @@ function renderCheckoutPage() {
       // Hiển thị khối tùy chọn thông tin đã lưu
       if (savedCard) {
         savedCard.style.display = 'block';
-        const nameText = document.getElementById('savedProfileNameText');
-        const phoneText = document.getElementById('savedProfilePhoneText');
-        const addrText = document.getElementById('savedProfileAddressText');
-        if (nameText) nameText.innerText = loggedUser.name || loggedUser.username || 'Khách hàng MoonLight';
-        if (phoneText) phoneText.innerText = loggedUser.phone || 'Chưa cập nhật SĐT';
-        
-        const fullAddr = loggedUser.address || [loggedUser.street, loggedUser.ward, loggedUser.district, loggedUser.province].filter(Boolean).join(', ');
-        if (addrText) addrText.innerText = fullAddr || 'Chưa lưu địa chỉ (Vui lòng chọn bên dưới)';
 
-        // Tự động điền số nhà tên đường nếu có
-        if (streetInput && !streetInput.value && loggedUser.street) {
-          streetInput.value = loggedUser.street;
+        let userAddresses = Array.isArray(loggedUser.addresses) ? loggedUser.addresses : [];
+        if (userAddresses.length > 0) {
+          renderCheckoutAddressPicker(userAddresses);
+        } else if (loggedUser.province || loggedUser.address) {
+          // Trường hợp tài khoản cũ có 1 địa chỉ phẳng
+          const legacyAddr = {
+            _id: 'legacy_default',
+            recipientName: loggedUser.name || loggedUser.username || 'Khách hàng',
+            phone: loggedUser.phone || '',
+            province: loggedUser.province || '',
+            provinceCode: loggedUser.provinceCode || '',
+            district: loggedUser.district || '',
+            districtCode: loggedUser.districtCode || '',
+            ward: loggedUser.ward || '',
+            wardCode: loggedUser.wardCode || '',
+            street: loggedUser.street || '',
+            fullAddress: loggedUser.address || '',
+            isDefault: true,
+            label: 'Nhà riêng'
+          };
+          renderCheckoutAddressPicker([legacyAddr]);
+        } else {
+          renderCheckoutAddressPicker([]);
+        }
+
+        // Tải thêm từ API để luôn đồng bộ mới nhất
+        if (typeof MoonlightAPI !== 'undefined' && typeof MoonlightAPI.getMyAddresses === 'function') {
+          MoonlightAPI.getMyAddresses().then(res => {
+            if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+              loggedUser.addresses = res.data;
+              localStorage.setItem('moonlight_user', JSON.stringify(loggedUser));
+              renderCheckoutAddressPicker(res.data);
+            }
+          }).catch(() => {});
         }
       }
     } else {
@@ -3313,13 +3469,10 @@ function renderCheckoutPage() {
         if (nameInput && !nameInput.value && savedCustomer.name) nameInput.value = savedCustomer.name;
         if (phoneInput && !phoneInput.value && savedCustomer.phone) phoneInput.value = savedCustomer.phone;
         if (streetInput && !streetInput.value && savedCustomer.street) streetInput.value = savedCustomer.street;
+        if (savedCustomer.provinceCode || savedCustomer.province) {
+          restoreCheckoutAddress(savedCustomer);
+        }
       }
-    }
-
-    // Khôi phục bộ chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã
-    const sourceGeo = loggedUser || savedCustomer;
-    if (sourceGeo && (sourceGeo.provinceCode || sourceGeo.province)) {
-      restoreCheckoutAddress(sourceGeo);
     }
   } catch (e) {
     console.warn('Lỗi khôi phục thông tin checkout:', e);
@@ -5262,6 +5415,9 @@ function closeCustomerOrdersModal() {
   const modal = document.getElementById('customerOrdersModal');
   if (modal) modal.classList.remove('open');
 }
+
+window.selectCheckoutSavedAddress = selectCheckoutSavedAddress;
+window.renderCheckoutAddressPicker = renderCheckoutAddressPicker;
 
 // Khởi chạy ngay lập tức nếu DOM đã sẵn sàng
 if (document.readyState === 'complete' || document.readyState === 'interactive') {

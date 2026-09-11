@@ -457,74 +457,25 @@
                                 </div>
                             </div>
 
-                            <!-- KHỐI 2: THÔNG TIN GIAO HÀNG (CÓ THỂ SỬA) -->
-                            <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-top:24px; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px; border-top:1px dashed #e2e8f0; padding-top:20px;">
-                                2. Thông tin liên hệ & Địa chỉ giao hàng mặc định
-                            </h4>
-
-                            <!-- SỐ ĐIỆN THOẠI CÓ THỂ SỬA -->
-                            <div class="form-group">
-                                <label>
-                                    <span>Số điện thoại nhận hàng *</span>
-                                    <span class="badge-editable"><i class="far fa-edit"></i> Có thể chỉnh sửa</span>
-                                </label>
-                                <input type="tel" id="profPhone" required placeholder="Ví dụ: 0912345678">
-                            </div>
-
-                            <!-- BỘ CHỌN ĐỊA CHỈ PHÂN CẤP CHUẨN -->
-                            <div class="checkout-address-block">
-                                <label style="font-size:13px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px; color:#0f172a;">
-                                    <i class="fas fa-map-marker-alt" style="color:var(--gold,#dfba73);"></i> Địa chỉ nhận hàng mặc định
-                                </label>
-
-                                <div class="address-select-grid">
-                                    <div class="form-group address-field-item">
-                                        <label for="profProvince">Tỉnh / Thành phố *</label>
-                                        <div class="custom-select-wrap">
-                                            <select id="profProvince">
-                                                <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                                            </select>
-                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
-                                        </div>
-                                    </div>
-                                    <div class="form-group address-field-item">
-                                        <label for="profDistrict">Quận / Huyện *</label>
-                                        <div class="custom-select-wrap">
-                                            <select id="profDistrict" disabled>
-                                                <option value="">-- Chọn Quận / Huyện --</option>
-                                            </select>
-                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
-                                        </div>
-                                    </div>
-                                    <div class="form-group address-field-item">
-                                        <label for="profWard">Phường / Xã *</label>
-                                        <div class="custom-select-wrap">
-                                            <select id="profWard" disabled>
-                                                <option value="">-- Chọn Phường / Xã --</option>
-                                            </select>
-                                            <i class="fas fa-chevron-down select-arrow-icon"></i>
-                                        </div>
-                                    </div>
+                            <!-- KHỐI 2: SỔ ĐỊA CHỈ GIAO HÀNG & LIÊN HỆ -->
+                            <div class="address-book-header" style="margin-top:24px; padding-top:20px; border-top:1px dashed #e2e8f0;">
+                                <div>
+                                    <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
+                                        2. Sổ địa chỉ giao hàng & Liên hệ
+                                    </h4>
+                                    <small style="color:#64748b; font-size:12px;">Quản lý các địa chỉ nhận hàng của bạn. Địa chỉ mặc định sẽ tự động được ưu tiên khi mua sắm.</small>
                                 </div>
-
-                                <div class="form-group" style="margin-top:10px; margin-bottom:0;">
-                                    <label for="profStreet" style="font-size:12px; color:#475569; margin-bottom:6px; font-weight:600;">Số nhà, tên đường, tòa nhà</label>
-                                    <input type="text" id="profStreet" placeholder="Ví dụ: 127 Tăng Bạt Hổ, Tòa nhà Landmark 81...">
-                                </div>
-
-                                <div class="address-preview-card" id="profAddressPreviewCard" style="display:none; margin-top:12px;">
-                                    <div class="address-preview-icon"><i class="fas fa-check-circle"></i></div>
-                                    <div class="address-preview-body">
-                                        <span class="address-preview-title">Địa chỉ lưu trữ đầy đủ:</span>
-                                        <span class="address-preview-text" id="profAddressPreviewText"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
-                                <button type="submit" id="btnSaveProfileSubmit" class="btn-save-profile">
-                                    <i class="fas fa-save"></i> <span>LƯU THAY ĐỔI HỒ SƠ</span>
+                                <button type="button" class="btn-add-address-trigger" onclick="openAddressModal()">
+                                    <i class="fas fa-plus"></i> <span>Thêm địa chỉ mới</span>
                                 </button>
+                            </div>
+
+                            <!-- Danh sách các thẻ địa chỉ đã lưu -->
+                            <div id="savedAddressListContainer" class="address-cards-list" style="margin-bottom:24px;">
+                                <div style="text-align:center; padding:30px; color:#94a3b8;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:20px; margin-bottom:8px;"></i>
+                                    <div>Đang tải sổ địa chỉ...</div>
+                                </div>
                             </div>
                         </form>
 
@@ -763,7 +714,113 @@
         </div>
     </div>
 
-    <!-- Modal Bảng Container Xác Nhận / Thao Tác Khách Hàng (Thay thế window.confirm & prompt) -->
+    <!-- Modal Thêm / Chỉnh Sửa Địa Chỉ Giao Hàng -->
+    <div id="profileAddressModal" class="cart-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.68); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:16px;">
+        <div style="background:#ffffff; border-radius:16px; max-width:540px; width:100%; padding:24px; position:relative; box-shadow:0 16px 40px rgba(0,0,0,0.28); max-height:92vh; overflow-y:auto; border:1px solid #e2e8f0;">
+            <button type="button" onclick="closeAddressModal()" class="profile-modal-corner-close" title="Đóng (Esc)">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <h3 id="addrModalTitle" style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-map-marker-alt" style="color:var(--gold,#dfba73);"></i>
+                <span>Thêm địa chỉ nhận hàng mới</span>
+            </h3>
+            <p style="font-size:12.5px; color:#64748b; margin-bottom:18px;">Vui lòng điền đầy đủ thông tin để đơn hàng được giao chính xác nhất.</p>
+
+            <form id="profileAddressForm" onsubmit="handleSaveAddressForm(event)">
+                <input type="hidden" id="addrModalEditId" value="">
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="addrModalRecipient" style="font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Tên người nhận *</label>
+                        <input type="text" id="addrModalRecipient" required placeholder="Ví dụ: Nguyễn Văn A" style="width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="addrModalPhone" style="font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Số điện thoại *</label>
+                        <input type="tel" id="addrModalPhone" required placeholder="Ví dụ: 0912345678" style="width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px;">
+                    </div>
+                </div>
+
+                <div class="address-select-grid" style="margin-bottom:12px;">
+                    <div class="form-group address-field-item">
+                        <label for="addrModalProvince">Tỉnh / Thành phố *</label>
+                        <div class="custom-select-wrap">
+                            <select id="addrModalProvince" required>
+                                <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group address-field-item">
+                        <label for="addrModalDistrict">Quận / Huyện *</label>
+                        <div class="custom-select-wrap">
+                            <select id="addrModalDistrict" required disabled>
+                                <option value="">-- Chọn Quận / Huyện --</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group address-field-item">
+                        <label for="addrModalWard">Phường / Xã *</label>
+                        <div class="custom-select-wrap">
+                            <select id="addrModalWard" required disabled>
+                                <option value="">-- Chọn Phường / Xã --</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-arrow-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label for="addrModalStreet" style="font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Số nhà, tên đường, tòa nhà *</label>
+                    <input type="text" id="addrModalStreet" required placeholder="Ví dụ: 127 Tăng Bạt Hổ, Tòa nhà Landmark..." style="width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px;">
+                </div>
+
+                <!-- Preview card trong modal -->
+                <div class="address-preview-card" id="addrModalPreviewCard" style="display:none; margin-bottom:14px;">
+                    <div class="address-preview-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="address-preview-body">
+                        <span class="address-preview-title">Địa chỉ đầy đủ:</span>
+                        <span class="address-preview-text" id="addrModalPreviewText"></span>
+                    </div>
+                </div>
+
+                <!-- Phân loại nhãn địa chỉ -->
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:600; color:#475569; margin-bottom:6px; display:block;">Loại địa chỉ:</label>
+                    <div style="display:flex; gap:14px;">
+                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="addrModalLabel" value="Nhà riêng" checked style="accent-color:var(--gold,#dfba73);">
+                            <span><i class="fas fa-home" style="color:#64748b; font-size:12px;"></i> Nhà riêng</span>
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="addrModalLabel" value="Văn phòng" style="accent-color:var(--gold,#dfba73);">
+                            <span><i class="fas fa-building" style="color:#64748b; font-size:12px;"></i> Văn phòng</span>
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="addrModalLabel" value="Khác" style="accent-color:var(--gold,#dfba73);">
+                            <span><i class="fas fa-map-marker-alt" style="color:#64748b; font-size:12px;"></i> Khác</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Checkbox đặt làm mặc định -->
+                <div style="margin-bottom:20px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#0f172a; cursor:pointer; margin:0;">
+                        <input type="checkbox" id="addrModalIsDefault" style="width:16px; height:16px; accent-color:var(--gold,#dfba73); cursor:pointer;">
+                        <span>Đặt làm địa chỉ nhận hàng mặc định</span>
+                    </label>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="closeAddressModal()" class="btn-order-action" style="padding:10px 18px; border-radius:8px;">Hủy bỏ</button>
+                    <button type="submit" id="btnAddrModalSubmit" class="btn-save-profile" style="padding:10px 22px;">
+                        <i class="fas fa-save"></i> <span>LƯU ĐỊA CHỈ</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div id="custConfirmModal" class="cust-modal-overlay" style="display:none;">
         <div class="cust-modal-card">
             <button type="button" class="cust-modal-close-btn" onclick="closeCustConfirmModal(false)" title="Đóng">

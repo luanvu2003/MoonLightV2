@@ -316,6 +316,7 @@ export class AuthController {
             street: updatedUser.street,
             role: updatedUser.role,
             avatar: updatedUser.avatar,
+            addresses: updatedUser.addresses || [],
             cart: updatedUser.cart || [],
             wishlist: updatedUser.wishlist || []
           }
@@ -765,4 +766,307 @@ export class AuthController {
     const clientId = process.env.GOOGLE_CLIENT_ID || '';
     sendSuccess(res, { clientId, isConfigured: Boolean(clientId) }, 'Lấy cấu hình Google OAuth thành công');
   }
+
+  /**
+   * Lấy danh sách toàn bộ địa chỉ của người dùng hiện tại
+   */
+  static async getAddresses(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        sendError(res, 'Không tìm thấy người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      // Tự động di chuyển địa chỉ mặc định cũ vào mảng nếu user.addresses đang rỗng
+      let addresses = user.addresses || [];
+      if (addresses.length === 0 && (user.province || user.address || user.street)) {
+        const fullAddr = user.address || [user.street, user.ward, user.district, user.province].filter(Boolean).join(', ');
+        const initialAddr: any = {
+          recipientName: user.name || '',
+          phone: user.phone || '',
+          province: user.province || '',
+          provinceCode: '',
+          district: user.district || '',
+          districtCode: '',
+          ward: user.ward || '',
+          wardCode: '',
+          street: user.street || '',
+          fullAddress: fullAddr,
+          isDefault: true,
+          label: 'Nhà riêng',
+          createdAt: new Date()
+        };
+        user.addresses = [initialAddr];
+        await user.save();
+        addresses = user.addresses;
+      }
+
+      // Đảm bảo luôn có ít nhất 1 địa chỉ mặc định nếu danh sách có phần tử
+      const hasDefault = addresses.some(a => a.isDefault);
+      if (!hasDefault && addresses.length > 0) {
+        addresses[0].isDefault = true;
+        await user.save();
+      }
+
+      // Sắp xếp: địa chỉ mặc định lên đầu, sau đó theo thời gian tạo mới nhất
+      const sorted = [...addresses].sort((a: any, b: any) => {
+        if (a.isDefault) return -1;
+        if (b.isDefault) return 1;
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+
+      sendSuccess(res, sorted, 'Lấy danh sách địa chỉ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Thêm địa chỉ mới
+   */
+  static async addAddress(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const {
+        recipientName,
+        phone,
+        province,
+        provinceCode,
+        district,
+        districtCode,
+        ward,
+        wardCode,
+        street,
+        isDefault,
+        label
+      } = req.body;
+
+      if (!province || !district || !ward || !street) {
+        sendError(res, 'Vui lòng cung cấp đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã và Số nhà tên đường', 400, 'BAD_REQUEST');
+        return;
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        sendError(res, 'Không tìm thấy người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      if (!user.addresses) user.addresses = [];
+
+      const fullAddress = [street, ward, district, province].filter(Boolean).join(', ');
+      const cleanPhone = phone ? String(phone).trim() : (user.phone || '');
+      const cleanRecipient = recipientName ? String(recipientName).trim() : (user.name || '');
+
+      // Nếu là địa chỉ đầu tiên hoặc được đánh dấu mặc định
+      const shouldBeDefault = Boolean(isDefault) || user.addresses.length === 0;
+
+      if (shouldBeDefault) {
+        user.addresses.forEach((a: any) => {
+          a.isDefault = false;
+        });
+
+        // Đồng bộ lên trường chính của User để tương thích ngược
+        user.address = fullAddress;
+        user.province = province;
+        user.district = district;
+        user.ward = ward;
+        user.street = street;
+        if (cleanPhone) user.phone = cleanPhone;
+      }
+
+      const newAddress: any = {
+        recipientName: cleanRecipient,
+        phone: cleanPhone,
+        province: String(province).trim(),
+        provinceCode: provinceCode ? String(provinceCode).trim() : '',
+        district: String(district).trim(),
+        districtCode: districtCode ? String(districtCode).trim() : '',
+        ward: String(ward).trim(),
+        wardCode: wardCode ? String(wardCode).trim() : '',
+        street: String(street).trim(),
+        fullAddress,
+        isDefault: shouldBeDefault,
+        label: label ? String(label).trim() : 'Nhà riêng',
+        createdAt: new Date()
+      };
+
+      user.addresses.push(newAddress);
+      await user.save();
+
+      const created = user.addresses[user.addresses.length - 1];
+      sendSuccess(res, { address: created, addresses: user.addresses }, 'Thêm địa chỉ mới thành công', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Cập nhật địa chỉ đã lưu
+   */
+  static async updateAddress(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const addressId = req.params.id;
+      const {
+        recipientName,
+        phone,
+        province,
+        provinceCode,
+        district,
+        districtCode,
+        ward,
+        wardCode,
+        street,
+        isDefault,
+        label
+      } = req.body;
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        sendError(res, 'Không tìm thấy người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      const addr: any = (user.addresses as any)?.id(addressId);
+      if (!addr) {
+        sendError(res, 'Không tìm thấy địa chỉ', 404, 'ADDRESS_NOT_FOUND');
+        return;
+      }
+
+      if (recipientName !== undefined) addr.recipientName = String(recipientName).trim();
+      if (phone !== undefined) addr.phone = String(phone).trim();
+      if (province !== undefined) addr.province = String(province).trim();
+      if (provinceCode !== undefined) addr.provinceCode = String(provinceCode).trim();
+      if (district !== undefined) addr.district = String(district).trim();
+      if (districtCode !== undefined) addr.districtCode = String(districtCode).trim();
+      if (ward !== undefined) addr.ward = String(ward).trim();
+      if (wardCode !== undefined) addr.wardCode = String(wardCode).trim();
+      if (street !== undefined) addr.street = String(street).trim();
+      if (label !== undefined) addr.label = String(label).trim();
+
+      addr.fullAddress = [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(', ');
+
+      if (isDefault) {
+        user.addresses?.forEach((a: any) => {
+          a.isDefault = false;
+        });
+        addr.isDefault = true;
+
+        // Đồng bộ lên User
+        user.address = addr.fullAddress;
+        user.province = addr.province;
+        user.district = addr.district;
+        user.ward = addr.ward;
+        user.street = addr.street;
+        if (addr.phone) user.phone = addr.phone;
+      }
+
+      await user.save();
+      sendSuccess(res, { address: addr, addresses: user.addresses }, 'Cập nhật địa chỉ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Xóa một địa chỉ đã lưu
+   */
+  static async deleteAddress(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const addressId = req.params.id;
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        sendError(res, 'Không tìm thấy người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      const targetAddr: any = (user.addresses as any)?.id(addressId);
+      if (!targetAddr) {
+        sendError(res, 'Không tìm thấy địa chỉ cần xóa', 404, 'ADDRESS_NOT_FOUND');
+        return;
+      }
+
+      const wasDefault = Boolean(targetAddr.isDefault);
+      (user.addresses as any)?.pull(addressId);
+
+      if (wasDefault && user.addresses && user.addresses.length > 0) {
+        user.addresses[0].isDefault = true;
+        user.address = user.addresses[0].fullAddress;
+        user.province = user.addresses[0].province;
+        user.district = user.addresses[0].district;
+        user.ward = user.addresses[0].ward;
+        user.street = user.addresses[0].street;
+        if (user.addresses[0].phone) user.phone = user.addresses[0].phone;
+      }
+
+      await user.save();
+      sendSuccess(res, { addresses: user.addresses }, 'Đã xóa địa chỉ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Đặt một địa chỉ làm mặc định
+   */
+  static async setDefaultAddress(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        sendError(res, 'Chưa đăng nhập', 401, 'UNAUTHORIZED');
+        return;
+      }
+
+      const addressId = req.params.id;
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        sendError(res, 'Không tìm thấy người dùng', 404, 'USER_NOT_FOUND');
+        return;
+      }
+
+      const targetAddr: any = (user.addresses as any)?.id(addressId);
+      if (!targetAddr) {
+        sendError(res, 'Không tìm thấy địa chỉ', 404, 'ADDRESS_NOT_FOUND');
+        return;
+      }
+
+      user.addresses?.forEach((a: any) => {
+        a.isDefault = false;
+      });
+      targetAddr.isDefault = true;
+
+      // Đồng bộ trường chính
+      user.address = targetAddr.fullAddress;
+      user.province = targetAddr.province;
+      user.district = targetAddr.district;
+      user.ward = targetAddr.ward;
+      user.street = targetAddr.street;
+      if (targetAddr.phone) user.phone = targetAddr.phone;
+
+      await user.save();
+      sendSuccess(res, { address: targetAddr, addresses: user.addresses }, 'Đã đặt làm địa chỉ mặc định');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

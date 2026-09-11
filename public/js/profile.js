@@ -33,8 +33,9 @@ async function initProfilePage() {
   // 2. Điền thông tin vào Form Thông tin cá nhân
   populateProfileForm(user);
 
-  // 3. Khởi tạo bộ chọn địa chỉ phân cấp
-  await initProfileAddressSelector(user);
+  // 3. Khởi tạo bộ chọn địa chỉ modal & Tải danh sách sổ địa chỉ
+  await initModalAddressSelector();
+  await loadSavedAddresses();
 
   // 4. Kiểm tra URL param ?tab=
   const urlParams = new URLSearchParams(window.location.search);
@@ -118,8 +119,6 @@ function populateProfileForm(user) {
   const profFullName = document.getElementById('profFullName');
   const profUsername = document.getElementById('profUsername');
   const profEmail = document.getElementById('profEmail');
-  const profPhone = document.getElementById('profPhone');
-  const profStreet = document.getElementById('profStreet');
 
   // RÀNG BUỘC CỐ ĐỊNH: Họ và tên KHÔNG THỂ SỬA
   if (profFullName) {
@@ -130,17 +129,6 @@ function populateProfileForm(user) {
 
   if (profUsername) profUsername.value = user.username || '';
   if (profEmail) profEmail.value = user.email || '';
-
-  // SỐ ĐIỆN THOẠI CÓ THỂ SỬA
-  if (profPhone) {
-    profPhone.value = user.phone || '';
-    profPhone.readOnly = false;
-  }
-
-  // SỐ NHÀ TÊN ĐƯỜNG CÓ THỂ SỬA
-  if (profStreet) {
-    profStreet.value = user.street || '';
-  }
 }
 
 // Chuyển đổi Tab (Thông tin cá nhân <-> Đơn mua <-> Yêu cầu hỗ trợ)
@@ -189,47 +177,54 @@ function switchProfileTab(tabName, updateUrl = true) {
   }
 }
 
-// Khởi tạo bộ chọn Tỉnh / Quận / Phường cho trang hồ sơ
-async function initProfileAddressSelector(user) {
-  const provEl = document.getElementById('profProvince');
-  const distEl = document.getElementById('profDistrict');
-  const wardEl = document.getElementById('profWard');
-  const streetEl = document.getElementById('profStreet');
+let currentAddressesList = [];
+
+// Khởi tạo bộ chọn Tỉnh / Quận / Phường cho Modal thêm/sửa địa chỉ
+async function initModalAddressSelector() {
+  const provEl = document.getElementById('addrModalProvince');
+  const distEl = document.getElementById('addrModalDistrict');
+  const wardEl = document.getElementById('addrModalWard');
+  const streetEl = document.getElementById('addrModalStreet');
 
   if (!provEl || !distEl || !wardEl) return;
 
   // Lắng nghe thay đổi số nhà để cập nhật xem trước
-  if (streetEl) streetEl.addEventListener('input', updateProfileAddressPreview);
+  if (streetEl) {
+    streetEl.removeEventListener('input', updateModalAddressPreview);
+    streetEl.addEventListener('input', updateModalAddressPreview);
+  }
 
-  // 1. Tải danh sách tỉnh thành
+  // 1. Tải danh sách tỉnh thành nếu chưa có
   try {
-    provEl.innerHTML = '<option value="">-- Đang nạp danh sách Tỉnh/Thành... --</option>';
-    let list = [];
-    try {
-      const res = await fetch('https://provinces.open-api.vn/api/v1/p/');
-      if (res.ok) list = await res.json();
-    } catch (e) {}
+    if (!profileGeoState.provinces || profileGeoState.provinces.length === 0) {
+      provEl.innerHTML = '<option value="">-- Đang nạp danh sách Tỉnh/Thành... --</option>';
+      let list = [];
+      try {
+        const res = await fetch('https://provinces.open-api.vn/api/v1/p/');
+        if (res.ok) list = await res.json();
+      } catch (e) {}
 
-    if (!list || list.length === 0) {
-      list = (typeof VN_PROVINCES_FALLBACK !== 'undefined') ? VN_PROVINCES_FALLBACK : [];
+      if (!list || list.length === 0) {
+        list = (typeof VN_PROVINCES_FALLBACK !== 'undefined') ? VN_PROVINCES_FALLBACK : [];
+      }
+      profileGeoState.provinces = list;
     }
 
-    profileGeoState.provinces = list;
     provEl.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>' +
-      list.map(p => `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`).join('');
+      profileGeoState.provinces.map(p => `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`).join('');
 
   } catch (err) {
     provEl.innerHTML = '<option value="">-- Lỗi tải danh sách Tỉnh/Thành --</option>';
   }
 
   // 2. Sự kiện đổi Tỉnh / Thành phố
-  provEl.addEventListener('change', async function () {
+  provEl.onchange = async function () {
     const pCode = this.value;
     distEl.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
     distEl.disabled = true;
     wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
     wardEl.disabled = true;
-    updateProfileAddressPreview();
+    updateModalAddressPreview();
 
     if (!pCode) return;
 
@@ -252,14 +247,14 @@ async function initProfileAddressSelector(user) {
     } catch (dErr) {
       distEl.innerHTML = '<option value="">-- Lỗi nạp dữ liệu --</option>';
     }
-  });
+  };
 
   // 3. Sự kiện đổi Quận / Huyện
-  distEl.addEventListener('change', async function () {
+  distEl.onchange = async function () {
     const dCode = this.value;
     wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
     wardEl.disabled = true;
-    updateProfileAddressPreview();
+    updateModalAddressPreview();
 
     if (!dCode) return;
 
@@ -282,49 +277,24 @@ async function initProfileAddressSelector(user) {
     } catch (wErr) {
       wardEl.innerHTML = '<option value="">-- Lỗi nạp dữ liệu --</option>';
     }
-  });
+  };
 
   // 4. Sự kiện đổi Phường / Xã
-  wardEl.addEventListener('change', updateProfileAddressPreview);
-
-  // 5. Khôi phục thông tin địa chỉ đã lưu của người dùng
-  if (user && (user.province || user.provinceCode)) {
-    const pVal = user.provinceCode || user.province;
-    let matchedProv = Array.from(provEl.options).find(o => o.value === String(pVal) || o.getAttribute('data-name') === pVal || (pVal && o.text.includes(pVal)));
-    if (matchedProv) {
-      provEl.value = matchedProv.value;
-      provEl.dispatchEvent(new Event('change'));
-      setTimeout(() => {
-        const dVal = user.districtCode || user.district;
-        if (dVal) {
-          let matchedDist = Array.from(distEl.options).find(o => o.value === String(dVal) || o.getAttribute('data-name') === dVal || (dVal && o.text.includes(dVal)));
-          if (matchedDist) {
-            distEl.value = matchedDist.value;
-            distEl.dispatchEvent(new Event('change'));
-            setTimeout(() => {
-              const wVal = user.wardCode || user.ward;
-              if (wVal) {
-                let matchedWard = Array.from(wardEl.options).find(o => o.value === String(wVal) || o.getAttribute('data-name') === wVal || (wVal && o.text.includes(wVal)));
-                if (matchedWard) wardEl.value = matchedWard.value;
-                updateProfileAddressPreview();
-              }
-            }, 180);
-          }
-        }
-      }, 180);
-    }
-  }
+  wardEl.onchange = function () {
+    updateModalAddressPreview();
+  };
 }
 
-function updateProfileAddressPreview() {
-  const provEl = document.getElementById('profProvince');
-  const distEl = document.getElementById('profDistrict');
-  const wardEl = document.getElementById('profWard');
-  const streetEl = document.getElementById('profStreet');
-  const previewCard = document.getElementById('profAddressPreviewCard');
-  const previewText = document.getElementById('profAddressPreviewText');
+// Cập nhật thẻ xem trước địa chỉ trong modal
+function updateModalAddressPreview() {
+  const provEl = document.getElementById('addrModalProvince');
+  const distEl = document.getElementById('addrModalDistrict');
+  const wardEl = document.getElementById('addrModalWard');
+  const streetEl = document.getElementById('addrModalStreet');
+  const previewCard = document.getElementById('addrModalPreviewCard');
+  const previewText = document.getElementById('addrModalPreviewText');
 
-  if (!provEl) return;
+  if (!provEl) return '';
 
   const street = (streetEl?.value || '').trim();
   const provName = (provEl.selectedIndex > 0 && !provEl.options[provEl.selectedIndex].text.startsWith('--'))
@@ -352,34 +322,275 @@ function updateProfileAddressPreview() {
   return fullAddress;
 }
 
-// Lưu cập nhật thông tin cá nhân (SĐT, Địa chỉ)
-async function handleSaveProfile(event) {
-  event.preventDefault();
-  const submitBtn = document.getElementById('btnSaveProfileSubmit');
-  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+// Tải danh sách các địa chỉ đã lưu của người dùng từ API
+async function loadSavedAddresses() {
+  const container = document.getElementById('savedAddressListContainer');
+  if (!container) return;
 
-  const phone = document.getElementById('profPhone')?.value.trim();
-  const street = document.getElementById('profStreet')?.value.trim();
-  const provEl = document.getElementById('profProvince');
-  const distEl = document.getElementById('profDistrict');
-  const wardEl = document.getElementById('profWard');
+  try {
+    const res = await MoonlightAPI.getMyAddresses();
+    if (res && res.success && Array.isArray(res.data)) {
+      currentAddressesList = res.data;
+    } else {
+      // Fallback từ localStorage nếu API chưa trả về
+      const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+      currentAddressesList = (user && Array.isArray(user.addresses)) ? user.addresses : [];
+    }
 
-  if (!phone) {
-    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng nhập số điện thoại nhận hàng!', type: 'warning' });
+    renderSavedAddressesList(currentAddressesList);
+
+    // Cập nhật lại Hero Card nếu có địa chỉ mặc định
+    const defaultAddr = currentAddressesList.find(a => a.isDefault);
+    if (defaultAddr && defaultAddr.phone) {
+      const heroPhone = document.getElementById('profHeroPhone');
+      if (heroPhone) heroPhone.textContent = `SĐT: ${defaultAddr.phone}`;
+    }
+  } catch (err) {
+    console.error('Lỗi khi nạp sổ địa chỉ:', err);
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px; color:#ef4444; background:#fef2f2; border-radius:10px;">
+        <i class="fas fa-exclamation-circle" style="font-size:24px; margin-bottom:8px;"></i>
+        <div>Không thể tải sổ địa chỉ lúc này. Vui lòng tải lại trang!</div>
+      </div>
+    `;
+  }
+}
+
+// Hiển thị danh sách thẻ địa chỉ
+function renderSavedAddressesList(addresses) {
+  const container = document.getElementById('savedAddressListContainer');
+  if (!container) return;
+
+  if (!addresses || addresses.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:36px 20px; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+        <i class="fas fa-map-marked-alt" style="font-size:32px; color:#94a3b8; margin-bottom:10px;"></i>
+        <p style="color:#64748b; font-size:13.5px; margin-bottom:14px; font-weight:500;">Bạn chưa có địa chỉ nhận hàng nào trong sổ địa chỉ.</p>
+        <button type="button" class="btn-primary" onclick="openAddressModal()" style="padding:9px 20px; font-size:13px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+          <i class="fas fa-plus"></i> <span>Thêm địa chỉ ngay</span>
+        </button>
+      </div>
+    `;
     return;
   }
 
-  const province = (provEl && provEl.selectedIndex > 0 && !provEl.options[provEl.selectedIndex].text.startsWith('--'))
-    ? provEl.options[provEl.selectedIndex].text
-    : '';
-  const district = (distEl && distEl.selectedIndex > 0 && !distEl.options[distEl.selectedIndex].text.startsWith('--'))
-    ? distEl.options[distEl.selectedIndex].text
-    : '';
-  const ward = (wardEl && wardEl.selectedIndex > 0 && !wardEl.options[wardEl.selectedIndex].text.startsWith('--'))
-    ? wardEl.options[wardEl.selectedIndex].text
-    : '';
+  // Sắp xếp: Địa chỉ mặc định luôn lên đầu tiên
+  const sorted = [...addresses].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
 
-  const fullAddress = updateProfileAddressPreview() || [street, ward, district, province].filter(Boolean).join(', ');
+  container.innerHTML = sorted.map(addr => {
+    const isDef = !!addr.isDefault;
+    const labelText = addr.label || 'Nhà riêng';
+    const labelIcon = labelText === 'Văn phòng' ? 'fa-building' : (labelText === 'Khác' ? 'fa-map-pin' : 'fa-home');
+    const displayAddr = addr.fullAddress || [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(', ');
+
+    return `
+      <div class="address-card-item ${isDef ? 'is-default' : ''}" id="addr-card-${addr._id}">
+        <div class="address-card-top">
+          <div class="address-card-title-group">
+            <span class="address-card-name">${escapeHtml(addr.recipientName || 'Người nhận')}</span>
+            <span class="address-card-phone"><i class="fas fa-phone-alt" style="font-size:11px; margin-right:3px;"></i>${escapeHtml(addr.phone || '')}</span>
+            <span class="badge-addr-label"><i class="fas ${labelIcon}"></i> ${escapeHtml(labelText)}</span>
+            ${isDef ? `<span class="badge-addr-default"><i class="fas fa-check-circle"></i> Mặc định</span>` : ''}
+          </div>
+        </div>
+        <div class="address-card-full-text">
+          <i class="fas fa-map-marker-alt" style="color:#dfba73; margin-right:6px; font-size:12px;"></i>
+          <span>${escapeHtml(displayAddr)}</span>
+        </div>
+        <div class="address-card-actions">
+          ${!isDef ? `
+            <button type="button" class="btn-addr-action set-default" onclick="handleSetDefaultAddress('${addr._id}')">
+              <i class="fas fa-star"></i> Đặt làm mặc định
+            </button>
+          ` : ''}
+          <button type="button" class="btn-addr-action edit" onclick="openAddressModal('${addr._id}')">
+            <i class="fas fa-edit"></i> Chỉnh sửa
+          </button>
+          <button type="button" class="btn-addr-action delete" onclick="handleDeleteAddress('${addr._id}')">
+            <i class="fas fa-trash-alt"></i> Xóa
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Mở Modal Thêm mới hoặc Chỉnh sửa địa chỉ
+async function openAddressModal(editId = null) {
+  const modal = document.getElementById('profileAddressModal');
+  const form = document.getElementById('profileAddressForm');
+  const titleEl = document.getElementById('addrModalTitle');
+  const editIdEl = document.getElementById('addrModalEditId');
+  const recipientEl = document.getElementById('addrModalRecipient');
+  const phoneEl = document.getElementById('addrModalPhone');
+  const streetEl = document.getElementById('addrModalStreet');
+  const defaultCheckEl = document.getElementById('addrModalIsDefault');
+  const provEl = document.getElementById('addrModalProvince');
+  const distEl = document.getElementById('addrModalDistrict');
+  const wardEl = document.getElementById('addrModalWard');
+
+  if (!modal) return;
+
+  // Đảm bảo options Tỉnh/Thành đã được nạp
+  await initModalAddressSelector();
+
+  if (editId) {
+    const addr = currentAddressesList.find(a => String(a._id) === String(editId));
+    if (!addr) {
+      showToast({ title: 'Lỗi', message: 'Không tìm thấy địa chỉ cần sửa.', type: 'warning' });
+      return;
+    }
+
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-edit" style="color:var(--gold,#dfba73);"></i> <span>Chỉnh sửa địa chỉ nhận hàng</span>';
+    if (editIdEl) editIdEl.value = addr._id;
+    if (recipientEl) recipientEl.value = addr.recipientName || '';
+    if (phoneEl) phoneEl.value = addr.phone || '';
+    if (streetEl) streetEl.value = addr.street || '';
+    if (defaultCheckEl) {
+      defaultCheckEl.checked = !!addr.isDefault;
+      defaultCheckEl.disabled = !!addr.isDefault; // Nếu đang là mặc định thì không cho bỏ check
+    }
+
+    // Chọn radio nhãn
+    const labelRadios = document.querySelectorAll('input[name="addrModalLabel"]');
+    labelRadios.forEach(r => {
+      r.checked = (r.value === (addr.label || 'Nhà riêng'));
+    });
+
+    // Chọn Tỉnh / Huyện / Xã theo dữ liệu cũ
+    if (provEl && (addr.provinceCode || addr.province)) {
+      const pVal = addr.provinceCode || addr.province;
+      let matchedProv = Array.from(provEl.options).find(o => o.value === String(pVal) || o.getAttribute('data-name') === pVal || (pVal && o.text.includes(pVal)));
+      if (matchedProv) {
+        provEl.value = matchedProv.value;
+        await provEl.onchange();
+
+        const dVal = addr.districtCode || addr.district;
+        if (dVal && distEl) {
+          let matchedDist = Array.from(distEl.options).find(o => o.value === String(dVal) || o.getAttribute('data-name') === dVal || (dVal && o.text.includes(dVal)));
+          if (matchedDist) {
+            distEl.value = matchedDist.value;
+            await distEl.onchange();
+
+            const wVal = addr.wardCode || addr.ward;
+            if (wVal && wardEl) {
+              let matchedWard = Array.from(wardEl.options).find(o => o.value === String(wVal) || o.getAttribute('data-name') === wVal || (wVal && o.text.includes(wVal)));
+              if (matchedWard) {
+                wardEl.value = matchedWard.value;
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    // Tạo địa chỉ mới
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-map-marker-alt" style="color:var(--gold,#dfba73);"></i> <span>Thêm địa chỉ nhận hàng mới</span>';
+    if (editIdEl) editIdEl.value = '';
+    if (form) form.reset();
+
+    // Điền mặc định thông tin từ User nếu có
+    const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    if (user) {
+      if (recipientEl) recipientEl.value = user.name || user.username || '';
+      if (phoneEl) phoneEl.value = user.phone || '';
+    }
+
+    // Nếu chưa có địa chỉ nào thì tự động tích chọn mặc định
+    if (defaultCheckEl) {
+      defaultCheckEl.checked = (!currentAddressesList || currentAddressesList.length === 0);
+      defaultCheckEl.disabled = false;
+    }
+
+    if (distEl) {
+      distEl.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+      distEl.disabled = true;
+    }
+    if (wardEl) {
+      wardEl.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+      wardEl.disabled = true;
+    }
+  }
+
+  updateModalAddressPreview();
+  modal.style.display = 'flex';
+  if (recipientEl) setTimeout(() => recipientEl.focus(), 100);
+}
+
+// Đóng Modal Địa chỉ
+function closeAddressModal() {
+  const modal = document.getElementById('profileAddressModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Xử lý gửi Form lưu địa chỉ (Thêm hoặc Sửa)
+async function handleSaveAddressForm(event) {
+  event.preventDefault();
+  const submitBtn = document.getElementById('btnAddrModalSubmit');
+  const originalHtml = submitBtn ? submitBtn.innerHTML : '';
+
+  const editId = document.getElementById('addrModalEditId')?.value;
+  const recipientName = document.getElementById('addrModalRecipient')?.value.trim();
+  const phone = document.getElementById('addrModalPhone')?.value.trim();
+  const street = document.getElementById('addrModalStreet')?.value.trim();
+  const isDefault = !!document.getElementById('addrModalIsDefault')?.checked;
+
+  const provEl = document.getElementById('addrModalProvince');
+  const distEl = document.getElementById('addrModalDistrict');
+  const wardEl = document.getElementById('addrModalWard');
+
+  const labelEl = document.querySelector('input[name="addrModalLabel"]:checked');
+  const label = labelEl ? labelEl.value : 'Nhà riêng';
+
+  if (!recipientName) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng nhập tên người nhận hàng!', type: 'warning' });
+    return;
+  }
+
+  if (!phone || !/^[0-9]{9,11}$/.test(phone.replace(/\s+/g, ''))) {
+    showToast({ title: 'Số điện thoại không hợp lệ', message: 'Vui lòng nhập số điện thoại hợp lệ (9 - 11 chữ số)!', type: 'warning' });
+    return;
+  }
+
+  if (!provEl || !provEl.value) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng chọn Tỉnh / Thành phố!', type: 'warning' });
+    return;
+  }
+
+  if (!distEl || !distEl.value) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng chọn Quận / Huyện!', type: 'warning' });
+    return;
+  }
+
+  if (!wardEl || !wardEl.value) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng chọn Phường / Xã!', type: 'warning' });
+    return;
+  }
+
+  if (!street) {
+    showToast({ title: 'Thiếu thông tin', message: 'Vui lòng nhập số nhà, tên đường cụ thể!', type: 'warning' });
+    return;
+  }
+
+  const province = (provEl.selectedIndex > 0) ? provEl.options[provEl.selectedIndex].text : '';
+  const district = (distEl.selectedIndex > 0) ? distEl.options[distEl.selectedIndex].text : '';
+  const ward = (wardEl.selectedIndex > 0) ? wardEl.options[wardEl.selectedIndex].text : '';
+  const fullAddress = [street, ward, district, province].filter(Boolean).join(', ');
+
+  const payload = {
+    recipientName,
+    phone,
+    province,
+    provinceCode: provEl.value,
+    district,
+    districtCode: distEl.value,
+    ward,
+    wardCode: wardEl.value,
+    street,
+    fullAddress,
+    isDefault,
+    label
+  };
 
   if (submitBtn) {
     submitBtn.disabled = true;
@@ -387,48 +598,105 @@ async function handleSaveProfile(event) {
   }
 
   try {
-    const payload = {
-      phone,
-      street,
-      province,
-      district,
-      ward,
-      address: fullAddress,
-      provinceCode: provEl?.value || '',
-      districtCode: distEl?.value || '',
-      wardCode: wardEl?.value || ''
-    };
-
-    // RÀNG BUỘC CỐ ĐỊNH: Tuyệt đối không gửi trường 'name' để không ai có thể sửa tên
-    const res = await MoonlightAPI.updateProfile(payload);
+    let res;
+    if (editId) {
+      res = await MoonlightAPI.updateAddress(editId, payload);
+    } else {
+      res = await MoonlightAPI.addAddress(payload);
+    }
 
     if (res && res.success) {
-      const updatedUser = res.data?.user;
-      if (updatedUser) {
-        updateHeroCard(updatedUser);
-        if (typeof updateCustomerNavbarUI === 'function') updateCustomerNavbarUI();
-      }
-
       showToast({
-        title: 'Cập nhật thành công',
-        message: 'Thông tin cá nhân và địa chỉ nhận hàng của bạn đã được lưu!',
+        title: 'Thành công',
+        message: editId ? 'Đã cập nhật địa chỉ thành công!' : 'Đã thêm địa chỉ mới vào sổ địa chỉ!',
         type: 'success'
       });
+      closeAddressModal();
+      await loadSavedAddresses();
     } else {
-      throw new Error(res?.message || 'Không thể lưu thông tin hồ sơ.');
+      throw new Error(res?.message || 'Không thể lưu địa chỉ lúc này.');
     }
   } catch (err) {
     showToast({
-      title: 'Lỗi cập nhật',
-      message: err.message || 'Không thể lưu thông tin lúc này. Vui lòng thử lại!',
+      title: 'Lỗi lưu địa chỉ',
+      message: err.message || 'Có lỗi xảy ra, vui lòng thử lại sau!',
       type: 'error'
     });
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnHtml;
+      submitBtn.innerHTML = originalHtml;
     }
   }
+}
+
+// Xử lý đặt địa chỉ làm mặc định
+async function handleSetDefaultAddress(addressId) {
+  if (!addressId) return;
+
+  try {
+    const res = await MoonlightAPI.setDefaultAddress(addressId);
+    if (res && res.success) {
+      showToast({
+        title: 'Thành công',
+        message: 'Đã đặt làm địa chỉ nhận hàng mặc định!',
+        type: 'success'
+      });
+      await loadSavedAddresses();
+    } else {
+      throw new Error(res?.message || 'Không thể thiết lập địa chỉ mặc định.');
+    }
+  } catch (err) {
+    showToast({
+      title: 'Thất bại',
+      message: err.message || 'Lỗi khi cập nhật địa chỉ mặc định.',
+      type: 'error'
+    });
+  }
+}
+
+// Xử lý xóa địa chỉ
+async function handleDeleteAddress(addressId) {
+  if (!addressId) return;
+
+  const addr = currentAddressesList.find(a => String(a._id) === String(addressId));
+  const isDefault = addr && addr.isDefault;
+
+  const confirmed = await showCustomConfirmModal({
+    title: 'Xóa địa chỉ nhận hàng',
+    message: isDefault
+      ? 'Địa chỉ này đang được đặt làm MẶC ĐỊNH. Bạn có chắc chắn muốn xóa không?'
+      : 'Bạn có chắc chắn muốn xóa địa chỉ này khỏi sổ địa chỉ không?',
+    confirmText: 'XÓA ĐỊA CHỈ',
+    confirmColor: '#ef4444'
+  });
+
+  if (!confirmed) return;
+
+  try {
+    const res = await MoonlightAPI.deleteAddress(addressId);
+    if (res && res.success) {
+      showToast({
+        title: 'Đã xóa',
+        message: 'Đã xóa địa chỉ thành công!',
+        type: 'success'
+      });
+      await loadSavedAddresses();
+    } else {
+      throw new Error(res?.message || 'Không thể xóa địa chỉ lúc này.');
+    }
+  } catch (err) {
+    showToast({
+      title: 'Lỗi xóa địa chỉ',
+      message: err.message || 'Không thể xóa địa chỉ. Vui lòng thử lại!',
+      type: 'error'
+    });
+  }
+}
+
+// Tương thích ngược: Xử lý lưu profile form nếu người dùng ấn submit form cũ
+function handleSaveProfile(event) {
+  if (event) event.preventDefault();
 }
 
 // Xử lý đổi mật khẩu
@@ -1345,19 +1613,27 @@ function showOrderVietQrModal(orderCode, amount) {
   modal.style.display = 'flex';
 }
 
-// Đóng modal chuyển khoản khi click ngoài backdrop hoặc bấm Escape
+// Đóng modal chuyển khoản & modal địa chỉ khi click ngoài backdrop hoặc bấm Escape
 window.addEventListener('click', (e) => {
-  const modal = document.getElementById('profileQrModal');
-  if (e.target === modal) {
+  const qrModal = document.getElementById('profileQrModal');
+  if (e.target === qrModal) {
     closeProfileQrModal();
+  }
+  const addrModal = document.getElementById('profileAddressModal');
+  if (e.target === addrModal) {
+    closeAddressModal();
   }
 });
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    const modal = document.getElementById('profileQrModal');
-    if (modal && modal.style.display === 'flex') {
+    const qrModal = document.getElementById('profileQrModal');
+    if (qrModal && qrModal.style.display === 'flex') {
       closeProfileQrModal();
+    }
+    const addrModal = document.getElementById('profileAddressModal');
+    if (addrModal && addrModal.style.display === 'flex') {
+      closeAddressModal();
     }
   }
 });
@@ -2848,3 +3124,13 @@ window.closeProfileQrModal = closeProfileQrModal;
 window.copyText = copyText;
 window.copyProfileQrAmount = copyProfileQrAmount;
 window.copyProfileQrMemo = copyProfileQrMemo;
+window.openAddressModal = openAddressModal;
+window.closeAddressModal = closeAddressModal;
+window.handleSaveAddressForm = handleSaveAddressForm;
+window.handleSetDefaultAddress = handleSetDefaultAddress;
+window.handleDeleteAddress = handleDeleteAddress;
+window.initModalAddressSelector = initModalAddressSelector;
+window.updateModalAddressPreview = updateModalAddressPreview;
+window.loadSavedAddresses = loadSavedAddresses;
+window.renderSavedAddressesList = renderSavedAddressesList;
+window.handleSaveProfile = handleSaveProfile;

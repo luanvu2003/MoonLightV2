@@ -69,16 +69,12 @@
                     <div id="checkoutSavedProfileCard" class="checkout-saved-profile-card" style="display:none;">
                         <div class="saved-profile-header">
                             <label class="saved-profile-checkbox-label">
-                                <input type="checkbox" id="useSavedProfileCheckbox" checked onchange="toggleUseSavedCustomerProfile(this.checked)">
-                                <span>Sử dụng thông tin giao hàng đã lưu trong tài khoản</span>
+                                <i class="fas fa-map-marked-alt" style="color:var(--gold,#dfba73); font-size:14px; margin-right:4px;"></i>
+                                <span>Sổ địa chỉ nhận hàng của bạn</span>
                             </label>
-                            <a href="profile.html?tab=profile" target="_blank" class="saved-profile-edit-link"><i class="far fa-edit"></i> Quản lý địa chỉ</a>
+                            <a href="profile.html?tab=profile" target="_blank" class="saved-profile-edit-link"><i class="far fa-edit"></i> Quản lý sổ địa chỉ</a>
                         </div>
-                        <div class="saved-profile-preview" id="savedProfilePreviewBox">
-                            <div class="saved-profile-row"><i class="fas fa-user-shield"></i> <strong>Họ tên:</strong> <span id="savedProfileNameText">--</span> <span class="badge-locked"><i class="fas fa-lock"></i> Cố định theo tài khoản</span></div>
-                            <div class="saved-profile-row"><i class="fas fa-phone-alt"></i> <strong>SĐT:</strong> <span id="savedProfilePhoneText">--</span> <span class="badge-editable"><i class="far fa-edit"></i> Có thể sửa</span></div>
-                            <div class="saved-profile-row"><i class="fas fa-map-marker-alt"></i> <strong>Địa chỉ:</strong> <span id="savedProfileAddressText">Chưa lưu</span></div>
-                        </div>
+                        <div id="checkoutAddressPickerList" class="checkout-address-options-list" style="margin-top:12px;"></div>
                     </div>
 
                     <form id="checkoutForm" onsubmit="handleCheckout(event)">

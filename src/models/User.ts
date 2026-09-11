@@ -73,6 +73,23 @@ const UserSchema = new Schema<IUser, UserModel, IUserMethods>(
       trim: true,
       default: ''
     },
+    addresses: [
+      {
+        recipientName: { type: String, trim: true, default: '' },
+        phone: { type: String, trim: true, default: '' },
+        province: { type: String, trim: true, default: '' },
+        provinceCode: { type: String, trim: true, default: '' },
+        district: { type: String, trim: true, default: '' },
+        districtCode: { type: String, trim: true, default: '' },
+        ward: { type: String, trim: true, default: '' },
+        wardCode: { type: String, trim: true, default: '' },
+        street: { type: String, trim: true, default: '' },
+        fullAddress: { type: String, trim: true, default: '' },
+        isDefault: { type: Boolean, default: false },
+        label: { type: String, trim: true, default: 'Nhà riêng' },
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
     isEmailVerified: {
       type: Boolean,
       default: false
