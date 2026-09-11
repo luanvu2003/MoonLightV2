@@ -12,6 +12,20 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 10000
       }
+    },
+    {
+      name: 'moonlight-ai',
+      script: 'backend/run.py',
+      interpreter: 'python3',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        PYTHONUNBUFFERED: '1',
+        AI_PORT: 8001,
+        AI_HOST: '0.0.0.0'
+      }
     }
   ]
 };
