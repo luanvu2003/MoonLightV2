@@ -953,6 +953,19 @@ function renderCustomerTickets(filterStatus = 'all') {
     urgent: { label: 'Khẩn cấp', color: '#dc2626' }
   };
 
+  // Lưu lại draft người dùng đang nhập và phần tử đang focus để không bao giờ bị mất chữ
+  const activeFocusedId = document.activeElement ? document.activeElement.id : null;
+  const savedDrafts = {};
+  if (Array.isArray(currentTicketsList)) {
+    currentTicketsList.forEach(t => {
+      const tid = t._id || t.id;
+      const inp = document.getElementById(`custTicketInput-${tid}`);
+      if (inp && inp.value) {
+        savedDrafts[tid] = inp.value;
+      }
+    });
+  }
+
   container.innerHTML = filtered.map(t => {
     const sm = statusMeta[t.status] || { label: t.status, bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', icon: 'fa-info-circle' };
     const catLabel = categoryNames[t.category] || t.category;
@@ -1013,55 +1026,12 @@ function renderCustomerTickets(filterStatus = 'all') {
         <!-- KHUNG TRAO ĐỔI TIN NHẮN (CHAT THREAD) -->
         <div class="ticket-chat-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:14px;">
           <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="fas fa-comments" style="color:var(--gold,#d4af37); margin-right:6px;"></i> Lịch sử trao đổi (${msgList.length} tin nhắn)</span>
+            <span><i class="fas fa-comments" style="color:var(--gold,#d4af37); margin-right:6px;"></i> Lịch sử trao đổi (<span id="custMsgCount-${t._id}">${msgList.length}</span> tin nhắn)</span>
             <span style="font-size:11px; font-weight:normal; color:#64748b;"><i class="fas fa-circle" style="color:#10b981; font-size:8px; margin-right:4px;"></i>Hỗ trợ trực tuyến</span>
           </div>
 
           <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
-            ${msgList.map(m => {
-              const isCust = m.senderRole === 'customer';
-              const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
-              if (isCust) {
-                return `
-                  <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-                      <span>${mTime}</span>
-                      <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
-                    </div>
-                    <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-                      ${escapeHtml(m.message)}
-                    </div>
-                    ${renderCustomerMessageStatus(m.status)}
-                  </div>
-                `;
-              } else {
-                return `
-                  <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-                      <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
-                        <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
-                      </strong>
-                      <span>${mTime}</span>
-                    </div>
-                    <div style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
-                      ${escapeHtml(m.message)}
-                    </div>
-                  </div>
-                `;
-              }
-            }).join('')}
-
-            ${!hasAdminReplied && !isClosed ? `
-              <div style="text-align:center; padding:10px 14px; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:8px; font-size:12px; color:#0369a1; margin-top:4px;">
-                <i class="fas fa-hourglass-half fa-spin"></i> Chuyên viên CSKH MoonLight đang tiếp nhận yêu cầu và sẽ trả lời bạn ngay tại khung chat này.
-              </div>
-            ` : ''}
-
-            <!-- KHỐI HIỂN THỊ ĐANG NHẬP TIN NHẮN (TYPING INDICATOR) -->
-            <div id="custTypingIndicator-${t._id}" style="display:none; align-items:center; gap:6px; font-size:11.5px; color:#b48518; background:rgba(212,175,55,0.1); border:1px dashed rgba(212,175,55,0.35); padding:5px 12px; border-radius:12px; width:fit-content; margin-top:4px;">
-              <i class="fas fa-pen-nib fa-bounce"></i>
-              <span id="custTypingText-${t._id}">CSKH MoonLight đang nhập tin nhắn...</span>
-            </div>
+            ${renderCustomerChatMessagesHtml(t._id, msgList, !hasAdminReplied && !isClosed)}
           </div>
 
           <!-- INPUT GỬI TIN NHẮN PHẢN HỒI TIẾP -->
@@ -1094,6 +1064,23 @@ function renderCustomerTickets(filterStatus = 'all') {
       </div>
     `;
   }).join('');
+
+  // Khôi phục lại nội dung draft và focus cho người dùng
+  Object.keys(savedDrafts).forEach(tid => {
+    const inp = document.getElementById(`custTicketInput-${tid}`);
+    if (inp) {
+      inp.value = savedDrafts[tid];
+    }
+  });
+  if (activeFocusedId) {
+    const el = document.getElementById(activeFocusedId);
+    if (el) {
+      el.focus();
+      if (typeof el.selectionStart === 'number') {
+        el.selectionStart = el.selectionEnd = el.value.length;
+      }
+    }
+  }
 }
 
 async function handleCustomerSubmitTicket(event) {
@@ -1168,6 +1155,96 @@ async function handleCloseCustomerTicket(ticketId) {
   }
 }
 
+function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
+  return msgList.map(m => {
+    const isCust = m.senderRole === 'customer';
+    const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+    if (isCust) {
+      return `
+        <div class="cust-chat-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-end;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+            <span>${mTime}</span>
+            <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
+          </div>
+          <div style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+            ${escapeHtml(m.message)}
+          </div>
+          ${renderCustomerMessageStatus(m.status)}
+        </div>
+      `;
+    } else {
+      return `
+        <div class="cust-chat-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-start;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+            <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
+              <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
+            </strong>
+            <span>${mTime}</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:85%; font-size:13px; line-height:1.5; white-space:pre-wrap; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+            ${escapeHtml(m.message)}
+          </div>
+        </div>
+      `;
+    }
+  }).join('') + `
+    ${showPendingNotice ? `
+      <div id="custPendingNotice-${ticketId}" style="text-align:center; padding:10px 14px; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:8px; font-size:12px; color:#0369a1; margin-top:4px;">
+        <i class="fas fa-hourglass-half fa-spin"></i> Chuyên viên CSKH MoonLight đang tiếp nhận yêu cầu và sẽ trả lời bạn ngay tại khung chat này.
+      </div>
+    ` : ''}
+
+    <!-- KHỐI HIỂN THỊ ĐANG NHẬP TIN NHẮN (TYPING INDICATOR) -->
+    <div id="custTypingIndicator-${ticketId}" style="display:none; align-items:center; gap:6px; font-size:11.5px; color:#b48518; background:rgba(212,175,55,0.1); border:1px dashed rgba(212,175,55,0.35); padding:5px 12px; border-radius:12px; width:fit-content; margin-top:4px;">
+      <i class="fas fa-pen-nib fa-bounce"></i>
+      <span id="custTypingText-${ticketId}">CSKH MoonLight đang nhập tin nhắn...</span>
+    </div>
+  `;
+}
+
+function renderCustomerChatThreadOnly(ticket) {
+  const ticketId = ticket._id || ticket.id;
+  const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
+  if (!scrollEl) return;
+
+  let msgList = [];
+  if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
+    msgList = ticket.messages;
+  } else if (ticket.message) {
+    msgList.push({
+      senderRole: 'customer',
+      senderName: ticket.customerName || 'Bạn',
+      message: ticket.message,
+      createdAt: ticket.createdAt
+    });
+  }
+
+  const isClosed = ticket.status === 'closed' || ticket.status === 'resolved';
+  const hasAdminReplied = msgList.some(m => m.senderRole === 'admin' || m.senderRole === 'staff');
+
+  const countEl = document.getElementById(`custMsgCount-${ticketId}`);
+  if (countEl) countEl.innerText = `${msgList.length}`;
+
+  const curTypingEl = document.getElementById(`custTypingIndicator-${ticketId}`);
+  const wasTyping = curTypingEl && curTypingEl.style.display !== 'none';
+  const curTypingText = document.getElementById(`custTypingText-${ticketId}`)?.innerText || '';
+
+  scrollEl.innerHTML = renderCustomerChatMessagesHtml(ticketId, msgList, !hasAdminReplied && !isClosed);
+
+  if (wasTyping) {
+    const newTypingEl = document.getElementById(`custTypingIndicator-${ticketId}`);
+    const newTypingText = document.getElementById(`custTypingText-${ticketId}`);
+    if (newTypingEl && newTypingText) {
+      newTypingText.innerText = curTypingText;
+      newTypingEl.style.display = 'inline-flex';
+    }
+  }
+
+  setTimeout(() => {
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+  }, 50);
+}
+
 function renderCustomerMessageStatus(status) {
   if (status === 'sending') {
     return `<div class="msg-status-tag" style="display:flex; align-items:center; gap:4px; font-size:10.5px; color:#94a3b8; margin-top:3px;">
@@ -1232,6 +1309,8 @@ async function handleSendCustomerMessage(event, ticketId) {
   if (scrollContainer) {
     const tempEl = document.createElement('div');
     tempEl.id = tempMsgId;
+    tempEl.className = 'cust-chat-msg-item';
+    tempEl.setAttribute('data-msg-role', 'customer');
     tempEl.style.cssText = "display:flex; flex-direction:column; align-items:flex-end;";
     tempEl.innerHTML = `
       <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
@@ -1347,16 +1426,16 @@ function startCustomerTicketLiveSync() {
             }
           }
 
-          // 2. Kiểm tra nếu có tin nhắn mới hoặc trạng thái đã xem thay đổi
-          const currentCount = scrollEl.querySelectorAll('.msg-status-tag').length;
+          // 2. Kiểm tra nếu có tin nhắn mới từ CSKH
+          const currentCount = scrollEl.querySelectorAll('.cust-chat-msg-item').length;
           const serverMsgs = liveTicket.messages || [];
           if (serverMsgs.length > currentCount) {
-            // Có tin nhắn mới từ CSKH -> re-render danh sách tin nhắn
+            // Có tin nhắn mới từ CSKH -> CHỈ cập nhật khung chat, KHÔNG re-render cả trang và KHÔNG đụng vào input!
             const idx = currentTicketsList.findIndex(item => String(item._id || item.id) === String(ticketId));
             if (idx !== -1) {
               currentTicketsList[idx] = liveTicket;
             }
-            renderCustomerTickets(currentTicketFilterStatus);
+            renderCustomerChatThreadOnly(liveTicket);
           } else {
             // Cập nhật trạng thái 'Đã xem' cho các tin nhắn của khách nếu admin đã xem
             const adminSeenTime = liveTicket.adminLastSeenAt ? new Date(liveTicket.adminLastSeenAt).getTime() : 0;
@@ -1386,5 +1465,7 @@ window.handleReopenCustomerTicket = handleReopenCustomerTicket;
 window.handleCloseCustomerTicket = handleCloseCustomerTicket;
 window.handleCustTicketTyping = handleCustTicketTyping;
 window.renderCustomerMessageStatus = renderCustomerMessageStatus;
+window.renderCustomerChatMessagesHtml = renderCustomerChatMessagesHtml;
+window.renderCustomerChatThreadOnly = renderCustomerChatThreadOnly;
 
 

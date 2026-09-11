@@ -4964,7 +4964,7 @@ function startAdminTicketLiveSync(ticketId) {
                 // 2. Kiểm tra nếu có tin nhắn mới từ khách
                 const threadEl = document.getElementById('admModalChatThread');
                 if (threadEl) {
-                    const currentCount = threadEl.querySelectorAll('.adm-msg-status').length;
+                    const currentCount = threadEl.querySelectorAll('.adm-msg-item').length;
                     const serverMsgs = liveTicket.messages || [];
                     if (serverMsgs.length > currentCount) {
                         // Cập nhật ticket trong allAdminTickets
@@ -5025,7 +5025,7 @@ function renderAdminChatThreadOnly(ticket) {
         const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
         if (isCust) {
             return `
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-start;">
                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
                         <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
                         <span>${mTime}</span>
@@ -5037,7 +5037,7 @@ function renderAdminChatThreadOnly(ticket) {
             `;
         } else {
             return `
-                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-end;">
                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
                         <span>${mTime}</span>
                         <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
@@ -5189,6 +5189,7 @@ async function handleAdminSubmitReply(event) {
     if (threadEl) {
         const tempEl = document.createElement('div');
         tempEl.id = tempMsgId;
+        tempEl.className = 'adm-msg-item';
         tempEl.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
         tempEl.innerHTML = `
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
