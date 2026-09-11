@@ -11,6 +11,8 @@ let profileGeoState = {
 
 let currentOrdersList = [];
 let currentFilterStatus = 'all';
+let currentOrderPage = 1;
+const ORDERS_PER_PAGE = 5;
 
 document.addEventListener('DOMContentLoaded', () => {
   initProfilePage();
@@ -538,23 +540,138 @@ function updateOrdersCounters(orders) {
 // Lọc đơn hàng theo trạng thái
 function filterCustomerOrders(status) {
   currentFilterStatus = status;
+  currentOrderPage = 1; // Reset về trang 1 khi lọc trạng thái
   document.querySelectorAll('.orders-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-status') === status);
   });
   renderCustomerOrders(status);
 }
 
-// Render giao diện danh sách đơn hàng kèm Stepper tiến trình
-function renderCustomerOrders(filterStatus = 'all') {
-  const container = document.getElementById('customerOrdersContainer');
-  if (!container) return;
-
-  let filtered = currentOrdersList;
+// Lấy danh sách đơn hàng đã lọc và sắp xếp theo ngày từ mới nhất đến cũ nhất
+function getFilteredCustomerOrders(filterStatus = 'all') {
+  let list = Array.isArray(currentOrdersList) ? [...currentOrdersList] : [];
   if (filterStatus !== 'all') {
-    filtered = currentOrdersList.filter(o => o.status === filterStatus);
+    list = list.filter(o => o.status === filterStatus);
   }
 
-  if (filtered.length === 0) {
+  // Luôn sắp xếp từ mới nhất đến cũ nhất (Newest first)
+  list.sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.date || 0).getTime() || 0;
+    const timeB = new Date(b.createdAt || b.date || 0).getTime() || 0;
+    if (timeB !== timeA) return timeB - timeA;
+    const codeA = String(a.orderCode || a._id || '');
+    const codeB = String(b.orderCode || b._id || '');
+    return codeB.localeCompare(codeA);
+  });
+
+  return list;
+}
+
+// Chuyển trang đơn hàng
+function goToOrderPage(page) {
+  const filtered = getFilteredCustomerOrders(currentFilterStatus);
+  const totalPages = Math.ceil(filtered.length / ORDERS_PER_PAGE) || 1;
+  const targetPage = Math.max(1, Math.min(page, totalPages));
+
+  currentOrderPage = targetPage;
+  renderCustomerOrders(currentFilterStatus);
+
+  // Cuộn mượt lên đầu danh sách đơn hàng để tiện theo dõi
+  const ordersTab = document.getElementById('paneOrders');
+  if (ordersTab) {
+    ordersTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Tạo danh sách các số trang hiển thị có hỗ trợ dấu '...'
+function getPaginationPages(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pages = [];
+  if (currentPage <= 4) {
+    for (let i = 1; i <= 5; i++) pages.push(i);
+    pages.push('...');
+    pages.push(totalPages);
+  } else if (currentPage >= totalPages - 3) {
+    pages.push(1);
+    pages.push('...');
+    for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    pages.push('...');
+    pages.push(currentPage - 1);
+    pages.push(currentPage);
+    pages.push(currentPage + 1);
+    pages.push('...');
+    pages.push(totalPages);
+  }
+  return pages;
+}
+
+// Render thanh phân trang đơn hàng
+function renderOrdersPagination(totalItems, totalPages, startIndex, endIndex) {
+  const paginEl = document.getElementById('customerOrdersPagination');
+  if (!paginEl) return;
+
+  if (totalItems <= ORDERS_PER_PAGE || totalPages <= 1) {
+    paginEl.style.display = 'none';
+    paginEl.innerHTML = '';
+    return;
+  }
+
+  paginEl.style.display = 'flex';
+
+  const pages = getPaginationPages(currentOrderPage, totalPages);
+
+  const prevDisabled = currentOrderPage <= 1 ? 'disabled' : '';
+  const nextDisabled = currentOrderPage >= totalPages ? 'disabled' : '';
+
+  let buttonsHtml = `
+    <button class="btn-order-page" ${prevDisabled} onclick="goToOrderPage(${currentOrderPage - 1})" title="Trang trước">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+  `;
+
+  pages.forEach(p => {
+    if (p === '...') {
+      buttonsHtml += `<span class="orders-page-dots">...</span>`;
+    } else {
+      const activeClass = p === currentOrderPage ? 'active' : '';
+      buttonsHtml += `
+        <button class="btn-order-page ${activeClass}" onclick="goToOrderPage(${p})">
+          ${p}
+        </button>
+      `;
+    }
+  });
+
+  buttonsHtml += `
+    <button class="btn-order-page" ${nextDisabled} onclick="goToOrderPage(${currentOrderPage + 1})" title="Trang sau">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  paginEl.innerHTML = `
+    <div class="orders-pagination-info">
+      Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> trong tổng số <strong>${totalItems}</strong> đơn hàng
+    </div>
+    <div class="orders-pagination-controls">
+      ${buttonsHtml}
+    </div>
+  `;
+}
+
+// Render giao diện danh sách đơn hàng kèm Stepper tiến trình và Phân trang (5 đơn / trang, mới nhất đến cũ nhất)
+function renderCustomerOrders(filterStatus = 'all') {
+  const container = document.getElementById('customerOrdersContainer');
+  const paginEl = document.getElementById('customerOrdersPagination');
+  if (!container) return;
+
+  const sortedAndFiltered = getFilteredCustomerOrders(filterStatus);
+  const totalItems = sortedAndFiltered.length;
+
+  if (totalItems === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding:50px 20px; color:#64748b;">
         <i class="fas fa-box-open" style="font-size:46px; color:#cbd5e1; margin-bottom:14px; display:block;"></i>
@@ -565,8 +682,25 @@ function renderCustomerOrders(filterStatus = 'all') {
         </a>
       </div>
     `;
+    if (paginEl) {
+      paginEl.style.display = 'none';
+      paginEl.innerHTML = '';
+    }
     return;
   }
+
+  // Tính toán phân trang
+  const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE);
+  if (currentOrderPage > totalPages) {
+    currentOrderPage = totalPages;
+  }
+  if (currentOrderPage < 1) {
+    currentOrderPage = 1;
+  }
+
+  const startIndex = (currentOrderPage - 1) * ORDERS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ORDERS_PER_PAGE, totalItems);
+  const pagedOrders = sortedAndFiltered.slice(startIndex, endIndex);
 
   const statusMeta = {
     pending: { label: 'Chờ tiếp nhận', class: 'pending', icon: 'fa-clock' },
@@ -576,7 +710,7 @@ function renderCustomerOrders(filterStatus = 'all') {
     cancelled: { label: 'Đã hủy đơn', class: 'cancelled', icon: 'fa-times-circle' }
   };
 
-  container.innerHTML = filtered.map(order => {
+  container.innerHTML = pagedOrders.map(order => {
     const meta = statusMeta[order.status] || { label: order.status, class: 'pending', icon: 'fa-info-circle' };
     const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : (order.date || 'Gần đây');
     const items = order.items || [];
@@ -716,6 +850,9 @@ function renderCustomerOrders(filterStatus = 'all') {
       </div>
     `;
   }).join('');
+
+  // Hiển thị thanh phân trang
+  renderOrdersPagination(totalItems, totalPages, startIndex, endIndex);
 }
 
 // ==========================================
@@ -2373,5 +2510,7 @@ window.hoverTicketStar = hoverTicketStar;
 window.resetTicketStar = resetTicketStar;
 window.handleSubmitTicketRating = handleSubmitTicketRating;
 window.renderStarScoreHtml = renderStarScoreHtml;
+window.goToOrderPage = goToOrderPage;
+window.filterCustomerOrders = filterCustomerOrders;
 
 
