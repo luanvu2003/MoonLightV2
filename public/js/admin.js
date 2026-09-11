@@ -4824,71 +4824,6 @@ async function refreshAdminTickets() {
     showToast("Thành công", "Đã cập nhật danh sách yêu cầu hỗ trợ mới nhất!", "success");
 }
 
-function openReplyTicketModal(ticketId) {
-    const ticket = allAdminTickets.find(t => String(t._id || t.id) === String(ticketId));
-    if (!ticket) {
-        showToast("Lỗi", "Không tìm thấy thông tin phiếu hỗ trợ!", "error");
-        return;
-    }
-
-    const modal = document.getElementById('replyTicketModal');
-    if (!modal) {
-        console.error('Không tìm thấy modal #replyTicketModal');
-        return;
-    }
-
-    const categoryNames = {
-        order_issue: 'Sự cố đơn hàng',
-        size_advice: 'Tư vấn may đo / Size',
-        return_refund: 'Đổi trả / Hoàn tiền',
-        payment: 'Thanh toán / Chuyển khoản',
-        other: 'Yêu cầu khác'
-    };
-
-    const idEl = document.getElementById('admModalTicketId');
-    if (idEl) idEl.value = ticket._id || ticket.id;
-
-    const codeEl = document.getElementById('admModalTicketCode');
-    if (codeEl) codeEl.innerText = '#' + (ticket.ticketCode || 'TK-000000');
-
-    const nameEl = document.getElementById('admModalCustomerName');
-    if (nameEl) nameEl.innerText = ticket.customerName || 'Khách hàng';
-
-    const contactEl = document.getElementById('admModalCustomerContact');
-    if (contactEl) contactEl.innerText = `${ticket.customerPhone || 'Chưa có SĐT'} | ${ticket.customerEmail || 'Chưa có Email'}`;
-
-    const catEl = document.getElementById('admModalTicketCategory');
-    if (catEl) catEl.innerText = `${categoryNames[ticket.category] || ticket.category || 'Yêu cầu khác'} ${ticket.orderCode ? `(Đơn #${ticket.orderCode})` : ''}`;
-
-    const dateEl = document.getElementById('admModalTicketDate');
-    if (dateEl) dateEl.innerText = ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('vi-VN') : '';
-
-    const subjEl = document.getElementById('admModalTicketSubject');
-    if (subjEl) subjEl.innerText = ticket.subject || '';
-
-    // Tổng hợp danh sách tin nhắn của ticket
-    let msgList = [];
-    if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
-        msgList = ticket.messages;
-    } else {
-        if (ticket.message) {
-            msgList.push({
-                senderRole: 'customer',
-                senderName: ticket.customerName || 'Khách hàng',
-                message: ticket.message,
-                createdAt: ticket.createdAt
-            });
-        }
-        if (ticket.reply && ticket.reply.message) {
-            msgList.push({
-                senderRole: 'admin',
-                senderName: ticket.reply.repliedBy || 'CSKH MoonLight',
-                message: ticket.reply.message,
-                createdAt: ticket.reply.repliedAt || ticket.updatedAt
-            });
-        }
-    }
-
 function renderAdminMessageStatus(status) {
     if (status === 'sending') {
         return `<div class="adm-msg-status" style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: #94a3b8; margin-top: 3px;">
@@ -5072,25 +5007,6 @@ function handleAdminChatScroll() {
         jumpBtn.style.display = 'inline-flex';
     }
 }
-
-function renderAdminChatThreadOnly(ticket) {
-    const threadEl = document.getElementById('admModalChatThread');
-    if (!threadEl) return;
-
-    let msgList = [];
-    if (Array.isArray(ticket.messages) && ticket.messages.length > 0) {
-        msgList = ticket.messages;
-    } else if (ticket.message) {
-        msgList.push({
-            senderRole: 'customer',
-            senderName: ticket.customerName || 'Khách hàng',
-            message: ticket.message,
-            createdAt: ticket.createdAt
-        });
-    }
-
-    const countEl = document.getElementById('admModalMsgCount');
-    if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
 // Tự động nhận diện URL cho chat Admin
 function formatAdminChatContent(rawText) {
