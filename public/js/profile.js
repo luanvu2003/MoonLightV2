@@ -1975,6 +1975,12 @@ async function handleSendCustomerMessage(event, ticketId) {
   const text = input ? input.value.trim() : '';
   const file = custSelectedFiles[ticketId];
 
+  const ticket = Array.isArray(currentTicketsList) ? currentTicketsList.find(t => String(t._id || t.id) === String(ticketId)) : null;
+  if (ticket && ticket.status === 'closed') {
+    showToast({ title: 'Phiếu đã đóng', message: 'Yêu cầu hỗ trợ này đã được đóng lại, không thể gửi thêm tin nhắn!', type: 'warning' });
+    return;
+  }
+
   if (!text && !file) {
     showToast({ title: 'Chưa nhập tin', message: 'Vui lòng nhập tin nhắn hoặc chọn ảnh để gửi!', type: 'warning' });
     return;

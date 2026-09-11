@@ -5422,6 +5422,19 @@ function openReplyTicketModal(ticketId) {
     // Render khung tin nhắn
     renderAdminChatThreadOnly(ticket);
 
+    // Kiểm tra trạng thái đóng phiếu: Nếu đã đóng thì ẩn form chat và hiện thông báo khóa
+    const isClosed = ticket.status === 'closed';
+    const formEl = document.getElementById('adminReplyTicketForm');
+    const closedNoticeEl = document.getElementById('admTicketClosedNotice');
+
+    if (isClosed) {
+        if (formEl) formEl.style.display = 'none';
+        if (closedNoticeEl) closedNoticeEl.style.display = 'flex';
+    } else {
+        if (formEl) formEl.style.display = 'flex';
+        if (closedNoticeEl) closedNoticeEl.style.display = 'none';
+    }
+
     // Đảm bảo nút gửi luôn mở khóa khi mở modal
     const submitBtn = document.getElementById('btnAdminSubmitReply');
     if (submitBtn) submitBtn.disabled = false;
@@ -5528,10 +5541,21 @@ async function handleAdminUpdateStatusClick() {
                     closeBtn.innerHTML = '<i class="fas fa-lock"></i> Phiếu Đã Đóng';
                     closeBtn.disabled = true;
                     closeBtn.style.opacity = '0.5';
+
+                    // Ẩn form chat và hiện thông báo đã đóng
+                    const formEl = document.getElementById('adminReplyTicketForm');
+                    const closedNoticeEl = document.getElementById('admTicketClosedNotice');
+                    if (formEl) formEl.style.display = 'none';
+                    if (closedNoticeEl) closedNoticeEl.style.display = 'flex';
                 } else {
                     closeBtn.innerHTML = '<i class="fas fa-lock"></i> Đóng Ticket Ngay';
                     closeBtn.disabled = false;
                     closeBtn.style.opacity = '1';
+
+                    const formEl = document.getElementById('adminReplyTicketForm');
+                    const closedNoticeEl = document.getElementById('admTicketClosedNotice');
+                    if (formEl) formEl.style.display = 'flex';
+                    if (closedNoticeEl) closedNoticeEl.style.display = 'none';
                 }
             }
 
@@ -5570,6 +5594,12 @@ async function handleAdminSubmitReply(event) {
     const replyMessage = repEl?.value?.trim() || '';
     const status = document.getElementById('admModalNewStatus')?.value || 'replied';
     const file = admSelectedFile;
+
+    const currentTicket = allAdminTickets.find(t => String(t._id || t.id) === String(ticketId));
+    if (currentTicket && currentTicket.status === 'closed') {
+        showToast("Phiếu đã đóng", "Phiếu hỗ trợ này đã được đóng lại, không thể gửi thêm tin nhắn!", "warning");
+        return;
+    }
 
     if (!replyMessage && !file) {
         showToast("Chưa nhập tin", "Vui lòng nhập tin nhắn hoặc chọn ảnh để gửi!", "warning");

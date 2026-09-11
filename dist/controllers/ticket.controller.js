@@ -373,8 +373,8 @@ export const addTicketMessage = async (req, res) => {
             sendError(res, 'Bạn không có quyền gửi tin nhắn trong yêu cầu này', 403, 'FORBIDDEN');
             return;
         }
-        if (ticket.status === 'closed' && !isAdminOrStaff) {
-            sendError(res, 'Yêu cầu hỗ trợ này đã được đóng, quý khách chỉ có thể xem lại lịch sử tin nhắn.', 400, 'TICKET_CLOSED');
+        if (ticket.status === 'closed') {
+            sendError(res, 'Yêu cầu hỗ trợ này đã được đóng, không thể gửi thêm tin nhắn.', 400, 'TICKET_CLOSED');
             return;
         }
         ensureTicketMessages(ticket);
