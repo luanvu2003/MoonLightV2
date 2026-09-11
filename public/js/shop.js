@@ -3035,25 +3035,25 @@ function renderCheckoutAddressPicker(addresses) {
     const displayAddr = addr.fullAddress || [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(', ');
 
     return `
-      <div class="checkout-addr-option ${isSelected ? 'selected' : ''}" data-addr-id="${addr._id}" onclick="selectCheckoutSavedAddress('${addr._id}', event)" role="button" tabindex="0">
-        <input type="radio" name="checkoutAddressSelectRadio" value="${addr._id}" ${isSelected ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="pointer-events: none;">
-        <div style="flex:1;">
+      <div class="checkout-addr-option ${isSelected ? 'selected' : ''}" data-addr-id="${addr._id}" onclick="selectCheckoutSavedAddress('${addr._id}', event)" role="button" tabindex="0" style="display:flex; flex-direction:row; align-items:flex-start; gap:12px; width:100%; box-sizing:border-box;">
+        <input type="radio" name="checkoutAddressSelectRadio" value="${addr._id}" ${isSelected ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="width:18px!important; min-width:18px!important; max-width:18px!important; height:18px!important; flex:0 0 18px!important; flex-shrink:0!important; margin:2px 0 0 0!important; padding:0!important; border:none!important; pointer-events:none; accent-color:var(--gold,#dfba73);">
+        <div class="checkout-addr-content" style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
             <strong style="font-size:13.5px; color:#0f172a;">${escapeHtmlShop(addr.recipientName || 'Người nhận')}</strong>
             <span style="font-size:12.5px; color:#64748b; font-weight:600;"><i class="fas fa-phone-alt" style="font-size:11px; margin-right:3px;"></i>${escapeHtmlShop(addr.phone || '')}</span>
             <span class="badge-addr-label" style="font-size:10.5px; padding:1px 6px;"><i class="fas ${labelIcon}"></i> ${escapeHtmlShop(labelText)}</span>
             ${isDef ? `<span class="badge-addr-default" style="font-size:10.5px; padding:1px 6px;"><i class="fas fa-check-circle"></i> Mặc định</span>` : ''}
           </div>
-          <div style="font-size:12.5px; color:#334155; line-height:1.45;">
+          <div style="font-size:12.5px; color:#334155; line-height:1.45; word-break:break-word;">
             ${escapeHtmlShop(displayAddr)}
           </div>
         </div>
       </div>
     `;
   }).join('') + `
-    <div class="checkout-addr-option ${currentSelectedCheckoutAddressId === 'custom' ? 'selected' : ''}" data-addr-id="custom" onclick="selectCheckoutSavedAddress('custom', event)" role="button" tabindex="0">
-      <input type="radio" name="checkoutAddressSelectRadio" value="custom" ${currentSelectedCheckoutAddressId === 'custom' ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="pointer-events: none;">
-      <div style="flex:1;">
+    <div class="checkout-addr-option ${currentSelectedCheckoutAddressId === 'custom' ? 'selected' : ''}" data-addr-id="custom" onclick="selectCheckoutSavedAddress('custom', event)" role="button" tabindex="0" style="display:flex; flex-direction:row; align-items:flex-start; gap:12px; width:100%; box-sizing:border-box;">
+      <input type="radio" name="checkoutAddressSelectRadio" value="custom" ${currentSelectedCheckoutAddressId === 'custom' ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="width:18px!important; min-width:18px!important; max-width:18px!important; height:18px!important; flex:0 0 18px!important; flex-shrink:0!important; margin:2px 0 0 0!important; padding:0!important; border:none!important; pointer-events:none; accent-color:var(--gold,#dfba73);">
+      <div class="checkout-addr-content" style="flex:1; min-width:0;">
         <div style="display:flex; align-items:center; gap:6px;">
           <strong style="font-size:13px; color:#0f172a;"><i class="fas fa-plus-circle" style="color:var(--gold,#dfba73);"></i> Giao đến địa chỉ mới khác</strong>
         </div>
