@@ -3006,26 +3006,27 @@ input.input-locked {
     justify-content: space-between;
     position: relative;
     margin: 18px 0 22px;
-    padding: 0 10px;
+    padding: 2px 0;
 }
 .order-stepper::before {
     content: '';
     position: absolute;
-    top: 14px;
-    left: 40px;
-    right: 40px;
+    top: 17px;
+    left: 12.5%;
+    width: 75%;
     height: 3px;
     background: #e2e8f0;
     z-index: 1;
 }
 .stepper-progress-fill {
     position: absolute;
-    top: 14px;
-    left: 40px;
+    top: 17px;
+    left: 12.5%;
+    max-width: 75%;
     height: 3px;
     background: var(--gold, #d4af37);
     z-index: 1;
-    transition: width 0.3s ease;
+    transition: width 0.35s ease;
 }
 .stepper-step {
     position: relative;
@@ -3034,29 +3035,38 @@ input.input-locked {
     flex: 1;
 }
 .stepper-circle {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: #ffffff;
     border: 2px solid #cbd5e1;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     color: #94a3b8;
     margin: 0 auto 6px;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 .stepper-step.completed .stepper-circle {
     background: var(--gold, #d4af37);
     border-color: var(--gold, #d4af37);
-    color: #000;
+    color: #0f172a;
     font-weight: bold;
 }
 .stepper-step.active .stepper-circle {
     border-color: var(--gold, #d4af37);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25);
+    font-weight: bold;
+}
+.stepper-step.active.completed .stepper-circle {
+    background: var(--gold, #d4af37);
+    color: #0f172a;
+}
+.stepper-step.active:not(.completed) .stepper-circle {
+    background: #ffffff;
     color: var(--gold, #d4af37);
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2);
 }
 .stepper-label {
     font-size: 11.5px;
@@ -3067,6 +3077,18 @@ input.input-locked {
 .stepper-step.active .stepper-label {
     color: #0f172a;
     font-weight: 700;
+}
+
+.order-delivery-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 16px;
+}
+@media (max-width: 640px) {
+    .order-delivery-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
 }
 
 /* Order Item Rows */

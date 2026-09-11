@@ -529,8 +529,15 @@ export class OrderController {
                 sendError(res, 'Bạn không có quyền thao tác trên đơn hàng này', 403, 'FORBIDDEN');
                 return;
             }
-            if (order.status !== OrderStatus.Pending) {
-                sendError(res, `Đơn hàng đang ở trạng thái "${order.status === OrderStatus.Confirmed ? 'Đã xác nhận' : 'Đang xử lý / Đang giao'}", không thể tự hủy. Quý khách vui lòng liên hệ hotline/zalo để được hỗ trợ.`, 400, 'ORDER_CANNOT_BE_CANCELLED');
+            const cancellableStatuses = [OrderStatus.Pending, OrderStatus.Confirmed];
+            if (!cancellableStatuses.includes(order.status)) {
+                const statusLabelMap = {
+                    [OrderStatus.Shipping]: 'Đang giao hàng',
+                    [OrderStatus.Completed]: 'Giao thành công',
+                    [OrderStatus.Cancelled]: 'Đã hủy đơn'
+                };
+                const statusLabel = statusLabelMap[order.status] || 'Đang vận chuyển / hoàn tất';
+                sendError(res, `Đơn hàng đang ở trạng thái "${statusLabel}", không thể tự hủy. Quý khách vui lòng liên hệ hotline/zalo hoặc gửi yêu cầu hỗ trợ.`, 400, 'ORDER_CANNOT_BE_CANCELLED');
                 return;
             }
             order.status = OrderStatus.Cancelled;

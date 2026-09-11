@@ -705,9 +705,9 @@ function renderCustomerOrders(filterStatus = 'all') {
   const statusMeta = {
     pending: { label: 'Chờ tiếp nhận', class: 'pending', icon: 'fa-clock' },
     confirmed: { label: 'Đã xác nhận', class: 'confirmed', icon: 'fa-check-circle' },
-    shipping: { label: 'Đang giao hàng', class: 'shipping', icon: 'fa-shipping-fast' },
-    completed: { label: 'Giao thành công', class: 'completed', icon: 'fa-box-check' },
-    cancelled: { label: 'Đã hủy đơn', class: 'cancelled', icon: 'fa-times-circle' }
+    shipping: { label: 'Đang giao hàng', class: 'shipping', icon: 'fa-truck-fast' },
+    completed: { label: 'Giao thành công', class: 'completed', icon: 'fa-circle-check' },
+    cancelled: { label: 'Đã hủy đơn', class: 'cancelled', icon: 'fa-ban' }
   };
 
   container.innerHTML = pagedOrders.map(order => {
@@ -717,6 +717,8 @@ function renderCustomerOrders(filterStatus = 'all') {
     const totalAmount = Number(order.total || 0).toLocaleString('vi-VN');
     const orderId = order._id || order.id;
     const isPending = order.status === 'pending';
+    const isConfirmed = order.status === 'confirmed';
+    const canCancel = isPending || isConfirmed;
     const isCancelled = order.status === 'cancelled';
     const isBanking = order.paymentMethod === 'banking';
     const isPaid = Boolean(order.isPaid);
@@ -734,7 +736,7 @@ function renderCustomerOrders(filterStatus = 'all') {
       `;
     } else {
       const stepIdx = ['pending', 'confirmed', 'shipping', 'completed'].indexOf(order.status);
-      const fillWidth = stepIdx <= 0 ? '0%' : (stepIdx === 1 ? '33%' : (stepIdx === 2 ? '66%' : '100%'));
+      const fillWidth = stepIdx <= 0 ? '0%' : (stepIdx === 1 ? '25%' : (stepIdx === 2 ? '50%' : '75%'));
 
       stepperHtml = `
         <div class="order-stepper">
@@ -752,7 +754,7 @@ function renderCustomerOrders(filterStatus = 'all') {
             <div class="stepper-label">Đang giao</div>
           </div>
           <div class="stepper-step ${stepIdx >= 3 ? 'completed' : ''} ${stepIdx === 3 ? 'active' : ''}">
-            <div class="stepper-circle"><i class="fas fa-box-open"></i></div>
+            <div class="stepper-circle"><i class="fas fa-circle-check"></i></div>
             <div class="stepper-label">Giao thành công</div>
           </div>
         </div>
@@ -785,7 +787,7 @@ function renderCustomerOrders(filterStatus = 'all') {
     const cusName = order.customer?.name || 'Khách hàng';
     const cusPhone = order.customer?.phone || '--';
     const cusAddress = order.customer?.address || 'Chưa cung cấp địa chỉ';
-    const cusNote = order.customer?.note ? `<div style="font-size:12px; color:#64748b; margin-top:4px;"><em>Ghi chú: ${order.customer.note}</em></div>` : '';
+    const cusNote = order.customer?.note ? `<div style="font-size:12px; color:#64748b; margin-top:4px; word-break:break-word;"><em>Ghi chú: ${order.customer.note}</em></div>` : '';
 
     return `
       <div class="order-box-card" id="orderCard_${orderId}">
@@ -812,7 +814,7 @@ function renderCustomerOrders(filterStatus = 'all') {
 
         <!-- Thông tin giao hàng & thanh toán -->
         <div style="background:#f8fafc; border-radius:8px; padding:12px 14px; margin-top:12px; font-size:12.5px; line-height:1.6; color:#334155; border:1px solid #f1f5f9;">
-          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:16px;">
+          <div class="order-delivery-grid">
             <div>
               <div><i class="fas fa-user" style="color:var(--gold,#d4af37); width:16px;"></i> Người nhận: <strong>${cusName}</strong> · SĐT: <strong>${cusPhone}</strong></div>
               <div><i class="fas fa-map-marker-alt" style="color:var(--gold,#d4af37); width:16px;"></i> Địa chỉ: ${cusAddress}</div>
@@ -837,7 +839,7 @@ function renderCustomerOrders(filterStatus = 'all') {
             <span class="order-total-sum">${totalAmount}₫</span>
           </div>
           <div class="order-actions-group">
-            ${isPending ? `
+            ${canCancel ? `
               <button class="btn-order-action danger" onclick="handleCancelCustomerOrder('${orderId}', '${order.orderCode || ''}')">
                 <i class="fas fa-ban"></i> HỦY ĐƠN HÀNG
               </button>
@@ -1053,8 +1055,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Khách hàng tự hủy đơn hàng (khi đơn còn ở trạng thái Pending)
+// Khách hàng tự hủy đơn hàng (khi đơn ở trạng thái Chờ tiếp nhận hoặc Đã xác nhận)
 async function handleCancelCustomerOrder(orderId, orderCode) {
+  const order = currentOrdersList.find(o => String(o._id || o.id) === String(orderId));
+  if (order && !['pending', 'confirmed'].includes(order.status)) {
+    showToast({
+      title: 'Không thể hủy đơn',
+      message: 'Đơn hàng đang giao hoặc đã hoàn tất/đã hủy, không thể tự hủy lúc này.',
+      type: 'warning'
+    });
+    return;
+  }
+
   const reason = await showCustomPromptModal({
     title: 'Xác nhận hủy đơn hàng',
     message: `Quý khách có chắc chắn muốn hủy đơn hàng <strong>${escapeHtml(orderCode || '')}</strong>?<br>Vui lòng cho MoonLight biết lý do bên dưới:`,
