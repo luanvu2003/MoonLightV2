@@ -4967,12 +4967,32 @@ function startAdminTicketLiveSync(ticketId) {
                     const currentCount = threadEl.querySelectorAll('.adm-msg-item').length;
                     const serverMsgs = liveTicket.messages || [];
                     if (serverMsgs.length > currentCount) {
+                        const isNearBottom = threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < 70;
                         // Cập nhật ticket trong allAdminTickets
                         const idx = allAdminTickets.findIndex(item => String(item._id || item.id) === String(ticketId));
                         if (idx !== -1) {
                             allAdminTickets[idx] = liveTicket;
                         }
                         renderAdminChatThreadOnly(liveTicket);
+
+                        if (isNearBottom) {
+                            setTimeout(() => {
+                                scrollAdminChatToBottom(true);
+                            }, 50);
+                        } else {
+                            const diff = serverMsgs.length - currentCount;
+                            admNewMsgCount = (admNewMsgCount || 0) + diff;
+                            const jumpBtn = document.getElementById('admJumpBtn');
+                            const pill = document.getElementById('admNewMsgPill');
+                            if (jumpBtn) {
+                                jumpBtn.style.display = 'inline-flex';
+                                jumpBtn.classList.add('has-new-messages');
+                            }
+                            if (pill) {
+                                pill.innerHTML = `<i class="fas fa-bell fa-shake"></i> ${admNewMsgCount} tin mới`;
+                                pill.style.display = 'inline-flex';
+                            }
+                        }
                     } else {
                         // Cập nhật trạng thái 'Đã xem' nếu khách đã xem tin nhắn của admin
                         const custSeenTime = liveTicket.customerLastSeenAt ? new Date(liveTicket.customerLastSeenAt).getTime() : 0;
@@ -4999,6 +5019,53 @@ function stopAdminTicketLiveSync() {
         adminLivePollTimer = null;
     }
     currentOpenAdminTicketId = null;
+}
+
+// Quản lý trạng thái cuộn và tin nhắn mới phía Admin
+let admNewMsgCount = 0;
+
+function scrollAdminChatToBottom(smooth = false) {
+    const threadEl = document.getElementById('admModalChatThread');
+    if (!threadEl) return;
+
+    if (smooth) {
+        threadEl.scrollTo({ top: threadEl.scrollHeight, behavior: 'smooth' });
+    } else {
+        threadEl.scrollTop = threadEl.scrollHeight;
+    }
+
+    const jumpBtn = document.getElementById('admJumpBtn');
+    const pill = document.getElementById('admNewMsgPill');
+    if (jumpBtn) {
+        jumpBtn.style.display = 'none';
+        jumpBtn.classList.remove('has-new-messages');
+    }
+    if (pill) {
+        pill.style.display = 'none';
+    }
+    admNewMsgCount = 0;
+}
+
+function jumpAdminChatToBottom() {
+    scrollAdminChatToBottom(true);
+}
+
+function handleAdminChatScroll() {
+    const threadEl = document.getElementById('admModalChatThread');
+    const jumpBtn = document.getElementById('admJumpBtn');
+    const pill = document.getElementById('admNewMsgPill');
+    if (!threadEl || !jumpBtn) return;
+
+    const isNearBottom = threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < 65;
+
+    if (isNearBottom) {
+        jumpBtn.style.display = 'none';
+        jumpBtn.classList.remove('has-new-messages');
+        if (pill) pill.style.display = 'none';
+        admNewMsgCount = 0;
+    } else {
+        jumpBtn.style.display = 'inline-flex';
+    }
 }
 
 function renderAdminChatThreadOnly(ticket) {
@@ -5184,7 +5251,7 @@ function renderAdminChatThreadOnly(ticket) {
     `;
 
     setTimeout(() => {
-        threadEl.scrollTop = threadEl.scrollHeight;
+        scrollAdminChatToBottom(false);
     }, 50);
 }
 
@@ -5378,7 +5445,7 @@ async function handleAdminSubmitReply(event) {
         } else {
             threadEl.appendChild(tempEl);
         }
-        threadEl.scrollTop = threadEl.scrollHeight;
+        scrollAdminChatToBottom(true);
     }
 
     try {
@@ -5444,6 +5511,9 @@ window.filterAdminTickets = filterAdminTickets;
 window.refreshAdminTickets = refreshAdminTickets;
 window.renderAdminMessageStatus = renderAdminMessageStatus;
 window.handleAdminTicketTyping = handleAdminTicketTyping;
+window.handleAdminChatScroll = handleAdminChatScroll;
+window.jumpAdminChatToBottom = jumpAdminChatToBottom;
+window.scrollAdminChatToBottom = scrollAdminChatToBottom;
 
 // --- 9. TAB 5: QUẢN LÝ NHÂN SỰ & XẾP LỊCH LÀM VIỆC ---
 

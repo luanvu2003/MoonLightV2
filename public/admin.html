@@ -774,8 +774,16 @@
                         <span><i class="fas fa-comments" style="color: var(--gold, #d4af37); margin-right: 6px;"></i> Lịch Sử Trao Đổi Tin Nhắn</span>
                         <span style="font-size: 11px; color: #64748b;" id="admModalMsgCount">0 tin nhắn</span>
                     </div>
-                    <div id="admModalChatThread" style="background: rgba(10, 12, 20, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Các tin nhắn được render bằng JS -->
+                    <div class="ticket-chat-scroll-wrapper" style="position: relative;">
+                        <div id="admModalChatThread" onscroll="handleAdminChatScroll()" style="background: rgba(10, 12, 20, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Các tin nhắn được render bằng JS -->
+                        </div>
+
+                        <!-- NÚT NHẢY ĐẾN TIN NHẮN HIỆN TẠI & THÔNG BÁO TIN MỚI (ADMIN) -->
+                        <button type="button" id="admJumpBtn" class="ticket-jump-to-latest-btn admin-jump-btn" onclick="jumpAdminChatToBottom()" style="display:none;" title="Nhảy đến tin nhắn mới nhất">
+                            <span id="admNewMsgPill" class="ticket-new-msg-pill" style="display:none;"><i class="fas fa-bell fa-shake"></i> Tin mới</span>
+                            <span class="jump-btn-label"><i class="fas fa-arrow-down"></i> Tin mới nhất</span>
+                        </button>
                     </div>
                 </div>
 

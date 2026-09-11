@@ -166,6 +166,11 @@ function switchProfileTab(tabName, updateUrl = true) {
     if (typeof loadCustomerTickets === 'function') {
       loadCustomerTickets();
     }
+    setTimeout(() => {
+      document.querySelectorAll('.ticket-messages-scroll').forEach(el => {
+        el.scrollTop = el.scrollHeight;
+      });
+    }, 120);
   } else {
     if (btnProfile) btnProfile.classList.add('active');
     if (paneProfile) paneProfile.style.display = 'block';
@@ -1030,8 +1035,16 @@ function renderCustomerTickets(filterStatus = 'all') {
             <span style="font-size:11px; font-weight:normal; color:#64748b;"><i class="fas fa-circle" style="color:#10b981; font-size:8px; margin-right:4px;"></i>Hỗ trợ trực tuyến</span>
           </div>
 
-          <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
-            ${renderCustomerChatMessagesHtml(t._id, msgList, !hasAdminReplied && !isClosed)}
+          <div class="ticket-chat-scroll-wrapper" style="position:relative; margin-bottom:12px;">
+            <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" onscroll="handleCustomerChatScroll('${t._id}')" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+              ${renderCustomerChatMessagesHtml(t._id, msgList, !hasAdminReplied && !isClosed)}
+            </div>
+
+            <!-- NÚT NHẢY ĐẾN TIN NHẮN HIỆN TẠI & THÔNG BÁO TIN MỚI -->
+            <button type="button" id="custJumpBtn-${t._id}" class="ticket-jump-to-latest-btn" onclick="jumpCustomerChatToBottom('${t._id}')" style="display:none;" title="Nhảy đến tin nhắn mới nhất">
+              <span id="custNewMsgPill-${t._id}" class="ticket-new-msg-pill" style="display:none;"><i class="fas fa-bell fa-shake"></i> Tin mới</span>
+              <span class="jump-btn-label"><i class="fas fa-arrow-down"></i> Tin mới nhất</span>
+            </button>
           </div>
 
           <!-- INPUT GỬI TIN NHẮN PHẢN HỒI TIẾP (TEXTAREA & ATTACHMENTS) -->
@@ -1127,6 +1140,14 @@ function renderCustomerTickets(filterStatus = 'all') {
       }
     }
   }
+
+  // Tự động cuộn xuống tin nhắn mới nhất cho toàn bộ cuộc trò chuyện
+  setTimeout(() => {
+    filtered.forEach(t => {
+      const tid = t._id || t.id;
+      scrollCustomerChatToBottom(tid, false);
+    });
+  }, 60);
 }
 
 async function handleCustomerSubmitTicket(event) {
@@ -1315,6 +1336,53 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
   `;
 }
 
+// Quản lý số tin nhắn mới khi người dùng đang cuộn lên xem lịch sử
+const custNewMsgCount = {};
+
+function scrollCustomerChatToBottom(ticketId, smooth = false) {
+  const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
+  if (!scrollEl) return;
+
+  if (smooth) {
+    scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+  } else {
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+  }
+
+  const jumpBtn = document.getElementById(`custJumpBtn-${ticketId}`);
+  const pill = document.getElementById(`custNewMsgPill-${ticketId}`);
+  if (jumpBtn) {
+    jumpBtn.style.display = 'none';
+    jumpBtn.classList.remove('has-new-messages');
+  }
+  if (pill) {
+    pill.style.display = 'none';
+  }
+  custNewMsgCount[ticketId] = 0;
+}
+
+function jumpCustomerChatToBottom(ticketId) {
+  scrollCustomerChatToBottom(ticketId, true);
+}
+
+function handleCustomerChatScroll(ticketId) {
+  const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
+  const jumpBtn = document.getElementById(`custJumpBtn-${ticketId}`);
+  const pill = document.getElementById(`custNewMsgPill-${ticketId}`);
+  if (!scrollEl || !jumpBtn) return;
+
+  const isNearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 65;
+
+  if (isNearBottom) {
+    jumpBtn.style.display = 'none';
+    jumpBtn.classList.remove('has-new-messages');
+    if (pill) pill.style.display = 'none';
+    custNewMsgCount[ticketId] = 0;
+  } else {
+    jumpBtn.style.display = 'inline-flex';
+  }
+}
+
 function renderCustomerChatThreadOnly(ticket) {
   const ticketId = ticket._id || ticket.id;
   const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
@@ -1336,11 +1404,15 @@ function renderCustomerChatThreadOnly(ticket) {
   const hasAdminReplied = msgList.some(m => m.senderRole === 'admin' || m.senderRole === 'staff');
 
   const countEl = document.getElementById(`custMsgCount-${ticketId}`);
+  const prevCount = parseInt(countEl?.innerText || '0', 10);
   if (countEl) countEl.innerText = `${msgList.length}`;
 
   const curTypingEl = document.getElementById(`custTypingIndicator-${ticketId}`);
   const wasTyping = curTypingEl && curTypingEl.style.display !== 'none';
   const curTypingText = document.getElementById(`custTypingText-${ticketId}`)?.innerText || '';
+
+  // Kiểm tra nếu người dùng đang ở sát đáy
+  const isNearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 75;
 
   scrollEl.innerHTML = renderCustomerChatMessagesHtml(ticketId, msgList, !hasAdminReplied && !isClosed);
 
@@ -1353,9 +1425,32 @@ function renderCustomerChatThreadOnly(ticket) {
     }
   }
 
-  setTimeout(() => {
-    scrollEl.scrollTop = scrollEl.scrollHeight;
-  }, 50);
+  const hasNewMsgs = msgList.length > prevCount;
+  if (hasNewMsgs) {
+    if (isNearBottom) {
+      setTimeout(() => {
+        scrollCustomerChatToBottom(ticketId, true);
+      }, 50);
+    } else {
+      // Người dùng đang cuộn lên xem tin cũ -> hiển thị badge có tin nhắn mới
+      const diff = msgList.length - prevCount;
+      custNewMsgCount[ticketId] = (custNewMsgCount[ticketId] || 0) + diff;
+      const jumpBtn = document.getElementById(`custJumpBtn-${ticketId}`);
+      const pill = document.getElementById(`custNewMsgPill-${ticketId}`);
+      if (jumpBtn) {
+        jumpBtn.style.display = 'inline-flex';
+        jumpBtn.classList.add('has-new-messages');
+      }
+      if (pill) {
+        pill.innerHTML = `<i class="fas fa-bell fa-shake"></i> ${custNewMsgCount[ticketId]} tin mới`;
+        pill.style.display = 'inline-flex';
+      }
+    }
+  } else if (isNearBottom) {
+    setTimeout(() => {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    }, 50);
+  }
 }
 
 function renderCustomerMessageStatus(status) {
@@ -1715,5 +1810,8 @@ window.openChatImageLightbox = openChatImageLightbox;
 window.renderCustomerMessageStatus = renderCustomerMessageStatus;
 window.renderCustomerChatMessagesHtml = renderCustomerChatMessagesHtml;
 window.renderCustomerChatThreadOnly = renderCustomerChatThreadOnly;
+window.scrollCustomerChatToBottom = scrollCustomerChatToBottom;
+window.jumpCustomerChatToBottom = jumpCustomerChatToBottom;
+window.handleCustomerChatScroll = handleCustomerChatScroll;
 
 
