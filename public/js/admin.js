@@ -5422,6 +5422,10 @@ function openReplyTicketModal(ticketId) {
     // Render khung tin nhắn
     renderAdminChatThreadOnly(ticket);
 
+    // Đảm bảo nút gửi luôn mở khóa khi mở modal
+    const submitBtn = document.getElementById('btnAdminSubmitReply');
+    if (submitBtn) submitBtn.disabled = false;
+
     // Reset textarea và gán sự kiện auto-resize + Enter để gửi
     const repEl = document.getElementById('admModalReplyMessage');
     if (repEl) {
@@ -5584,100 +5588,107 @@ async function handleAdminSubmitReply(event) {
 
     if (btn) btn.disabled = true;
 
-    let attachments = [];
-
-    // Nếu có file đính kèm, thực hiện upload với progress bar
-    if (file) {
-        const progressBox = document.getElementById('admUploadProgressBox');
-        const statusText = document.getElementById('admUploadStatusText');
-        const percentText = document.getElementById('admUploadPercent');
-        const barFill = document.getElementById('admUploadBarFill');
-
-        if (progressBox) progressBox.style.display = 'block';
-
-        try {
-            const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
-                if (percentText) percentText.innerText = `${progress.percent}%`;
-                if (barFill) barFill.style.width = `${progress.percent}%`;
-                if (statusText) {
-                    const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
-                    const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
-                    statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
-                }
-            });
-
-            if (upRes && (upRes.success || upRes.data)) {
-                attachments.push(upRes.data);
-                if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
-            } else {
-                throw new Error(upRes?.message || 'Tải file thất bại.');
-            }
-        } catch (uploadErr) {
-            console.error('Lỗi upload file admin:', uploadErr);
-            showToast("Lỗi tải tệp", uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', "error");
-            if (btn) btn.disabled = false;
-            if (progressBox) progressBox.style.display = 'none';
-            return;
-        }
-    }
-
-    // Xóa ô nhập ngay lập tức và reset đính kèm
-    if (repEl) {
-        repEl.value = '';
-        repEl.style.height = 'auto';
-    }
-    handleRemoveAdminAttach();
-
-    // Thêm tin nhắn tạm thời 'Đang gửi...' vào khung chat
-    const threadEl = document.getElementById('admModalChatThread');
     const tempMsgId = 'adm-temp-msg-' + Date.now();
-    const nowStr = new Date().toLocaleString('vi-VN');
-
-    // Lấy thông tin nhân viên đang đăng nhập
-    const loggedUser = JSON.parse(localStorage.getItem('moonlight_user')) || { name: 'Quản Trị Viên' };
-    const staffName = loggedUser.name || loggedUser.username || 'CSKH MoonLight';
-
-    if (threadEl) {
-        const allItems = threadEl.querySelectorAll('.adm-msg-item');
-        const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
-        const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'admin';
-
-        if (wasSameSender) {
-            const oldStatus = lastMsg.querySelector('.adm-msg-status');
-            if (oldStatus) oldStatus.remove();
-        }
-
-        const hasText = Boolean(replyMessage && replyMessage.trim());
-        const hasMedia = Array.isArray(attachments) && attachments.length > 0;
-
-        let bubbleStyle = `width:fit-content; max-width:78%;`;
-        let bubbleContent = '';
-
-        if (!hasText && hasMedia) {
-            bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
-            bubbleContent = renderAdminMessageAttachments(attachments);
-        } else if (hasText && hasMedia) {
-            bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
-            bubbleContent = `${renderAdminMessageAttachments(attachments)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
-        } else {
-            bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
-            bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
-        }
-
-        tempEl.innerHTML = `
-            <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
-            ${renderAdminMessageStatus('sending')}
-        `;
-        const typingInd = document.getElementById('admTypingIndicator');
-        if (typingInd) {
-            threadEl.insertBefore(tempEl, typingInd);
-        } else {
-            threadEl.appendChild(tempEl);
-        }
-        scrollAdminChatToBottom(true);
-    }
+    let tempEl = null;
 
     try {
+        let attachments = [];
+
+        // Nếu có file đính kèm, thực hiện upload với progress bar
+        if (file) {
+            const progressBox = document.getElementById('admUploadProgressBox');
+            const statusText = document.getElementById('admUploadStatusText');
+            const percentText = document.getElementById('admUploadPercent');
+            const barFill = document.getElementById('admUploadBarFill');
+
+            if (progressBox) progressBox.style.display = 'block';
+
+            try {
+                const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
+                    if (percentText) percentText.innerText = `${progress.percent}%`;
+                    if (barFill) barFill.style.width = `${progress.percent}%`;
+                    if (statusText) {
+                        const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
+                        statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
+                    }
+                });
+
+                if (upRes && (upRes.success || upRes.data)) {
+                    attachments.push(upRes.data);
+                    if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
+                } else {
+                    throw new Error(upRes?.message || 'Tải file thất bại.');
+                }
+            } catch (uploadErr) {
+                console.error('Lỗi upload file admin:', uploadErr);
+                showToast("Lỗi tải tệp", uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', "error");
+                if (progressBox) progressBox.style.display = 'none';
+                return;
+            }
+        }
+
+        // Xóa ô nhập ngay lập tức và reset đính kèm
+        if (repEl) {
+            repEl.value = '';
+            repEl.style.height = 'auto';
+        }
+        handleRemoveAdminAttach();
+
+        // Thêm tin nhắn tạm thời 'Đang gửi...' vào khung chat
+        const threadEl = document.getElementById('admModalChatThread');
+        const nowStr = new Date().toLocaleString('vi-VN');
+
+        if (threadEl) {
+            const allItems = threadEl.querySelectorAll('.adm-msg-item');
+            const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
+            const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'admin';
+
+            if (wasSameSender) {
+                const oldStatus = lastMsg.querySelector('.adm-msg-status');
+                if (oldStatus) oldStatus.remove();
+            }
+
+            const hasText = Boolean(replyMessage && replyMessage.trim());
+            const hasMedia = Array.isArray(attachments) && attachments.length > 0;
+
+            let bubbleStyle = `width:fit-content; max-width:78%;`;
+            let bubbleContent = '';
+
+            if (!hasText && hasMedia) {
+                bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
+                bubbleContent = renderAdminMessageAttachments(attachments);
+            } else if (hasText && hasMedia) {
+                bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
+                bubbleContent = `${renderAdminMessageAttachments(attachments)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
+            } else {
+                bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
+                bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
+            }
+
+            tempEl = document.createElement('div');
+            tempEl.id = tempMsgId;
+            tempEl.className = 'adm-msg-item';
+            tempEl.setAttribute('data-msg-role', 'admin');
+            tempEl.style.display = 'flex';
+            tempEl.style.flexDirection = 'column';
+            tempEl.style.alignItems = 'flex-end';
+            tempEl.style.marginRight = '4px';
+            tempEl.style.marginTop = wasSameSender ? '2px' : '10px';
+
+            tempEl.innerHTML = `
+                <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
+                ${renderAdminMessageStatus('sending')}
+            `;
+            const typingInd = document.getElementById('admTypingIndicator');
+            if (typingInd) {
+                threadEl.insertBefore(tempEl, typingInd);
+            } else {
+                threadEl.appendChild(tempEl);
+            }
+            scrollAdminChatToBottom(true);
+        }
+
         const res = await MoonlightAPI.replyTicket(ticketId, {
             message: replyMessage,
             replyMessage: replyMessage,
@@ -5686,28 +5697,20 @@ async function handleAdminSubmitReply(event) {
         });
 
         if (res && (res.success || res.data)) {
-            // Cập nhật trạng thái từ 'Đang gửi...' sang 'Đã nhận'
-            const tempEl = document.getElementById(tempMsgId);
-            if (tempEl) {
-                const statusDiv = tempEl.querySelector('.adm-msg-status');
-                if (statusDiv) {
-                    statusDiv.outerHTML = renderAdminMessageStatus('delivered');
-                }
-            }
-
             const updatedTicket = res.data;
             if (updatedTicket) {
                 const idx = allAdminTickets.findIndex(t => String(t._id || t.id) === String(ticketId));
                 if (idx !== -1) {
                     allAdminTickets[idx] = updatedTicket;
                 }
+                // Đồng bộ lại luồng chat chính xác theo ticket mới từ server
+                renderAdminChatThreadOnly(updatedTicket);
+                scrollAdminChatToBottom(true);
             }
-
             // Cập nhật lại giao diện bảng ngoài admin
             renderAdminTickets();
         } else {
             showToast("Lỗi gửi tin", res?.message || 'Không thể gửi phản hồi cho khách hàng.', "error");
-            const tempEl = document.getElementById(tempMsgId);
             if (tempEl) {
                 const statusDiv = tempEl.querySelector('.adm-msg-status');
                 if (statusDiv) {
@@ -5718,7 +5721,6 @@ async function handleAdminSubmitReply(event) {
     } catch (err) {
         console.error('Lỗi khi gửi tin nhắn ticket:', err);
         showToast("Lỗi gửi tin", err.message || 'Có lỗi xảy ra khi gửi tin nhắn phản hồi.', "error");
-        const tempEl = document.getElementById(tempMsgId);
         if (tempEl) {
             const statusDiv = tempEl.querySelector('.adm-msg-status');
             if (statusDiv) {
@@ -5727,6 +5729,7 @@ async function handleAdminSubmitReply(event) {
         }
     } finally {
         if (btn) btn.disabled = false;
+        if (repEl) repEl.focus();
     }
 }
 
