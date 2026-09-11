@@ -699,6 +699,31 @@
         </div>
     </div>
 
+    <!-- Modal Bảng Container Xác Nhận / Thao Tác Khách Hàng (Thay thế window.confirm & prompt) -->
+    <div id="custConfirmModal" class="cust-modal-overlay" style="display:none;">
+        <div class="cust-modal-card">
+            <button type="button" class="cust-modal-close-btn" onclick="closeCustConfirmModal(false)" title="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="cust-modal-icon-wrapper" id="custConfirmIconWrap">
+                <i class="fas fa-question" id="custConfirmIcon"></i>
+            </div>
+            <h3 class="cust-modal-title" id="custConfirmTitle">Xác nhận thao tác</h3>
+            <div class="cust-modal-desc" id="custConfirmMessage">Bạn có chắc chắn muốn thực hiện hành động này không?</div>
+            
+            <!-- Input container cho trường hợp prompt -->
+            <div id="custConfirmInputWrap" style="display:none; margin-bottom:20px; text-align:left;">
+                <label id="custConfirmInputLabel" style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">Lý do:</label>
+                <textarea id="custConfirmInput" rows="2" style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:12px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
+            </div>
+
+            <div class="cust-modal-actions">
+                <button type="button" class="cust-modal-cancel-btn" id="custConfirmCancelBtn" onclick="closeCustConfirmModal(false)">HỦY BỎ</button>
+                <button type="button" class="cust-modal-confirm-btn" id="custConfirmAcceptBtn">XÁC NHẬN</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast container -->
     <div id="toastContainer"></div>
 

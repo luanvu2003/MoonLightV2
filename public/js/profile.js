@@ -713,14 +713,223 @@ function renderCustomerOrders(filterStatus = 'all') {
   }).join('');
 }
 
+// ==========================================
+// HỘP THOẠI MODAL CONTAINER TÙY CHỈNH (THAY THẾ WINDOW.CONFIRM & PROMPT)
+// ==========================================
+let pendingCustConfirmResolve = null;
+
+function ensureCustConfirmModalHtml() {
+  if (document.getElementById('custConfirmModal')) return;
+  const div = document.createElement('div');
+  div.id = 'custConfirmModal';
+  div.className = 'cust-modal-overlay';
+  div.style.display = 'none';
+  div.innerHTML = `
+    <div class="cust-modal-card">
+      <button type="button" class="cust-modal-close-btn" onclick="closeCustConfirmModal(false)" title="Đóng">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="cust-modal-icon-wrapper" id="custConfirmIconWrap">
+        <i class="fas fa-question" id="custConfirmIcon"></i>
+      </div>
+      <h3 class="cust-modal-title" id="custConfirmTitle">Xác nhận thao tác</h3>
+      <div class="cust-modal-desc" id="custConfirmMessage">Bạn có chắc chắn muốn thực hiện hành động này không?</div>
+      
+      <div id="custConfirmInputWrap" style="display:none; margin-bottom:20px; text-align:left;">
+        <label id="custConfirmInputLabel" style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">Lý do:</label>
+        <textarea id="custConfirmInput" rows="2" style="width:100%; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:12px; padding:10px 12px; font-size:13px; outline:none; resize:none; font-family:inherit;"></textarea>
+      </div>
+
+      <div class="cust-modal-actions">
+        <button type="button" class="cust-modal-cancel-btn" id="custConfirmCancelBtn" onclick="closeCustConfirmModal(false)">HỦY BỎ</button>
+        <button type="button" class="cust-modal-confirm-btn" id="custConfirmAcceptBtn">XÁC NHẬN</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function showCustomConfirmModal({
+  title = 'Xác nhận thao tác',
+  message = 'Bạn có chắc chắn muốn thực hiện hành động này không?',
+  icon = 'fa-question-circle',
+  iconType = 'primary', // 'primary' | 'warning' | 'danger' | 'success'
+  confirmText = 'ĐỒNG Ý',
+  cancelText = 'HỦY BỎ',
+  isDanger = false
+}) {
+  return new Promise((resolve) => {
+    ensureCustConfirmModalHtml();
+    const modal = document.getElementById('custConfirmModal');
+    const iconWrap = document.getElementById('custConfirmIconWrap');
+    const iconEl = document.getElementById('custConfirmIcon');
+    const titleEl = document.getElementById('custConfirmTitle');
+    const msgEl = document.getElementById('custConfirmMessage');
+    const acceptBtn = document.getElementById('custConfirmAcceptBtn');
+    const cancelBtn = document.getElementById('custConfirmCancelBtn');
+    const inputWrap = document.getElementById('custConfirmInputWrap');
+
+    if (!modal) return resolve(window.confirm(message));
+
+    pendingCustConfirmResolve = resolve;
+
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerHTML = message;
+    if (iconEl) iconEl.className = `fas ${icon}`;
+
+    if (iconWrap) {
+      iconWrap.className = 'cust-modal-icon-wrapper';
+      if (iconType && iconType !== 'primary') {
+        iconWrap.classList.add(iconType);
+      }
+    }
+
+    if (inputWrap) inputWrap.style.display = 'none';
+
+    if (cancelBtn) {
+      cancelBtn.style.display = 'block';
+      cancelBtn.innerText = cancelText;
+    }
+
+    if (acceptBtn) {
+      acceptBtn.innerText = confirmText;
+      acceptBtn.className = `cust-modal-confirm-btn ${isDanger ? 'danger' : ''}`;
+      acceptBtn.onclick = () => closeCustConfirmModal(true);
+    }
+
+    modal.onclick = (e) => {
+      if (e.target === modal) closeCustConfirmModal(false);
+    };
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      modal.classList.add('open');
+    });
+  });
+}
+
+function showCustomPromptModal({
+  title = 'Nhập thông tin',
+  message = 'Vui lòng nhập nội dung bên dưới:',
+  label = 'Lý do:',
+  placeholder = 'Nhập nội dung...',
+  defaultValue = '',
+  icon = 'fa-edit',
+  iconType = 'primary',
+  confirmText = 'XÁC NHẬN',
+  cancelText = 'HỦY BỎ',
+  isDanger = false
+}) {
+  return new Promise((resolve) => {
+    ensureCustConfirmModalHtml();
+    const modal = document.getElementById('custConfirmModal');
+    const iconWrap = document.getElementById('custConfirmIconWrap');
+    const iconEl = document.getElementById('custConfirmIcon');
+    const titleEl = document.getElementById('custConfirmTitle');
+    const msgEl = document.getElementById('custConfirmMessage');
+    const acceptBtn = document.getElementById('custConfirmAcceptBtn');
+    const cancelBtn = document.getElementById('custConfirmCancelBtn');
+    const inputWrap = document.getElementById('custConfirmInputWrap');
+    const inputLabel = document.getElementById('custConfirmInputLabel');
+    const inputEl = document.getElementById('custConfirmInput');
+
+    if (!modal) return resolve(window.prompt(message, defaultValue));
+
+    pendingCustConfirmResolve = resolve;
+
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerHTML = message;
+    if (iconEl) iconEl.className = `fas ${icon}`;
+
+    if (iconWrap) {
+      iconWrap.className = 'cust-modal-icon-wrapper';
+      if (iconType && iconType !== 'primary') {
+        iconWrap.classList.add(iconType);
+      }
+    }
+
+    if (inputWrap) {
+      inputWrap.style.display = 'block';
+      if (inputLabel) inputLabel.innerText = label;
+      if (inputEl) {
+        inputEl.placeholder = placeholder;
+        inputEl.value = defaultValue;
+      }
+    }
+
+    if (cancelBtn) {
+      cancelBtn.style.display = 'block';
+      cancelBtn.innerText = cancelText;
+    }
+
+    if (acceptBtn) {
+      acceptBtn.innerText = confirmText;
+      acceptBtn.className = `cust-modal-confirm-btn ${isDanger ? 'danger' : ''}`;
+      acceptBtn.onclick = () => {
+        const val = inputEl ? inputEl.value : '';
+        closeCustConfirmModal(val);
+      };
+    }
+
+    modal.onclick = (e) => {
+      if (e.target === modal) closeCustConfirmModal(null);
+    };
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      modal.classList.add('open');
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+      }
+    });
+  });
+}
+
+function closeCustConfirmModal(result = false) {
+  const modal = document.getElementById('custConfirmModal');
+  if (modal) {
+    modal.classList.remove('open');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 250);
+  }
+  if (typeof pendingCustConfirmResolve === 'function') {
+    const fn = pendingCustConfirmResolve;
+    pendingCustConfirmResolve = null;
+    fn(result);
+  }
+}
+
+// Bắt phím Escape để đóng modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('custConfirmModal');
+    if (modal && modal.classList.contains('open')) {
+      closeCustConfirmModal(false);
+    }
+  }
+});
+
 // Khách hàng tự hủy đơn hàng (khi đơn còn ở trạng thái Pending)
 async function handleCancelCustomerOrder(orderId, orderCode) {
-  const reason = prompt(`Quý khách có chắc chắn muốn hủy đơn hàng ${orderCode || ''}?\nVui lòng nhập lý do hủy (hoặc bấm OK để tiếp tục):`, 'Tôi muốn đổi sản phẩm / địa chỉ khác');
-  if (reason === null) return; // Khách bấm Cancel trên prompt
+  const reason = await showCustomPromptModal({
+    title: 'Xác nhận hủy đơn hàng',
+    message: `Quý khách có chắc chắn muốn hủy đơn hàng <strong>${escapeHtml(orderCode || '')}</strong>?<br>Vui lòng cho MoonLight biết lý do bên dưới:`,
+    label: 'Lý do hủy đơn hàng:',
+    placeholder: 'Nhập lý do hủy (ví dụ: Tôi muốn đổi màu / size hoặc địa chỉ khác)...',
+    defaultValue: 'Tôi muốn đổi sản phẩm / địa chỉ khác',
+    icon: 'fa-exclamation-triangle',
+    iconType: 'danger',
+    confirmText: 'HỦY ĐƠN HÀNG',
+    cancelText: 'GIỮ LẠI ĐƠN',
+    isDanger: true
+  });
+  if (reason === null || reason === false) return; // Khách bấm Hủy bỏ
 
   try {
     showToast({ title: 'Đang xử lý', message: 'Đang tiến hành hủy đơn hàng...', type: 'info' });
-    const res = await MoonlightAPI.cancelMyOrder(orderId, reason.trim() || 'Khách hàng tự hủy đơn qua trang cá nhân');
+    const res = await MoonlightAPI.cancelMyOrder(orderId, (typeof reason === 'string' && reason.trim()) ? reason.trim() : 'Khách hàng tự hủy đơn qua trang cá nhân');
 
     if (res && res.success) {
       showToast({ title: 'Hủy thành công', message: `Đơn hàng ${orderCode || ''} đã được hủy thành công.`, type: 'success' });
@@ -1206,7 +1415,16 @@ async function handleCustomerSubmitTicket(event) {
 }
 
 async function handleCloseCustomerTicket(ticketId) {
-  if (!confirm('Quý khách có chắc chắn muốn đóng phiếu hỗ trợ này không?')) return;
+  const confirmed = await showCustomConfirmModal({
+    title: 'Xác nhận đóng yêu cầu hỗ trợ',
+    message: 'Quý khách có chắc chắn vấn đề đã được hỗ trợ xong và muốn đóng phiếu hỗ trợ này không?',
+    icon: 'fa-clipboard-check',
+    iconType: 'warning',
+    confirmText: 'ĐỒNG Ý ĐÓNG',
+    cancelText: 'HỦY BỎ',
+    isDanger: false
+  });
+  if (!confirmed) return;
 
   try {
     const res = await MoonlightAPI.closeMyTicket(ticketId);
@@ -1941,5 +2159,8 @@ window.renderCustomerChatThreadOnly = renderCustomerChatThreadOnly;
 window.scrollCustomerChatToBottom = scrollCustomerChatToBottom;
 window.jumpCustomerChatToBottom = jumpCustomerChatToBottom;
 window.handleCustomerChatScroll = handleCustomerChatScroll;
+window.showCustomConfirmModal = showCustomConfirmModal;
+window.showCustomPromptModal = showCustomPromptModal;
+window.closeCustConfirmModal = closeCustConfirmModal;
 
 
