@@ -1629,10 +1629,18 @@ document.addEventListener('DOMContentLoaded', () => {
       renderShop(displayedProducts);
       renderBestSellers(4);
       setupSearch();
-      setupScrollEffects();
-      setupMobileMenu();
     } catch (err) {
       console.warn('[Shop] Lỗi render trang chủ:', err);
+    }
+  }
+
+  // Luôn kích hoạt Mobile Menu và Scroll Effects trên mọi trang khách hàng (trừ admin)
+  if (!window.location.pathname.includes('admin.html') && !window.location.pathname.includes('staff.html')) {
+    try {
+      setupMobileMenu();
+      setupScrollEffects();
+    } catch (err) {
+      console.warn('[Shop] Lỗi thiết lập scroll/menu:', err);
     }
   }
 
@@ -4053,40 +4061,57 @@ window.toggleSearch = toggleSearch;
 
 // Scroll Effects (Navbar đổi màu, Nút lên đầu trang, Reveal Animation)
 function setupScrollEffects() {
-  const scrollTopBtn = document.getElementById('scrollTopBtn');
   const navbar = document.getElementById('navbar');
 
-  window.addEventListener('scroll', () => {
+  const checkScrollState = () => {
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+
     // 1. Navbar scrolled style
-    if (window.scrollY > 80) {
-      if (navbar) navbar.classList.add('scrolled');
-    } else {
-      if (navbar) navbar.classList.remove('scrolled');
+    if (navbar) {
+      if (scrollY > 80) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
     }
 
     // 2. Scroll to top button show/hide
-    if (window.scrollY > 300) {
-      if (scrollTopBtn) scrollTopBtn.classList.add('show');
-    } else {
-      if (scrollTopBtn) scrollTopBtn.classList.remove('show');
+    if (scrollTopBtn) {
+      if (scrollY > 250) {
+        scrollTopBtn.classList.add('show');
+      } else {
+        scrollTopBtn.classList.remove('show');
+      }
     }
-  });
+  };
+
+  window.removeEventListener('scroll', checkScrollState);
+  window.addEventListener('scroll', checkScrollState, { passive: true });
+  checkScrollState();
 
   // 3. Scroll to top click
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
   if (scrollTopBtn) {
-    scrollTopBtn.addEventListener('click', () => {
+    scrollTopBtn.onclick = (e) => {
+      e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    };
   }
 
   // 4. Reveal Animations
   const elements = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) entry.target.classList.add('active');
-    });
-  });
-  elements.forEach((el) => observer.observe(el));
+  if (elements.length > 0 && typeof IntersectionObserver !== 'undefined') {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    elements.forEach((el) => observer.observe(el));
+  }
 }
 
 // Mobile Menu Navigation
@@ -5463,8 +5488,10 @@ window.highlightActiveNavMenu = highlightActiveNavMenu;
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initCustomerAuthUI();
   highlightActiveNavMenu();
+  setupScrollEffects();
 } else {
   document.addEventListener('DOMContentLoaded', () => {
     highlightActiveNavMenu();
+    setupScrollEffects();
   });
 }
