@@ -59,6 +59,10 @@ const REVIEWS_PER_PAGE = ADMIN_PAGE_SIZE;
 let ticketCurrentPage = 1;
 const TICKETS_PER_PAGE = ADMIN_PAGE_SIZE;
 
+// Bộ lọc & Phân trang Quản lý nhân sự (Staff)
+let staffCurrentPage = 1;
+const STAFF_PER_PAGE = ADMIN_PAGE_SIZE;
+
 // Tạo danh sách số trang phân trang với hỗ trợ dấu '...'
 function getAdminPaginationPages(currentPage, totalPages) {
     if (totalPages <= 7) {
@@ -6214,6 +6218,16 @@ function renderAdminStaff() {
 }
 
 function renderStaffAccountsHTML(loggedUser) {
+    // Phân trang: 20 nhân sự / trang
+    const totalItems = accounts.length;
+    const totalPages = Math.ceil(totalItems / STAFF_PER_PAGE) || 1;
+    if (staffCurrentPage > totalPages) staffCurrentPage = totalPages;
+    if (staffCurrentPage < 1) staffCurrentPage = 1;
+
+    const startIndex = (staffCurrentPage - 1) * STAFF_PER_PAGE;
+    const endIndex = Math.min(startIndex + STAFF_PER_PAGE, totalItems);
+    const pagedAccounts = accounts.slice(startIndex, endIndex);
+
     return `
         <div class="data-table-container">
             <table class="admin-table">
@@ -6227,7 +6241,9 @@ function renderStaffAccountsHTML(loggedUser) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${accounts.map(acc => {
+                    ${totalItems === 0 ? `
+                        <tr><td colspan="5" style="text-align:center; padding:40px; color:#777;">Chưa có tài khoản nhân sự nào.</td></tr>
+                    ` : pagedAccounts.map(acc => {
                         let roleBadge = '';
                         let roleDesc = '';
                         if (acc.role === 'Admin') {
@@ -6277,8 +6293,25 @@ function renderStaffAccountsHTML(loggedUser) {
                     }).join('')}
                 </tbody>
             </table>
+            ${buildAdminPaginationHtml({
+                currentPage: staffCurrentPage,
+                totalPages,
+                totalItems,
+                startIndex,
+                endIndex,
+                unit: 'nhân sự',
+                onPageChange: 'goToStaffPage'
+            })}
         </div>
     `;
+}
+
+// Chuyển trang nhân sự
+function goToStaffPage(page) {
+    staffCurrentPage = page;
+    renderAdminStaff();
+    const tableEl = document.querySelector('.data-table-container');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderStaffScheduleHTML(days) {
@@ -6979,6 +7012,7 @@ function handleSaveStaff(e) {
     showToast("Thành công", `Đã cấp tài khoản cho nhân viên "${name}"`, "success");
     showResultModal({ type: 'success', title: 'Tạo Nhân Sự Thành Công!', message: `Tài khoản "${name}" (${username}) với vai trò ${role} đã được kích hoạt.` });
     closeStaffModal();
+    staffCurrentPage = 1;
     renderAdminStaff();
 }
 
