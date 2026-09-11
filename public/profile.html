@@ -694,11 +694,18 @@
             <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:14px;">
                 <img id="profileQrImg" src="" alt="VietQR TPBank" style="max-width:240px; width:100%; border-radius:6px;">
             </div>
-            <div style="font-size:13px; color:#334155; line-height:1.6; text-align:left; background:#fff; border:1px dashed #cbd5e1; border-radius:6px; padding:10px 14px;">
+            <div style="font-size:13px; color:#334155; line-height:1.7; text-align:left; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px;">
                 <div>Ngân hàng: <strong>TPBank (Tiên Phong)</strong></div>
-                <div>Số tài khoản: <strong style="color:var(--gold,#b48518); font-family:monospace;">89896789999</strong></div>
+                <div>Chủ tài khoản: <strong>VU PHAM LUAN</strong></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:2px 0;">
+                    <span>Số tài khoản: <strong style="color:var(--gold,#b48518); font-family:monospace; font-size:14px;">0393203037</strong></span>
+                    <button type="button" onclick="navigator.clipboard.writeText('0393203037'); if(typeof showToast==='function') showToast({title:'Đã chép', message:'Đã sao chép STK TPBank!', type:'success'});" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:2px 8px; color:#0f172a; cursor:pointer; font-size:11.5px; font-weight:600;"><i class="far fa-copy"></i> Chép STK</button>
+                </div>
                 <div>Số tiền: <strong id="profileQrAmountText" style="color:#0f172a;">--</strong></div>
-                <div>Nội dung CK: <strong id="profileQrMemoText" style="color:var(--gold,#b48518); font-family:monospace;">--</strong></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                    <span>Nội dung CK: <strong id="profileQrMemoText" style="color:var(--gold,#b48518); font-family:monospace;">--</strong></span>
+                    <button type="button" onclick="const memo = document.getElementById('profileQrMemoText').textContent; navigator.clipboard.writeText(memo); if(typeof showToast==='function') showToast({title:'Đã chép', message:'Đã sao chép mã đơn!', type:'success'});" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:2px 8px; color:#0f172a; cursor:pointer; font-size:11.5px; font-weight:600;"><i class="far fa-copy"></i> Chép mã</button>
+                </div>
             </div>
             <button onclick="document.getElementById('profileQrModal').style.display='none'" class="btn-primary" style="width:100%; margin-top:16px; padding:11px; border-radius:6px; font-weight:700;">
                 ĐÃ HOÀN TẤT CHUYỂN KHOẢN

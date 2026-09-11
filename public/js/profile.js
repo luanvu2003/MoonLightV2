@@ -1158,7 +1158,7 @@ function showOrderVietQrModal(orderCode, amount) {
   if (!modal || !qrImg) return;
 
   const total = Number(amount) || 0;
-  const qrUrl = `https://img.vietqr.io/image/TPB-89896789999-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
+  const qrUrl = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
 
   qrImg.src = qrUrl;
   if (amountText) amountText.textContent = `${total.toLocaleString('vi-VN')}₫`;
