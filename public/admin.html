@@ -478,8 +478,8 @@
     <!-- ==========================================================================
          MOONLIGHT AI COPILOT AGENT WIDGET
          ========================================================================== -->
-    <!-- Floating AI Launcher Button -->
-    <button class="ai-agent-launcher" id="aiAgentLauncher" onclick="toggleAIAgent()" title="Mở Trợ lý AI MoonLight">
+    <!-- Floating AI Launcher Button (Compact, Expand on Hover, Draggable) -->
+    <button class="ai-agent-launcher" id="aiAgentLauncher" onclick="toggleAIAgent()" title="Mở Trợ lý AI MoonLight (Kéo giữ để di chuyển vị trí)">
         <div class="ai-launcher-icon">
             <i class="fas fa-sparkles"></i>
         </div>
@@ -505,6 +505,9 @@
                 </div>
             </div>
             <div class="ai-header-actions">
+                <button class="ai-btn-icon" id="btnToggleFloatingAI" onclick="toggleFloatingAILauncher()" title="Ẩn/Hiện nút AI tròn nổi trên màn hình">
+                    <i class="fas fa-eye"></i>
+                </button>
                 <button class="ai-btn-icon" onclick="clearAIChat()" title="Làm mới hội thoại">
                     <i class="fas fa-rotate-right"></i>
                 </button>

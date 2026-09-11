@@ -722,7 +722,7 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
    ========================================================================== */
 .admin-content {
     flex: 1;
-    padding: 22px 28px;
+    padding: 22px 28px 50px;
     overflow-y: auto;
     position: relative;
     background: var(--bg-body);
@@ -1565,7 +1565,7 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     align-items: center;
     flex-wrap: wrap;
     gap: 14px;
-    padding: 14px 20px;
+    padding: 14px 90px 14px 24px;
     background: var(--bg-card);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2917,51 +2917,75 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
 }
 
 /* ==========================================================================
-   MOONLIGHT AI COPILOT AGENT (LUXURY ASSISTANT 2026)
+   MOONLIGHT AI COPILOT AGENT (LUXURY ASSISTANT 2026 - COMPACT & DRAGGABLE)
    ========================================================================== */
 .ai-agent-launcher {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 22px;
+    right: 22px;
     z-index: 990;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    background: rgba(17, 19, 26, 0.9);
+    height: 48px;
+    width: 48px;
+    border-radius: 24px;
+    background: rgba(17, 19, 26, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(197, 160, 89, 0.35);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(197, 160, 89, 0.12);
-    padding: 8px 18px 8px 10px;
-    border-radius: 30px;
+    border: 1px solid rgba(197, 160, 89, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(197, 160, 89, 0.18);
+    padding: 4px;
     color: #fff;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: grab;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
+    touch-action: none;
+}
+
+.ai-agent-launcher:active {
+    cursor: grabbing;
 }
 
 .ai-agent-launcher:hover {
+    width: 195px;
+    border-color: var(--gold-light, #f3e5ab);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 24px rgba(197, 160, 89, 0.3);
     transform: translateY(-2px);
-    border-color: var(--gold-light);
-    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.7), 0 0 22px rgba(197, 160, 89, 0.22);
 }
 
 .ai-launcher-icon {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
     color: #090a0f;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-size: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
 }
 
 .ai-launcher-label {
     display: flex;
     flex-direction: column;
     text-align: left;
+    margin-left: 10px;
+    margin-right: 8px;
+    opacity: 0;
+    transform: translateX(8px);
+    transition: opacity 0.2s 0.05s ease, transform 0.2s 0.05s ease;
+    pointer-events: none;
+}
+
+.ai-agent-launcher:hover .ai-launcher-label {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .ai-launcher-title {
@@ -2969,22 +2993,34 @@ body.admin-body.theme-light, [data-theme="light"] body.admin-body {
     font-weight: 700;
     color: #fff;
     letter-spacing: 0.3px;
+    line-height: 1.2;
 }
 
 .ai-launcher-sub {
     font-size: 10px;
     color: var(--gold-light);
     font-weight: 500;
+    line-height: 1.2;
 }
 
 .ai-launcher-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
     background: #ef4444;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 2px;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 9px;
+    padding: 0 4px;
+    border: 2px solid #0f1118;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6);
+    pointer-events: none;
+    z-index: 2;
 }
 
 /* AI Copilot Drawer */

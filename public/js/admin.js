@@ -7119,6 +7119,160 @@ let aiChatHistory = [];
 function initAIAgent() {
     updateAIBadge();
     renderAIBriefing();
+    initDraggableAILauncher();
+}
+
+// Khởi tạo tính năng kéo thả (Drag & Drop) và ẩn/hiện nút AI nổi
+function initDraggableAILauncher() {
+    const launcher = document.getElementById('aiAgentLauncher');
+    if (!launcher) return;
+
+    // Phục hồi vị trí đã lưu nếu có
+    const savedPos = localStorage.getItem('moonlight_ai_launcher_pos');
+    if (savedPos) {
+        try {
+            const { top, left } = JSON.parse(savedPos);
+            if (typeof top === 'number' && typeof left === 'number') {
+                const maxLeft = Math.max(10, window.innerWidth - 60);
+                const maxTop = Math.max(10, window.innerHeight - 60);
+                const clampedLeft = Math.max(10, Math.min(left, maxLeft));
+                const clampedTop = Math.max(10, Math.min(top, maxTop));
+                launcher.style.top = clampedTop + 'px';
+                launcher.style.left = clampedLeft + 'px';
+                launcher.style.bottom = 'auto';
+                launcher.style.right = 'auto';
+            }
+        } catch (e) {}
+    }
+
+    // Kiểm tra trạng thái ẩn/hiện đã lưu
+    const isHidden = localStorage.getItem('moonlight_ai_launcher_hidden') === 'true';
+    if (isHidden) {
+        launcher.style.display = 'none';
+        updateToggleFloatingAIBtn(false);
+    } else {
+        updateToggleFloatingAIBtn(true);
+    }
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialLeft = 0, initialTop = 0;
+    let hasMoved = false;
+
+    function onPointerDown(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+
+        isDragging = true;
+        hasMoved = false;
+        const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        startX = clientX;
+        startY = clientY;
+
+        const rect = launcher.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        launcher.style.transition = 'none';
+        launcher.style.cursor = 'grabbing';
+
+        document.addEventListener('mousemove', onPointerMove, { passive: false });
+        document.addEventListener('mouseup', onPointerUp);
+        document.addEventListener('touchmove', onPointerMove, { passive: false });
+        document.addEventListener('touchend', onPointerUp);
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging) return;
+        const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            hasMoved = true;
+            if (e.cancelable) e.preventDefault();
+        }
+
+        if (hasMoved) {
+            let newLeft = initialLeft + dx;
+            let newTop = initialTop + dy;
+
+            const pad = 10;
+            const maxLeft = window.innerWidth - launcher.offsetWidth - pad;
+            const maxTop = window.innerHeight - launcher.offsetHeight - pad;
+
+            newLeft = Math.max(pad, Math.min(newLeft, maxLeft));
+            newTop = Math.max(pad, Math.min(newTop, maxTop));
+
+            launcher.style.left = newLeft + 'px';
+            launcher.style.top = newTop + 'px';
+            launcher.style.bottom = 'auto';
+            launcher.style.right = 'auto';
+        }
+    }
+
+    function onPointerUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        launcher.style.cursor = 'grab';
+        launcher.style.transition = '';
+
+        document.removeEventListener('mousemove', onPointerMove);
+        document.removeEventListener('mouseup', onPointerUp);
+        document.removeEventListener('touchmove', onPointerMove);
+        document.removeEventListener('touchend', onPointerUp);
+
+        if (hasMoved) {
+            const rect = launcher.getBoundingClientRect();
+            localStorage.setItem('moonlight_ai_launcher_pos', JSON.stringify({
+                top: Math.round(rect.top),
+                left: Math.round(rect.left)
+            }));
+        }
+    }
+
+    launcher.addEventListener('mousedown', onPointerDown);
+    launcher.addEventListener('touchstart', onPointerDown, { passive: true });
+
+    // Chặn kích hoạt click nếu người dùng vừa kéo di chuyển
+    launcher.addEventListener('click', (e) => {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false;
+        }
+    }, true);
+}
+
+// Bật / Ẩn nút AI nổi
+function toggleFloatingAILauncher() {
+    const launcher = document.getElementById('aiAgentLauncher');
+    if (!launcher) return;
+    const isCurrentlyHidden = launcher.style.display === 'none';
+    if (isCurrentlyHidden) {
+        launcher.style.display = 'inline-flex';
+        localStorage.setItem('moonlight_ai_launcher_hidden', 'false');
+        updateToggleFloatingAIBtn(true);
+        showToast("Trợ lý AI", "Đã bật lại nút AI tròn nổi trên màn hình!", "info");
+    } else {
+        launcher.style.display = 'none';
+        localStorage.setItem('moonlight_ai_launcher_hidden', 'true');
+        updateToggleFloatingAIBtn(false);
+        showToast("Trợ lý AI", "Đã ẩn nút AI nổi. Bạn có thể mở AI bất cứ lúc nào qua mục 'Trợ lý AI Copilot' ở menu bên trái!", "info");
+    }
+}
+
+function updateToggleFloatingAIBtn(isVisible) {
+    const btn = document.getElementById('btnToggleFloatingAI');
+    if (!btn) return;
+    if (isVisible) {
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+        btn.title = 'Ẩn nút AI tròn nổi trên màn hình';
+    } else {
+        btn.innerHTML = '<i class="fas fa-eye-slash" style="color:#ef4444;"></i>';
+        btn.title = 'Hiện lại nút AI tròn nổi trên màn hình';
+    }
 }
 
 function toggleAIAgent() {
