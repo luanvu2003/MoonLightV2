@@ -2988,6 +2988,19 @@ function escapeHtmlShop(text) {
 
 let checkoutSavedAddresses = [];
 let currentSelectedCheckoutAddressId = null;
+let isSelectingCheckoutAddress = false;
+
+// Dọn dẹp các thông báo chọn địa chỉ cũ nếu còn hiển thị để tránh dồn ứ nhiều thông báo
+function dismissExistingAddressToasts() {
+  const toastBox = document.getElementById('toast-box');
+  if (!toastBox) return;
+  toastBox.querySelectorAll('.toast').forEach(t => {
+    const title = t.querySelector('.toast__title');
+    if (title && (/địa chỉ/i.test(title.textContent) || /dia chi/i.test(title.textContent))) {
+      t.remove();
+    }
+  });
+}
 
 // Hiển thị danh sách địa chỉ đã lưu của khách hàng tại trang thanh toán (checkout)
 function renderCheckoutAddressPicker(addresses) {
@@ -3022,8 +3035,8 @@ function renderCheckoutAddressPicker(addresses) {
     const displayAddr = addr.fullAddress || [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(', ');
 
     return `
-      <label class="checkout-addr-option ${isSelected ? 'selected' : ''}" data-addr-id="${addr._id}" onclick="selectCheckoutSavedAddress('${addr._id}')">
-        <input type="radio" name="checkoutAddressSelectRadio" value="${addr._id}" ${isSelected ? 'checked' : ''} class="checkout-addr-radio">
+      <div class="checkout-addr-option ${isSelected ? 'selected' : ''}" data-addr-id="${addr._id}" onclick="selectCheckoutSavedAddress('${addr._id}', event)" role="button" tabindex="0">
+        <input type="radio" name="checkoutAddressSelectRadio" value="${addr._id}" ${isSelected ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="pointer-events: none;">
         <div style="flex:1;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
             <strong style="font-size:13.5px; color:#0f172a;">${escapeHtmlShop(addr.recipientName || 'Người nhận')}</strong>
@@ -3035,37 +3048,50 @@ function renderCheckoutAddressPicker(addresses) {
             ${escapeHtmlShop(displayAddr)}
           </div>
         </div>
-      </label>
+      </div>
     `;
   }).join('') + `
-    <label class="checkout-addr-option ${currentSelectedCheckoutAddressId === 'custom' ? 'selected' : ''}" data-addr-id="custom" onclick="selectCheckoutSavedAddress('custom')">
-      <input type="radio" name="checkoutAddressSelectRadio" value="custom" ${currentSelectedCheckoutAddressId === 'custom' ? 'checked' : ''} class="checkout-addr-radio">
+    <div class="checkout-addr-option ${currentSelectedCheckoutAddressId === 'custom' ? 'selected' : ''}" data-addr-id="custom" onclick="selectCheckoutSavedAddress('custom', event)" role="button" tabindex="0">
+      <input type="radio" name="checkoutAddressSelectRadio" value="custom" ${currentSelectedCheckoutAddressId === 'custom' ? 'checked' : ''} class="checkout-addr-radio" tabindex="-1" style="pointer-events: none;">
       <div style="flex:1;">
         <div style="display:flex; align-items:center; gap:6px;">
           <strong style="font-size:13px; color:#0f172a;"><i class="fas fa-plus-circle" style="color:var(--gold,#dfba73);"></i> Giao đến địa chỉ mới khác</strong>
         </div>
         <p style="font-size:11.5px; color:#64748b; margin:2px 0 0 0;">Nhập số điện thoại và địa chỉ nhận hàng riêng cho đơn này bên dưới</p>
       </div>
-    </label>
+    </div>
   `;
 
-  // Điền dữ liệu cho lần đầu tải trang
+  // Điền dữ liệu cho lần đầu tải trang (không bắn notify)
   applySelectedCheckoutAddress(currentSelectedCheckoutAddressId, false);
 }
 
 // Xử lý khi khách bấm chọn một địa chỉ
-function selectCheckoutSavedAddress(addrId) {
-  currentSelectedCheckoutAddressId = String(addrId);
+function selectCheckoutSavedAddress(addrId, event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const strId = String(addrId);
+  // Nếu đã đang chọn địa chỉ này rồi thì không làm gì cả, không bắn lại thông báo
+  if (currentSelectedCheckoutAddressId === strId) return;
+
+  // Khóa chống double-click nhanh
+  if (isSelectingCheckoutAddress) return;
+  isSelectingCheckoutAddress = true;
+  setTimeout(() => { isSelectingCheckoutAddress = false; }, 300);
+
+  currentSelectedCheckoutAddressId = strId;
 
   // Đồng bộ giao diện radio & class selected
   document.querySelectorAll('#checkoutAddressPickerList .checkout-addr-option').forEach(opt => {
-    const isThis = opt.getAttribute('data-addr-id') === String(addrId);
+    const isThis = opt.getAttribute('data-addr-id') === strId;
     opt.classList.toggle('selected', isThis);
     const radio = opt.querySelector('input[type="radio"]');
     if (radio) radio.checked = isThis;
   });
 
-  applySelectedCheckoutAddress(addrId, true);
+  applySelectedCheckoutAddress(strId, true);
 }
 
 // Áp dụng dữ liệu địa chỉ đã chọn vào form thanh toán
@@ -3082,6 +3108,7 @@ function applySelectedCheckoutAddress(addrId, showNotification = true) {
     }
     if (typeof updateCheckoutAddressValue === 'function') updateCheckoutAddressValue();
     if (showNotification && typeof showToast === 'function') {
+      dismissExistingAddressToasts();
       showToast({ title: 'Nhập địa chỉ mới', message: 'Vui lòng điền thông tin địa chỉ nhận hàng bên dưới.', type: 'info' });
     }
     return;
@@ -3100,6 +3127,7 @@ function applySelectedCheckoutAddress(addrId, showNotification = true) {
   restoreCheckoutAddress(addr);
 
   if (showNotification && typeof showToast === 'function') {
+    dismissExistingAddressToasts();
     showToast({
       title: 'Đã chọn địa chỉ',
       message: `Đã áp dụng địa chỉ giao hàng của ${addr.recipientName || 'bạn'}.`,
@@ -4211,6 +4239,14 @@ function showToast(arg1, arg2, arg3) {
     box.id = 'toast-box';
     document.body.appendChild(box);
   }
+
+  // Chống spam: Nếu thông báo có cùng tiêu đề và nội dung đang hiển thị thì không tạo thêm
+  const existingDup = Array.from(box.querySelectorAll('.toast')).find(t => {
+    const tTitle = t.querySelector('.toast__title')?.textContent?.trim() || '';
+    const tMsg = t.querySelector('.toast__msg')?.textContent?.trim() || '';
+    return tTitle === title.trim() && tMsg === message.trim();
+  });
+  if (existingDup) return;
 
   const toast = document.createElement('div');
   const icons = {

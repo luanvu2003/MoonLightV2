@@ -295,7 +295,6 @@
     <script src="./js/api.js?v=10.0"></script>
     <script src="./js/shop.js?v=10.0"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => { renderCheckoutPage(); });
         function selectPayment(type) {
             document.querySelectorAll('.payment-card').forEach(el => el.classList.remove('selected'));
             if (type === 'banking') {
