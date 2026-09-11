@@ -1294,13 +1294,15 @@ function renderCustomerTickets(filterStatus = 'all') {
 
               <div class="ticket-form-bottom-row">
                 <div class="ticket-form-tools-left">
-                  <!-- Nút đính kèm ảnh / video -->
-                  <label class="btn-ticket-attach" title="Đính kèm ảnh (< 5MB) hoặc video (< 500MB)">
-                    <i class="fas fa-paperclip"></i>
-                    <input type="file" id="custTicketFile-${t._id}" accept="image/*,video/*" style="display:none;" onchange="handleCustFileSelect(event, '${t._id}')">
+                  <!-- NÚT 1: THÊM HÌNH ẢNH -->
+                  <label class="btn-ticket-attach" title="Thêm hình ảnh (< 5MB)" style="cursor:pointer;">
+                    <i class="fas fa-image" style="color:#0284c7;"></i>
+                    <input type="file" id="custTicketImgFile-${t._id}" accept="image/*" style="display:none;" onchange="handleCustFileSelect(event, '${t._id}')">
                   </label>
-                  <label class="btn-ticket-attach" title="Đính kèm ảnh từ thiết bị" onclick="document.getElementById('custTicketFile-${t._id}').click();">
-                    <i class="fas fa-image"></i>
+                  <!-- NÚT 2: ĐÍNH KÈM TỆP / VIDEO -->
+                  <label class="btn-ticket-attach" title="Đính kèm tệp hoặc video (< 500MB)" style="cursor:pointer;">
+                    <i class="fas fa-paperclip" style="color:#f59e0b;"></i>
+                    <input type="file" id="custTicketFile-${t._id}" accept="video/*,image/*" style="display:none;" onchange="handleCustFileSelect(event, '${t._id}')">
                   </label>
                   <span id="custFileHint-${t._id}" style="font-size:11px; color:#94a3b8;">Ảnh &lt; 5MB · Video &lt; 500MB</span>
                 </div>
@@ -1948,6 +1950,8 @@ function handleRemoveCustAttach(ticketId) {
   delete custSelectedFiles[ticketId];
   const fileInput = document.getElementById(`custTicketFile-${ticketId}`);
   if (fileInput) fileInput.value = '';
+  const imgInput = document.getElementById(`custTicketImgFile-${ticketId}`);
+  if (imgInput) imgInput.value = '';
 
   const previewBox = document.getElementById(`custAttachPreview-${ticketId}`);
   if (previewBox) previewBox.style.display = 'none';
@@ -1957,13 +1961,18 @@ function handleRemoveCustAttach(ticketId) {
 }
 
 async function handleSendCustomerMessage(event, ticketId) {
-  event.preventDefault();
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
   const input = document.getElementById(`custTicketInput-${ticketId}`);
   const btn = document.getElementById(`btnCustSend-${ticketId}`);
   const text = input ? input.value.trim() : '';
   const file = custSelectedFiles[ticketId];
 
-  if (!text && !file) return;
+  if (!text && !file) {
+    showToast({ title: 'Chưa nhập tin', message: 'Vui lòng nhập tin nhắn hoặc chọn ảnh để gửi!', type: 'warning' });
+    return;
+  }
 
   // Hủy trạng thái typing ngay khi gửi
   if (custTypingTimers[ticketId]) clearTimeout(custTypingTimers[ticketId]);
@@ -1972,117 +1981,121 @@ async function handleSendCustomerMessage(event, ticketId) {
 
   if (btn) btn.disabled = true;
 
-  let attachments = [];
-
-  // Nếu có file đính kèm, thực hiện upload lên server với thanh tiến trình
-  if (file) {
-    const progressBox = document.getElementById(`custUploadProgressBox-${ticketId}`);
-    const statusText = document.getElementById(`custUploadStatusText-${ticketId}`);
-    const percentText = document.getElementById(`custUploadPercent-${ticketId}`);
-    const barFill = document.getElementById(`custUploadBarFill-${ticketId}`);
-
-    if (progressBox) progressBox.style.display = 'block';
-
-    try {
-      const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
-        if (percentText) percentText.innerText = `${progress.percent}%`;
-        if (barFill) barFill.style.width = `${progress.percent}%`;
-        if (statusText) {
-          const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
-          const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
-          statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
-        }
-      });
-
-      if (upRes && (upRes.success || upRes.data)) {
-        attachments.push(upRes.data);
-        if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
-      } else {
-        throw new Error(upRes?.message || 'Tải file thất bại.');
-      }
-    } catch (uploadErr) {
-      console.error('Lỗi upload file ticket:', uploadErr);
-      showToast({ title: 'Lỗi tải tệp', message: uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', type: 'danger' });
-      if (btn) btn.disabled = false;
-      if (progressBox) progressBox.style.display = 'none';
-      return;
-    }
-  }
-
-  // Xóa nội dung trong ô nhập ngay lập tức và reset độ cao textarea
-  if (input) {
-    input.value = '';
-    input.style.height = 'auto';
-  }
-  handleRemoveCustAttach(ticketId);
-
-  // Chèn trực tiếp tin nhắn tạm thời với trạng thái 'Đang gửi...' vào khung chat
-  const scrollContainer = document.getElementById(`custMsgScroll-${ticketId}`);
   const tempMsgId = 'temp-msg-' + Date.now();
-  const nowStr = new Date().toLocaleString('vi-VN');
-
-  if (scrollContainer) {
-    const allItems = scrollContainer.querySelectorAll('.cust-chat-msg-item');
-    const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
-    const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'customer';
-
-    // Ẩn trạng thái cũ của tin nhắn trước nếu cùng người gửi (chỉ tin mới nhất có status)
-    if (wasSameSender) {
-      const oldStatus = lastMsg.querySelector('.msg-status-tag');
-      if (oldStatus) oldStatus.remove();
-    }
-
-    const hasText = Boolean(text && text.trim());
-    const hasMedia = Array.isArray(attachments) && attachments.length > 0;
-
-    let bubbleStyle = `width:fit-content; max-width:78%;`;
-    let bubbleContent = '';
-
-    if (!hasText && hasMedia) {
-      bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
-      bubbleContent = renderMessageAttachments(attachments, true);
-    } else if (hasText && hasMedia) {
-      bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(2,132,199,0.18);`;
-      bubbleContent = `${renderMessageAttachments(attachments, true)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
-    } else {
-      bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 6px rgba(2,132,199,0.15);`;
-      bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
-    }
-
-    tempEl.innerHTML = `
-      <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
-      ${renderCustomerMessageStatus('sending')}
-    `;
-    const typingInd = document.getElementById(`custTypingIndicator-${ticketId}`);
-    if (typingInd) {
-      scrollContainer.insertBefore(tempEl, typingInd);
-    } else {
-      scrollContainer.appendChild(tempEl);
-    }
-    scrollCustomerChatToBottom(ticketId, true);
-  }
+  let tempEl = null;
 
   try {
-    const res = await MoonlightAPI.sendTicketMessage(ticketId, text, attachments);
-    if (res && (res.success || res.data)) {
-      // Cập nhật trạng thái từ 'Đang gửi...' sang 'Đã nhận'
-      const tempEl = document.getElementById(tempMsgId);
-      if (tempEl) {
-        const statusDiv = tempEl.querySelector('.msg-status-tag');
-        if (statusDiv) {
-          statusDiv.outerHTML = renderCustomerMessageStatus('delivered');
+    let attachments = [];
+
+    // Nếu có file đính kèm, thực hiện upload lên server với thanh tiến trình
+    if (file) {
+      const progressBox = document.getElementById(`custUploadProgressBox-${ticketId}`);
+      const statusText = document.getElementById(`custUploadStatusText-${ticketId}`);
+      const percentText = document.getElementById(`custUploadPercent-${ticketId}`);
+      const barFill = document.getElementById(`custUploadBarFill-${ticketId}`);
+
+      if (progressBox) progressBox.style.display = 'block';
+
+      try {
+        const upRes = await MoonlightAPI.uploadTicketFile(file, (progress) => {
+          if (percentText) percentText.innerText = `${progress.percent}%`;
+          if (barFill) barFill.style.width = `${progress.percent}%`;
+          if (statusText) {
+            const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
+            const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
+            statusText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải lên: ${loadedMb}/${totalMb} MB (${progress.percent}%)`;
+          }
+        });
+
+        if (upRes && (upRes.success || upRes.data)) {
+          attachments.push(upRes.data);
+          if (statusText) statusText.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> Tải lên hoàn tất!`;
+        } else {
+          throw new Error(upRes?.message || 'Tải file thất bại.');
         }
+      } catch (uploadErr) {
+        console.error('Lỗi upload file ticket:', uploadErr);
+        showToast({ title: 'Lỗi tải tệp', message: uploadErr.message || 'Không thể tải tệp đính kèm lên máy chủ.', type: 'danger' });
+        if (progressBox) progressBox.style.display = 'none';
+        return;
+      }
+    }
+
+    // Xóa nội dung trong ô nhập ngay lập tức và reset độ cao textarea
+    if (input) {
+      input.value = '';
+      input.style.height = 'auto';
+    }
+    handleRemoveCustAttach(ticketId);
+
+    // Chèn trực tiếp tin nhắn tạm thời với trạng thái 'Đang gửi...' vào khung chat
+    const scrollContainer = document.getElementById(`custMsgScroll-${ticketId}`);
+    const nowStr = new Date().toLocaleString('vi-VN');
+
+    if (scrollContainer) {
+      const allItems = scrollContainer.querySelectorAll('.cust-chat-msg-item');
+      const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
+      const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'customer';
+
+      // Ẩn trạng thái cũ của tin nhắn trước nếu cùng người gửi (chỉ tin mới nhất có status)
+      if (wasSameSender) {
+        const oldStatus = lastMsg.querySelector('.msg-status-tag');
+        if (oldStatus) oldStatus.remove();
       }
 
+      const hasText = Boolean(text && text.trim());
+      const hasMedia = Array.isArray(attachments) && attachments.length > 0;
+
+      let bubbleStyle = `width:fit-content; max-width:78%;`;
+      let bubbleContent = '';
+
+      if (!hasText && hasMedia) {
+        bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
+        bubbleContent = renderMessageAttachments(attachments, true);
+      } else if (hasText && hasMedia) {
+        bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(2,132,199,0.18);`;
+        bubbleContent = `${renderMessageAttachments(attachments, true)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
+      } else {
+        bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 6px rgba(2,132,199,0.15);`;
+        bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
+      }
+
+      tempEl = document.createElement('div');
+      tempEl.id = tempMsgId;
+      tempEl.className = 'cust-chat-msg-item';
+      tempEl.setAttribute('data-msg-role', 'customer');
+      tempEl.style.display = 'flex';
+      tempEl.style.flexDirection = 'column';
+      tempEl.style.alignItems = 'flex-end';
+      tempEl.style.marginBottom = wasSameSender ? '3px' : '12px';
+      tempEl.style.position = 'relative';
+
+      tempEl.innerHTML = `
+        <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
+        ${renderCustomerMessageStatus('sending')}
+      `;
+      const typingInd = document.getElementById(`custTypingIndicator-${ticketId}`);
+      if (typingInd) {
+        scrollContainer.insertBefore(tempEl, typingInd);
+      } else {
+        scrollContainer.appendChild(tempEl);
+      }
+      scrollCustomerChatToBottom(ticketId, true);
+    }
+
+    const res = await MoonlightAPI.sendTicketMessage(ticketId, text, attachments);
+    if (res && (res.success || res.data)) {
       const updatedTicket = res.data;
       if (updatedTicket) {
         const idx = currentTicketsList.findIndex(t => String(t._id || t.id) === String(ticketId));
         if (idx !== -1) {
           currentTicketsList[idx] = updatedTicket;
         }
+        renderCustomerChatThreadOnly(updatedTicket);
+        scrollCustomerChatToBottom(ticketId, true);
       }
     } else {
-      const tempEl = document.getElementById(tempMsgId);
+      showToast({ title: 'Lỗi gửi tin', message: res?.message || 'Không thể gửi phản hồi.', type: 'danger' });
       if (tempEl) {
         const statusDiv = tempEl.querySelector('.msg-status-tag');
         if (statusDiv) {
@@ -2092,7 +2105,7 @@ async function handleSendCustomerMessage(event, ticketId) {
     }
   } catch (err) {
     console.error('Lỗi khi gửi tin nhắn ticket:', err);
-    const tempEl = document.getElementById(tempMsgId);
+    showToast({ title: 'Lỗi gửi tin', message: err.message || 'Có lỗi xảy ra khi gửi tin nhắn.', type: 'danger' });
     if (tempEl) {
       const statusDiv = tempEl.querySelector('.msg-status-tag');
       if (statusDiv) {
@@ -2101,6 +2114,7 @@ async function handleSendCustomerMessage(event, ticketId) {
     }
   } finally {
     if (btn) btn.disabled = false;
+    if (input) input.focus();
   }
 }
 
