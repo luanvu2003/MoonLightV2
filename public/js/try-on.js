@@ -1439,6 +1439,18 @@
 
   // Add to cart from result
   function handleAddToCartFromResult() {
+    if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) {
+      if (typeof showToast === 'function') {
+        showToast({
+          title: 'Yêu cầu đăng nhập',
+          message: 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+          type: 'warning'
+        });
+      }
+      if (typeof openAuthModal === 'function') openAuthModal('login');
+      return;
+    }
+
     const prod = (currentResultData && currentResultData.product) || selectedProduct;
     if (!prod) return;
 

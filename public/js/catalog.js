@@ -2257,6 +2257,18 @@ function updateCartBadge() {
 }
 
 function quickAddToCart(productId) {
+  if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) {
+    if (typeof showToast === 'function') {
+      showToast({
+        title: 'Yêu cầu đăng nhập',
+        message: 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+        type: 'warning'
+      });
+    }
+    if (typeof openAuthModal === 'function') openAuthModal('login');
+    return;
+  }
+
   const prod = catalogState.allProducts.find(p => String(p._id || p.id) === String(productId));
   if (!prod) return;
 

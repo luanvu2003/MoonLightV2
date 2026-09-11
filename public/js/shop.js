@@ -2345,7 +2345,31 @@ function updateDetailQty(change) {
   if (el) el.value = quantity;
 }
 
+// Kiểm tra trạng thái đăng nhập của khách hàng
+function isCustomerLoggedIn() {
+  try {
+    const token = typeof MoonlightAPI !== 'undefined' && typeof MoonlightAPI.getToken === 'function'
+      ? MoonlightAPI.getToken()
+      : localStorage.getItem('moonlight_token');
+    const user = JSON.parse(localStorage.getItem('moonlight_user') || 'null');
+    return !!(token && user);
+  } catch (e) {
+    return false;
+  }
+}
+window.isCustomerLoggedIn = isCustomerLoggedIn;
+
 function addDetailToCart() {
+  if (!isCustomerLoggedIn()) {
+    showToast({
+      title: 'Yêu cầu đăng nhập',
+      message: 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+      type: 'warning'
+    });
+    openAuthModal('login');
+    return;
+  }
+
   if (!selectedSizeName) {
     showToast({ title: 'Chưa chọn size', message: 'Vui lòng chọn kích thước phù hợp trước khi thêm vào giỏ hàng.', type: 'warning' });
     return;
@@ -2407,6 +2431,16 @@ function renderRelatedProducts() {
 // --- 5. LOGIC GIỎ HÀNG (CORE) ---
 
 function addToCart(newItem) {
+  if (!isCustomerLoggedIn()) {
+    showToast({
+      title: 'Yêu cầu đăng nhập',
+      message: 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+      type: 'warning'
+    });
+    openAuthModal('login');
+    return false;
+  }
+
   const exist = cart.find((i) => String(i.id) === String(newItem.id) && i.color === newItem.color && i.size === newItem.size);
   if (exist) {
     exist.quantity += newItem.quantity;
@@ -2422,6 +2456,16 @@ function addToCart(newItem) {
 }
 
 function quickAdd(id) {
+  if (!isCustomerLoggedIn()) {
+    showToast({
+      title: 'Yêu cầu đăng nhập',
+      message: 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+      type: 'warning'
+    });
+    openAuthModal('login');
+    return;
+  }
+
   const allProds = (typeof catalogState !== 'undefined' && catalogState.allProducts && catalogState.allProducts.length > 0)
     ? catalogState.allProducts
     : products;
@@ -2740,6 +2784,16 @@ function toggleCart() {
 
 // Chuyển sang trang thanh toán
 function goToCheckout() {
+  if (!isCustomerLoggedIn()) {
+    showToast({
+      title: 'Yêu cầu đăng nhập',
+      message: 'Vui lòng đăng nhập tài khoản để tiến hành thanh toán đơn hàng.',
+      type: 'warning'
+    });
+    openAuthModal('login');
+    return;
+  }
+
   if (cart.length === 0) {
     showToast({ title: 'Giỏ hàng trống', message: 'Vui lòng chọn sản phẩm trước khi tiến hành thanh toán.', type: 'warning' });
     return;
@@ -3492,14 +3546,38 @@ function renderCheckoutPage() {
         }
       }
     } else {
-      // KHÁCH VÃNG LAI: Tên có thể sửa bình thường
+      // KHÁCH CHƯA ĐĂNG NHẬP: Bắt buộc đăng nhập để thanh toán!
+      if (!isCustomerLoggedIn()) {
+        showToast({
+          title: 'Yêu cầu đăng nhập',
+          message: 'Vui lòng đăng nhập tài khoản để tiến hành thanh toán đơn hàng.',
+          type: 'warning'
+        });
+        openAuthModal('login');
+
+        if (savedCard) {
+          savedCard.style.display = 'block';
+          savedCard.innerHTML = `
+            <div style="text-align:center; padding:22px 16px; background:#fffdf5; border:1.5px dashed var(--gold,#dfba73); border-radius:12px; margin-bottom:15px;">
+              <div style="width:48px; height:48px; border-radius:50%; background:rgba(223,186,115,0.15); color:var(--gold,#dfba73); display:inline-flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:10px;">
+                <i class="fas fa-user-lock"></i>
+              </div>
+              <h4 style="margin:0 0 6px 0; color:#0f172a; font-size:14.5px; font-weight:700;">Bạn chưa đăng nhập tài khoản MoonLight</h4>
+              <p style="margin:0 0 14px 0; color:#64748b; font-size:12.5px; line-height:1.5;">Vui lòng đăng nhập để hệ thống tự động tải sổ địa chỉ nhận hàng và bảo vệ quyền lợi đơn hàng của bạn.</p>
+              <button type="button" class="btn-primary" onclick="openAuthModal('login')" style="padding:10px 24px; font-size:12.5px; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP NGAY
+              </button>
+            </div>
+          `;
+        }
+      }
+
       if (nameInput) {
         nameInput.readOnly = false;
         nameInput.classList.remove('input-locked');
       }
       if (nameLockedNotice) nameLockedNotice.style.display = 'none';
       if (nameLockIcon) nameLockIcon.style.display = 'none';
-      if (savedCard) savedCard.style.display = 'none';
 
       if (savedCustomer) {
         if (nameInput && !nameInput.value && savedCustomer.name) nameInput.value = savedCustomer.name;
@@ -3710,6 +3788,17 @@ async function handleConfirmTransfer(customCode) {
 
 async function handleCheckout(e) {
   e.preventDefault();
+
+  if (!isCustomerLoggedIn()) {
+    showToast({
+      title: 'Yêu cầu đăng nhập',
+      message: 'Vui lòng đăng nhập tài khoản MoonLight để hoàn tất đặt hàng!',
+      type: 'warning'
+    });
+    openAuthModal('login');
+    return;
+  }
+
   if (cart.length === 0) {
     showToast({ title: 'Giỏ hàng trống', message: 'Vui lòng chọn sản phẩm trước khi thanh toán!', type: 'warning' });
     return;
@@ -4792,6 +4881,11 @@ function updateCustomerNavbarUI() {
       adminLinks.forEach(link => {
         link.style.display = 'none';
       });
+    }
+
+    // Nếu đang ở trang checkout, tự động nạp lại dữ liệu thanh toán & sổ địa chỉ của tài khoản
+    if (document.getElementById('checkoutItems') && typeof renderCheckoutPage === 'function') {
+      renderCheckoutPage();
     }
   } else {
     if (userIcon) userIcon.className = 'far fa-user';
