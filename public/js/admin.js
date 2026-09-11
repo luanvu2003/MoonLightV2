@@ -5193,6 +5193,19 @@ function handleRemoveAdminAttach() {
     if (progressBox) progressBox.style.display = 'none';
 }
 
+// Định dạng mốc thời gian phân tách (Time divider) cho Admin
+function formatTimeDivider(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} · ${day}/${month}/${year}`;
+}
+
 function renderAdminChatThreadOnly(ticket) {
     const threadEl = document.getElementById('admModalChatThread');
     if (!threadEl) return;
@@ -5212,62 +5225,96 @@ function renderAdminChatThreadOnly(ticket) {
     const countEl = document.getElementById('admModalMsgCount');
     if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
-    threadEl.innerHTML = msgList.map((m, idx) => {
+    let html = '';
+    msgList.forEach((m, idx) => {
         const isCust = m.senderRole === 'customer';
         const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+        const mDateObj = m.createdAt ? new Date(m.createdAt) : null;
 
         const prev = idx > 0 ? msgList[idx - 1] : null;
         const next = idx < msgList.length - 1 ? msgList[idx + 1] : null;
 
-        const sameSenderAsPrev = prev && prev.senderRole === m.senderRole;
-        const prevTimeDiff = prev && prev.createdAt && m.createdAt ? (new Date(m.createdAt) - new Date(prev.createdAt)) : 0;
-        const isFirstInGroup = !sameSenderAsPrev || prevTimeDiff > 10 * 60 * 1000;
+        const prevDateObj = prev && prev.createdAt ? new Date(prev.createdAt) : null;
+        const nextDateObj = next && next.createdAt ? new Date(next.createdAt) : null;
 
-        const sameSenderAsNext = next && next.senderRole === m.senderRole;
-        const nextTimeDiff = next && next.createdAt && m.createdAt ? (new Date(next.createdAt) - new Date(m.createdAt)) : 0;
-        const isLastInGroup = !sameSenderAsNext || nextTimeDiff > 10 * 60 * 1000;
-
-        const itemMarginTop = isFirstInGroup ? (idx === 0 ? '0px' : '10px') : '2px';
-
-        let custRadius = '16px 16px 16px 4px';
-        if (!isFirstInGroup && !isLastInGroup) {
-            custRadius = '4px 16px 16px 4px';
-        } else if (!isFirstInGroup && isLastInGroup) {
-            custRadius = '4px 16px 16px 16px';
+        let showTimeDivider = false;
+        let dividerLabel = '';
+        if (idx === 0 && mDateObj) {
+            showTimeDivider = true;
+            dividerLabel = formatTimeDivider(m.createdAt);
+        } else if (prevDateObj && mDateObj) {
+            const timeDiff = mDateObj - prevDateObj;
+            const isDifferentDay = prevDateObj.toDateString() !== mDateObj.toDateString();
+            if (timeDiff > 45 * 60 * 1000 || isDifferentDay) {
+                showTimeDivider = true;
+                dividerLabel = formatTimeDivider(m.createdAt);
+            }
         }
 
-        let adminRadius = '16px 16px 4px 16px';
+        if (showTimeDivider) {
+            html += `
+                <div class="chat-time-divider" style="display:flex; justify-content:center; align-items:center; margin:16px 0 10px 0; width:100%;">
+                    <span style="font-size:11px; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:3px 12px; border-radius:12px; font-weight:600; letter-spacing:0.2px;">
+                        ${dividerLabel}
+                    </span>
+                </div>
+            `;
+        }
+
+        const sameSenderAsPrev = !showTimeDivider && prev && prev.senderRole === m.senderRole;
+        let nextHasDivider = false;
+        if (next && nextDateObj && mDateObj) {
+            const nextDiff = nextDateObj - mDateObj;
+            const nextDiffDay = nextDateObj.toDateString() !== mDateObj.toDateString();
+            if (nextDiff > 45 * 60 * 1000 || nextDiffDay) {
+                nextHasDivider = true;
+            }
+        }
+        const sameSenderAsNext = !nextHasDivider && next && next.senderRole === m.senderRole;
+
+        const isFirstInGroup = !sameSenderAsPrev;
+        const isLastInGroup = !sameSenderAsNext;
+
+        const itemMarginTop = isFirstInGroup ? (idx === 0 && !showTimeDivider ? '0px' : '10px') : '2px';
+
+        let custRadius = '18px';
         if (!isFirstInGroup && !isLastInGroup) {
-            adminRadius = '16px 4px 4px 16px';
+            custRadius = '4px 18px 18px 4px';
+        } else if (isFirstInGroup && !isLastInGroup) {
+            custRadius = '18px 18px 18px 4px';
         } else if (!isFirstInGroup && isLastInGroup) {
-            adminRadius = '16px 4px 16px 16px';
+            custRadius = '4px 18px 18px 18px';
+        }
+
+        let adminRadius = '18px';
+        if (!isFirstInGroup && !isLastInGroup) {
+            adminRadius = '18px 4px 4px 18px';
+        } else if (isFirstInGroup && !isLastInGroup) {
+            adminRadius = '18px 18px 4px 18px';
+        } else if (!isFirstInGroup && isLastInGroup) {
+            adminRadius = '18px 4px 18px 18px';
         }
 
         if (isCust) {
-            return `
-                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-start; margin-right: 4px; margin-top: ${itemMarginTop};">
+            // Khách hàng (bên trái trong Admin): Chỉ hiện tên khách ở tin đầu tiên trong cụm
+            html += `
+                <div class="adm-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-start; margin-right:4px; margin-top:${itemMarginTop};">
                     ${isFirstInGroup ? `
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
-                            <strong style="color: #38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
-                            <span>${mTime}</span>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#94a3b8; padding-left:2px;">
+                            <strong style="color:#38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
                         </div>
                     ` : ''}
-                    <div class="chat-msg-bubble" title="${mTime}" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; padding: 9px 14px; border-radius: ${custRadius}; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">
+                    <div class="chat-msg-bubble" title="${mTime}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#f1f5f9; padding:10px 15px; border-radius:${custRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;">
                         ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
                         ${renderAdminMessageAttachments(m.attachments)}
                     </div>
                 </div>
             `;
         } else {
-            return `
-                <div class="adm-msg-item" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px; margin-top: ${itemMarginTop};">
-                    ${isFirstInGroup ? `
-                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
-                            <span>${mTime}</span>
-                            <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(m.senderName || 'CSKH MoonLight')}</strong>
-                        </div>
-                    ` : ''}
-                    <div class="chat-msg-bubble" title="${mTime}" style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 9px 14px; border-radius: ${adminRadius}; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+            // CSKH / Admin (bên phải): Messenger style - không lặp lại tên nhân viên
+            html += `
+                <div class="adm-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-end; margin-right:4px; margin-top:${itemMarginTop};">
+                    <div class="chat-msg-bubble" title="${mTime}" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:10px 15px; border-radius:${adminRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
                         ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
                         ${renderAdminMessageAttachments(m.attachments)}
                     </div>
@@ -5275,13 +5322,17 @@ function renderAdminChatThreadOnly(ticket) {
                 </div>
             `;
         }
-    }).join('') + `
+    });
+
+    html += `
         <!-- KHỐI HIỂN THỊ KHÁCH ĐANG NHẬP -->
-        <div id="admTypingIndicator" style="display: none; align-items: center; gap: 6px; font-size: 11.5px; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px dashed rgba(56,189,248,0.35); padding: 5px 12px; border-radius: 12px; width: fit-content; margin-top: 4px;">
+        <div id="admTypingIndicator" style="display:none; align-items:center; gap:6px; font-size:11.5px; color:#38bdf8; background:rgba(56,189,248,0.1); border:1px dashed rgba(56,189,248,0.35); padding:6px 14px; border-radius:12px; width:fit-content; margin-top:6px;">
             <i class="fas fa-pen-nib fa-bounce"></i>
             <span id="admTypingText">Khách hàng đang nhập tin nhắn...</span>
         </div>
     `;
+
+    threadEl.innerHTML = html;
 
     setTimeout(() => {
         scrollAdminChatToBottom(false);
@@ -5459,25 +5510,20 @@ async function handleAdminSubmitReply(event) {
     if (threadEl) {
         const allItems = threadEl.querySelectorAll('.adm-msg-item');
         const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
-        const wasSameSender = lastMsg && lastMsg.querySelector('strong')?.innerText?.includes(staffName);
+        const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'admin';
 
         if (wasSameSender) {
             const oldStatus = lastMsg.querySelector('.adm-msg-status');
-            if (oldStatus) oldStatus.style.display = 'none';
+            if (oldStatus) oldStatus.remove();
         }
 
         const tempEl = document.createElement('div');
         tempEl.id = tempMsgId;
         tempEl.className = 'adm-msg-item';
+        tempEl.setAttribute('data-msg-role', 'admin');
         tempEl.style.cssText = `display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px; margin-top: ${wasSameSender ? '2px' : '10px'};`;
         tempEl.innerHTML = `
-            ${!wasSameSender ? `
-                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 11px; color: #94a3b8;">
-                    <span>${nowStr}</span>
-                    <strong style="color: var(--gold, #d4af37);"><i class="fas fa-headset"></i> ${escapeAdminHtml(staffName)}</strong>
-                </div>
-            ` : ''}
-            <div class="chat-msg-bubble" title="${nowStr}" style="background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.38); color: #ffffff; padding: 9px 14px; border-radius: ${wasSameSender ? '16px 4px 16px 16px' : '16px 16px 4px 16px'}; max-width: 80%; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+            <div class="chat-msg-bubble" title="${nowStr}" style="background: rgba(212, 175, 55, 0.18); border: 1px solid rgba(212, 175, 55, 0.4); color: #ffffff; padding: 10px 15px; border-radius: ${wasSameSender ? '18px 4px 18px 18px' : '18px'}; max-width: 78%; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
                 ${replyMessage ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>` : ''}
                 ${renderAdminMessageAttachments(attachments)}
             </div>

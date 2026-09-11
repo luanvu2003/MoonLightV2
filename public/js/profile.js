@@ -1029,14 +1029,14 @@ function renderCustomerTickets(filterStatus = 'all') {
         </div>
 
         <!-- KHUNG TRAO ĐỔI TIN NHẮN (CHAT THREAD) -->
-        <div class="ticket-chat-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="fas fa-comments" style="color:var(--gold,#d4af37); margin-right:6px;"></i> Lịch sử trao đổi (<span id="custMsgCount-${t._id}">${msgList.length}</span> tin nhắn)</span>
-            <span style="font-size:11px; font-weight:normal; color:#64748b;"><i class="fas fa-circle" style="color:#10b981; font-size:8px; margin-right:4px;"></i>Hỗ trợ trực tuyến</span>
+        <div class="ticket-chat-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:18px 20px; margin-bottom:16px;">
+          <div style="font-size:12.5px; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="fas fa-comments" style="color:var(--gold,#d4af37); margin-right:7px; font-size:14px;"></i> Lịch sử trao đổi (<span id="custMsgCount-${t._id}">${msgList.length}</span> tin nhắn)</span>
+            <span style="font-size:11.5px; font-weight:600; color:#10b981; display:flex; align-items:center; gap:5px;"><i class="fas fa-circle" style="font-size:7px;"></i> Hỗ trợ trực tuyến</span>
           </div>
 
           <div class="ticket-chat-scroll-wrapper" style="position:relative; margin-bottom:12px;">
-            <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" onscroll="handleCustomerChatScroll('${t._id}')" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+            <div class="ticket-messages-scroll" id="custMsgScroll-${t._id}" onscroll="handleCustomerChatScroll('${t._id}')" style="min-height:420px; max-height:560px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding:16px 18px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:inset 0 1px 4px rgba(0,0,0,0.02);">
               ${renderCustomerChatMessagesHtml(t._id, msgList, !hasAdminReplied && !isClosed)}
             </div>
 
@@ -1288,51 +1288,102 @@ function openChatImageLightbox(imgUrl) {
   modal.style.display = 'flex';
 }
 
+// Định dạng mốc thời gian phân tách (Time divider)
+function formatTimeDivider(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${hours}:${minutes} · ${day}/${month}/${year}`;
+}
+
 function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
-  return msgList.map((m, idx) => {
+  let html = '';
+
+  msgList.forEach((m, idx) => {
     const isCust = m.senderRole === 'customer';
     const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+    const mDateObj = m.createdAt ? new Date(m.createdAt) : null;
 
     const prev = idx > 0 ? msgList[idx - 1] : null;
     const next = idx < msgList.length - 1 ? msgList[idx + 1] : null;
 
-    // Kiểm tra tin nhắn trước đó có cùng người gửi không (trong vòng 10 phút)
-    const sameSenderAsPrev = prev && prev.senderRole === m.senderRole;
-    const prevTimeDiff = prev && prev.createdAt && m.createdAt ? (new Date(m.createdAt) - new Date(prev.createdAt)) : 0;
-    const isFirstInGroup = !sameSenderAsPrev || prevTimeDiff > 10 * 60 * 1000;
+    const prevDateObj = prev && prev.createdAt ? new Date(prev.createdAt) : null;
+    const nextDateObj = next && next.createdAt ? new Date(next.createdAt) : null;
 
-    // Kiểm tra tin nhắn tiếp theo có cùng người gửi không (trong vòng 10 phút)
-    const sameSenderAsNext = next && next.senderRole === m.senderRole;
-    const nextTimeDiff = next && next.createdAt && m.createdAt ? (new Date(next.createdAt) - new Date(m.createdAt)) : 0;
-    const isLastInGroup = !sameSenderAsNext || nextTimeDiff > 10 * 60 * 1000;
-
-    const itemMarginTop = isFirstInGroup ? (idx === 0 ? '0px' : '10px') : '2px';
-
-    // Bo góc kiểu Facebook Messenger
-    let custRadius = '16px 16px 4px 16px';
-    if (!isFirstInGroup && !isLastInGroup) {
-      custRadius = '16px 4px 4px 16px';
-    } else if (!isFirstInGroup && isLastInGroup) {
-      custRadius = '16px 4px 16px 16px';
+    // Phân tách mốc thời gian (Time Divider) nếu là tin đầu tiên hoặc cách tin trước hơn 45 phút / khác ngày
+    let showTimeDivider = false;
+    let dividerLabel = '';
+    if (idx === 0 && mDateObj) {
+      showTimeDivider = true;
+      dividerLabel = formatTimeDivider(m.createdAt);
+    } else if (prevDateObj && mDateObj) {
+      const timeDiff = mDateObj - prevDateObj;
+      const isDifferentDay = prevDateObj.toDateString() !== mDateObj.toDateString();
+      if (timeDiff > 45 * 60 * 1000 || isDifferentDay) {
+        showTimeDivider = true;
+        dividerLabel = formatTimeDivider(m.createdAt);
+      }
     }
 
-    let adminRadius = '16px 16px 16px 4px';
+    if (showTimeDivider) {
+      html += `
+        <div class="chat-time-divider" style="display:flex; justify-content:center; align-items:center; margin:16px 0 10px 0; width:100%;">
+          <span style="font-size:11px; color:#64748b; background:#f1f5f9; border:1px solid #e2e8f0; padding:3px 12px; border-radius:12px; font-weight:600; letter-spacing:0.2px;">
+            ${dividerLabel}
+          </span>
+        </div>
+      `;
+    }
+
+    // Kiểm tra tin nhắn trước và sau có cùng người gửi không
+    // Cùng một người gửi liên tiếp nếu cùng senderRole VÀ không bị ngắt bởi time divider lớn
+    const sameSenderAsPrev = !showTimeDivider && prev && prev.senderRole === m.senderRole;
+
+    // Tin nhắn tiếp theo có cùng người gửi không
+    let nextHasDivider = false;
+    if (next && nextDateObj && mDateObj) {
+      const nextDiff = nextDateObj - mDateObj;
+      const nextDiffDay = nextDateObj.toDateString() !== mDateObj.toDateString();
+      if (nextDiff > 45 * 60 * 1000 || nextDiffDay) {
+        nextHasDivider = true;
+      }
+    }
+    const sameSenderAsNext = !nextHasDivider && next && next.senderRole === m.senderRole;
+
+    const isFirstInGroup = !sameSenderAsPrev;
+    const isLastInGroup = !sameSenderAsNext;
+
+    const itemMarginTop = isFirstInGroup ? (idx === 0 && !showTimeDivider ? '0px' : '10px') : '2px';
+
+    // Bo góc chuẩn Facebook Messenger
+    let custRadius = '18px';
     if (!isFirstInGroup && !isLastInGroup) {
-      adminRadius = '4px 16px 16px 4px';
+      custRadius = '18px 4px 4px 18px'; // Ở giữa cụm
+    } else if (isFirstInGroup && !isLastInGroup) {
+      custRadius = '18px 18px 4px 18px'; // Đầu cụm
     } else if (!isFirstInGroup && isLastInGroup) {
-      adminRadius = '4px 16px 16px 16px';
+      custRadius = '18px 4px 18px 18px'; // Cuối cụm
+    }
+
+    let adminRadius = '18px';
+    if (!isFirstInGroup && !isLastInGroup) {
+      adminRadius = '4px 18px 18px 4px';
+    } else if (isFirstInGroup && !isLastInGroup) {
+      adminRadius = '18px 18px 18px 4px';
+    } else if (!isFirstInGroup && isLastInGroup) {
+      adminRadius = '4px 18px 18px 18px';
     }
 
     if (isCust) {
-      return `
+      // Tin nhắn Khách hàng gửi (bên phải): Messenger style - không lặp lại "Bạn" hay header
+      html += `
         <div class="cust-chat-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-end; margin-top:${itemMarginTop};">
-          ${isFirstInGroup ? `
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-              <span>${mTime}</span>
-              <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
-            </div>
-          ` : ''}
-          <div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:9px 14px; border-radius:${custRadius}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+          <div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 15px; border-radius:${custRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15); transition:transform 0.1s ease;">
             ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, true)}
           </div>
@@ -1340,36 +1391,42 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
         </div>
       `;
     } else {
-      return `
+      // Tin nhắn CSKH gửi (bên trái): Chỉ hiện tên CSKH ở tin nhắn đầu tiên trong cụm
+      html += `
         <div class="cust-chat-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-start; margin-top:${itemMarginTop};">
           ${isFirstInGroup ? `
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b; padding-left:2px;">
               <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
                 <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
               </strong>
-              <span>${mTime}</span>
             </div>
           ` : ''}
-          <div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:9px 14px; border-radius:${adminRadius}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+          <div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #e2e8f0; color:#0f172a; padding:10px 15px; border-radius:${adminRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03); transition:transform 0.1s ease;">
             ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, false)}
           </div>
         </div>
       `;
     }
-  }).join('') + `
-    ${showPendingNotice ? `
-      <div id="custPendingNotice-${ticketId}" style="text-align:center; padding:10px 14px; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:8px; font-size:12px; color:#0369a1; margin-top:4px;">
+  });
+
+  if (showPendingNotice) {
+    html += `
+      <div id="custPendingNotice-${ticketId}" style="text-align:center; padding:10px 14px; background:#f0f9ff; border:1px dashed #bae6fd; border-radius:8px; font-size:12px; color:#0369a1; margin-top:8px;">
         <i class="fas fa-hourglass-half fa-spin"></i> Chuyên viên CSKH MoonLight đang tiếp nhận yêu cầu và sẽ trả lời bạn ngay tại khung chat này.
       </div>
-    ` : ''}
+    `;
+  }
 
+  html += `
     <!-- KHỐI HIỂN THỊ ĐANG NHẬP TIN NHẮN (TYPING INDICATOR) -->
-    <div id="custTypingIndicator-${ticketId}" style="display:none; align-items:center; gap:6px; font-size:11.5px; color:#b48518; background:rgba(212,175,55,0.1); border:1px dashed rgba(212,175,55,0.35); padding:5px 12px; border-radius:12px; width:fit-content; margin-top:4px;">
+    <div id="custTypingIndicator-${ticketId}" style="display:none; align-items:center; gap:6px; font-size:11.5px; color:#b48518; background:rgba(212,175,55,0.1); border:1px dashed rgba(212,175,55,0.35); padding:6px 14px; border-radius:12px; width:fit-content; margin-top:6px;">
       <i class="fas fa-pen-nib fa-bounce"></i>
       <span id="custTypingText-${ticketId}">CSKH MoonLight đang nhập tin nhắn...</span>
     </div>
   `;
+
+  return html;
 }
 
 // Quản lý số tin nhắn mới khi người dùng đang cuộn lên xem lịch sử
@@ -1689,10 +1746,10 @@ async function handleSendCustomerMessage(event, ticketId) {
     const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
     const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'customer';
 
-    // Ẩn trạng thái cũ của tin nhắn trước nếu cùng người gửi
+    // Ẩn trạng thái cũ của tin nhắn trước nếu cùng người gửi (chỉ tin mới nhất có status)
     if (wasSameSender) {
       const oldStatus = lastMsg.querySelector('.msg-status-tag');
-      if (oldStatus) oldStatus.style.display = 'none';
+      if (oldStatus) oldStatus.remove();
     }
 
     const tempEl = document.createElement('div');
@@ -1701,13 +1758,7 @@ async function handleSendCustomerMessage(event, ticketId) {
     tempEl.setAttribute('data-msg-role', 'customer');
     tempEl.style.cssText = `display:flex; flex-direction:column; align-items:flex-end; margin-top:${wasSameSender ? '2px' : '10px'};`;
     tempEl.innerHTML = `
-      ${!wasSameSender ? `
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-          <span>${nowStr}</span>
-          <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
-        </div>
-      ` : ''}
-      <div class="chat-msg-bubble" title="${nowStr}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:9px 14px; border-radius:${wasSameSender ? '16px 4px 16px 16px' : '16px 16px 4px 16px'}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+      <div class="chat-msg-bubble" title="${nowStr}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 15px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
         ${text ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>` : ''}
         ${renderMessageAttachments(attachments, true)}
       </div>

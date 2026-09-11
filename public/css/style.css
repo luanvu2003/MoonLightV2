@@ -3169,14 +3169,53 @@ input.input-locked {
    TICKET CHAT THREAD ENHANCEMENTS (SCROLLBAR, TEXTAREA, ATTACHMENTS, MEDIA)
    ========================================================================== */
 
-/* Sleek custom scrollbar - Prevents scrollbar from overlapping chat bubbles */
-.ticket-messages-scroll,
-#admModalChatThread {
+/* Sleek custom scrollbar & spacious layout - Prevents scrollbar from overlapping chat bubbles */
+.ticket-messages-scroll {
+    min-height: 420px;
+    max-height: 560px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-sizing: border-box;
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-    padding-right: 14px !important;
-    padding-left: 4px !important;
+}
+
+#admModalChatThread {
+    min-height: 380px;
+    max-height: 520px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px !important;
+    background: rgba(10, 12, 20, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.ticket-chat-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+}
+
+.chat-time-divider {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0 10px 0;
+    width: 100%;
 }
 
 .ticket-messages-scroll::-webkit-scrollbar,
