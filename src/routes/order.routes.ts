@@ -11,7 +11,7 @@ router.get('/:id', authenticate, requireRole(Role.Admin, Role.Owner, Role.Staff)
 router.post('/', optionalAuthenticate, OrderController.create);
 router.post('/webhook', OrderController.handleWebhook);
 router.get('/:orderCode/status', OrderController.checkPaymentStatus);
-router.post('/:orderCode/confirm-transfer', OrderController.confirmTransfer);
+router.post('/:orderCode/confirm-transfer', authenticate, requireRole(Role.Admin, Role.Owner, Role.Staff), OrderController.confirmTransfer);
 router.put('/:id/cancel-my-order', authenticate, OrderController.cancelMyOrder);
 router.put('/:id/status', authenticate, requireRole(Role.Admin, Role.Owner, Role.Staff), OrderController.updateStatus);
 router.delete('/:id', authenticate, requireRole(Role.Admin, Role.Owner), OrderController.delete);

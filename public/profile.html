@@ -750,15 +750,12 @@
                     <i class="fas fa-circle-check"></i>
                     <div class="paid-text-group">
                         <strong>ĐÃ NHẬN TIỀN CHUYỂN KHOẢN THÀNH CÔNG!</strong>
-                        <p>Hệ thống TPBank đã khớp lệnh thanh toán. Đơn hàng đang được chuẩn bị đóng gói giao ngay!</p>
+                        <p id="profilePaidSuccessDesc">Hệ thống TPBank đã khớp lệnh thanh toán. Cửa sổ sẽ tự đóng sau <strong id="profileAutoCloseCountdown" style="color:#059669; font-weight:800;">5s</strong>...</p>
                     </div>
                 </div>
 
-                <div style="display:flex; gap:10px; margin-top:16px;">
-                    <button type="button" onclick="handleCustomerConfirmedTransfer()" id="btnProfileCustConfirmTransfer" class="btn-confirm-transfer" style="flex:1;">
-                        <i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN
-                    </button>
-                    <button type="button" onclick="closeProfileQrModal()" class="btn-order-action" style="padding:12px 20px; border-radius:50px;">
+                <div style="margin-top:16px;">
+                    <button type="button" onclick="closeProfileQrModal()" class="btn-order-action" style="width:100%; padding:11px 20px; border-radius:50px; font-weight:700;">
                         Đóng
                     </button>
                 </div>
