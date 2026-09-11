@@ -1152,6 +1152,8 @@ function showOrderVietQrModal(orderCode, amount) {
 
 let currentTicketsList = [];
 let currentTicketFilterStatus = 'all';
+let currentTicketPage = 1;
+const TICKETS_PER_PAGE = 2;
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -1250,7 +1252,8 @@ function updateTicketCounters(tickets) {
 
 function filterCustomerTickets(status) {
   currentTicketFilterStatus = status;
-  const tabsContainer = document.querySelector('#paneTickets .orders-filter-tabs');
+  currentTicketPage = 1; // Reset về trang 1 khi lọc
+  const tabsContainer = document.querySelector('#paneTickets .orders-filter-bar');
   if (tabsContainer) {
     tabsContainer.querySelectorAll('.orders-filter-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-status') === status);
@@ -1259,20 +1262,109 @@ function filterCustomerTickets(status) {
   renderCustomerTickets(status);
 }
 
-function renderCustomerTickets(filterStatus = 'all') {
-  const container = document.getElementById('customerTicketsContainer');
-  if (!container) return;
-
-  let filtered = currentTicketsList;
+// Lấy danh sách ticket đã lọc và sắp xếp theo ngày từ mới nhất đến cũ nhất
+function getFilteredCustomerTickets(filterStatus = 'all') {
+  let list = Array.isArray(currentTicketsList) ? [...currentTicketsList] : [];
   if (filterStatus === 'pending') {
-    filtered = currentTicketsList.filter(t => t.status === 'pending' || t.status === 'processing');
+    list = list.filter(t => t.status === 'pending' || t.status === 'processing');
   } else if (filterStatus === 'replied') {
-    filtered = currentTicketsList.filter(t => t.status === 'replied');
+    list = list.filter(t => t.status === 'replied');
   } else if (filterStatus === 'closed') {
-    filtered = currentTicketsList.filter(t => t.status === 'closed' || t.status === 'resolved');
+    list = list.filter(t => t.status === 'closed' || t.status === 'resolved');
   }
 
-  if (filtered.length === 0) {
+  // Luôn sắp xếp từ mới nhất đến cũ nhất (Newest first)
+  list.sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime() || 0;
+    const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime() || 0;
+    if (timeB !== timeA) return timeB - timeA;
+    const codeA = String(a.ticketCode || a._id || '');
+    const codeB = String(b.ticketCode || b._id || '');
+    return codeB.localeCompare(codeA);
+  });
+
+  return list;
+}
+
+// Chuyển trang ticket khách hàng
+function goToTicketPage(page) {
+  const filtered = getFilteredCustomerTickets(currentTicketFilterStatus);
+  const totalPages = Math.ceil(filtered.length / TICKETS_PER_PAGE) || 1;
+  const targetPage = Math.max(1, Math.min(page, totalPages));
+
+  currentTicketPage = targetPage;
+  renderCustomerTickets(currentTicketFilterStatus);
+
+  // Cuộn mượt lên đầu danh sách yêu cầu hỗ trợ
+  const ticketsTab = document.getElementById('paneTickets');
+  if (ticketsTab) {
+    ticketsTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Render thanh phân trang ticket
+function renderTicketsPagination(totalItems, totalPages, startIndex, endIndex) {
+  const paginEl = document.getElementById('customerTicketsPagination');
+  if (!paginEl) return;
+
+  if (totalItems <= TICKETS_PER_PAGE || totalPages <= 1) {
+    paginEl.style.display = 'none';
+    paginEl.innerHTML = '';
+    return;
+  }
+
+  paginEl.style.display = 'flex';
+
+  const pages = getPaginationPages(currentTicketPage, totalPages);
+
+  const prevDisabled = currentTicketPage <= 1 ? 'disabled' : '';
+  const nextDisabled = currentTicketPage >= totalPages ? 'disabled' : '';
+
+  let buttonsHtml = `
+    <button class="btn-order-page" ${prevDisabled} onclick="goToTicketPage(${currentTicketPage - 1})" title="Trang trước">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+  `;
+
+  pages.forEach(p => {
+    if (p === '...') {
+      buttonsHtml += `<span class="orders-page-dots">...</span>`;
+    } else {
+      const activeClass = p === currentTicketPage ? 'active' : '';
+      buttonsHtml += `
+        <button class="btn-order-page ${activeClass}" onclick="goToTicketPage(${p})">
+          ${p}
+        </button>
+      `;
+    }
+  });
+
+  buttonsHtml += `
+    <button class="btn-order-page" ${nextDisabled} onclick="goToTicketPage(${currentTicketPage + 1})" title="Trang sau">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  paginEl.innerHTML = `
+    <div class="orders-pagination-info">
+      Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> trong tổng số <strong>${totalItems}</strong> yêu cầu hỗ trợ
+    </div>
+    <div class="orders-pagination-controls">
+      ${buttonsHtml}
+    </div>
+  `;
+}
+
+// Render giao diện danh sách yêu cầu hỗ trợ (Phân trang 2 ticket / trang, mới nhất đến cũ nhất)
+function renderCustomerTickets(filterStatus = 'all') {
+  const container = document.getElementById('customerTicketsContainer');
+  const paginEl = document.getElementById('customerTicketsPagination');
+  if (!container) return;
+
+  const sortedAndFiltered = getFilteredCustomerTickets(filterStatus);
+  const totalItems = sortedAndFiltered.length;
+
+  if (totalItems === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding:50px 20px; color:#64748b;">
         <i class="fas fa-headset" style="font-size:42px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
@@ -1283,16 +1375,33 @@ function renderCustomerTickets(filterStatus = 'all') {
         </button>
       </div>
     `;
+    if (paginEl) {
+      paginEl.style.display = 'none';
+      paginEl.innerHTML = '';
+    }
     return;
   }
 
-const custTicketStatusMeta = {
-  pending: { label: 'Chờ tiếp nhận', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: 'fa-clock' },
-  processing: { label: 'Đang xử lý', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', icon: 'fa-spinner fa-spin' },
-  replied: { label: 'Đã phản hồi', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-comment-dots' },
-  resolved: { label: 'Đã giải quyết', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'fa-check-circle' },
-  closed: { label: 'Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: 'fa-lock' }
-};
+  // Tính toán phân trang: 2 ticket / trang
+  const totalPages = Math.ceil(totalItems / TICKETS_PER_PAGE);
+  if (currentTicketPage > totalPages) {
+    currentTicketPage = totalPages;
+  }
+  if (currentTicketPage < 1) {
+    currentTicketPage = 1;
+  }
+
+  const startIndex = (currentTicketPage - 1) * TICKETS_PER_PAGE;
+  const endIndex = Math.min(startIndex + TICKETS_PER_PAGE, totalItems);
+  const pagedTickets = sortedAndFiltered.slice(startIndex, endIndex);
+
+  const custTicketStatusMeta = {
+    pending: { label: 'Chờ tiếp nhận', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: 'fa-clock' },
+    processing: { label: 'Đang xử lý', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', icon: 'fa-spinner fa-spin' },
+    replied: { label: 'Đã phản hồi', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-comment-dots' },
+    resolved: { label: 'Đã giải quyết', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'fa-check-circle' },
+    closed: { label: 'Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: 'fa-lock' }
+  };
   const statusMeta = custTicketStatusMeta;
 
   const categoryNames = {
@@ -1323,7 +1432,7 @@ const custTicketStatusMeta = {
     });
   }
 
-  container.innerHTML = filtered.map(t => {
+  container.innerHTML = pagedTickets.map(t => {
     const sm = statusMeta[t.status] || { label: t.status, bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', icon: 'fa-info-circle' };
     const catLabel = categoryNames[t.category] || t.category;
     const pri = priorityMeta[t.priority] || { label: 'Bình thường', color: '#0284c7' };
@@ -1537,13 +1646,16 @@ const custTicketStatusMeta = {
     }
   }
 
-  // Tự động cuộn xuống tin nhắn mới nhất cho toàn bộ cuộc trò chuyện
+  // Tự động cuộn xuống tin nhắn mới nhất cho các ticket trong trang hiện tại
   setTimeout(() => {
-    filtered.forEach(t => {
+    pagedTickets.forEach(t => {
       const tid = t._id || t.id;
       scrollCustomerChatToBottom(tid, false);
     });
   }, 60);
+
+  // Hiển thị thanh phân trang ticket
+  renderTicketsPagination(totalItems, totalPages, startIndex, endIndex);
 }
 
 async function handleCustomerSubmitTicket(event) {
@@ -1586,6 +1698,7 @@ async function handleCustomerSubmitTicket(event) {
       if (form) form.reset();
       toggleNewTicketForm();
 
+      currentTicketPage = 1;
       await loadCustomerTickets();
     } else {
       showToast({ title: 'Lỗi', message: res?.message || 'Không thể gửi yêu cầu lúc này.', type: 'danger' });
@@ -2512,5 +2625,7 @@ window.handleSubmitTicketRating = handleSubmitTicketRating;
 window.renderStarScoreHtml = renderStarScoreHtml;
 window.goToOrderPage = goToOrderPage;
 window.filterCustomerOrders = filterCustomerOrders;
+window.goToTicketPage = goToTicketPage;
+window.filterCustomerTickets = filterCustomerTickets;
 
 

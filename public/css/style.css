@@ -3165,7 +3165,43 @@ input.input-locked {
     background: #c59f2e;
 }
 
-/* Orders Pagination (5 đơn / trang, mới nhất đến cũ nhất) */
+/* ==========================================================================
+   PAGE PAGINATION & LUXURY CARD ENTRANCE TRANSITIONS
+   ========================================================================== */
+@keyframes moonlightCardFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.99);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.order-box-card {
+    animation: moonlightCardFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+}
+.order-box-card:nth-child(1) { animation-delay: 0.03s; }
+.order-box-card:nth-child(2) { animation-delay: 0.08s; }
+.order-box-card:nth-child(3) { animation-delay: 0.13s; }
+.order-box-card:nth-child(4) { animation-delay: 0.18s; }
+.order-box-card:nth-child(5) { animation-delay: 0.23s; }
+
+.ticket-item-card {
+    animation: moonlightCardFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.ticket-item-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.ticket-item-card:nth-child(1) { animation-delay: 0.05s; }
+.ticket-item-card:nth-child(2) { animation-delay: 0.12s; }
+
+/* Orders & Tickets Pagination Wrapper */
 .orders-pagination-wrapper {
     display: flex;
     justify-content: space-between;
@@ -3175,6 +3211,7 @@ input.input-locked {
     margin-top: 24px;
     padding-top: 18px;
     border-top: 1px solid #f1f5f9;
+    animation: moonlightCardFadeIn 0.3s ease both;
 }
 .orders-pagination-info {
     font-size: 13px;
@@ -3205,30 +3242,36 @@ input.input-locked {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
 }
 .btn-order-page:hover:not(:disabled) {
     border-color: var(--gold, #d4af37);
     color: #0f172a;
-    background: #f8fafc;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: #fdfbf7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.18);
+}
+.btn-order-page:active:not(:disabled) {
+    transform: translateY(0) scale(0.96);
 }
 .btn-order-page.active {
     background: #0f172a;
     color: #ffffff;
     border-color: #0f172a;
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.28);
     pointer-events: none;
+    transform: scale(1.04);
 }
 .btn-order-page:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
     background: #f8fafc;
     border-color: #e2e8f0;
     color: #94a3b8;
+    transform: none;
+    box-shadow: none;
 }
 .orders-page-dots {
     color: #94a3b8;
