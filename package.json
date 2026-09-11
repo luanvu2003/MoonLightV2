@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:ai": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload",
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",

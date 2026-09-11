@@ -340,9 +340,38 @@ export class AIController {
                 sendError(res, 'Vui lòng chọn sản phẩm thời trang hoặc cung cấp ảnh trang phục (garmentImage)', 400, 'MISSING_GARMENT');
                 return;
             }
+            // ── 0. ƯU TIÊN HÀNG ĐẦU: Gọi PYTHON AI BACKEND SERVICE (FastAPI + IDM-VTON + OpenCV) ──
+            try {
+                const pyController = new AbortController();
+                const pyTimeout = setTimeout(() => pyController.abort(), 95000); // 95s
+                const pyRes = await fetch('http://127.0.0.1:8001/api/tryon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        personImage,
+                        garmentImage: targetGarmentUrl,
+                        productId,
+                        modelGender,
+                        product
+                    }),
+                    signal: pyController.signal
+                });
+                clearTimeout(pyTimeout);
+                if (pyRes.ok) {
+                    const pyData = await pyRes.json();
+                    if (pyData && pyData.success && pyData.data && pyData.data.resultImage) {
+                        console.log('🐍 [Python AI Backend] Thử đồ thành công:', pyData.data.provider, pyData.data.workflow?.name);
+                        sendSuccess(res, pyData.data, 'AI Virtual Try-On hoàn tất qua Python AI Backend!');
+                        return;
+                    }
+                }
+            }
+            catch (pyErr) {
+                console.warn('⚠️ Python AI Backend không phản hồi, chuyển tiếp sang Node.js AI Engine:', pyErr.message || pyErr);
+            }
             const fashnKey = process.env.FASHN_API_KEY;
             const replicateKey = process.env.REPLICATE_API_TOKEN;
-            // Chạy toàn bộ quy trình AI Agent Pipeline qua AIWorkflowService
+            // Chạy toàn bộ quy trình AI Agent Pipeline qua AIWorkflowService (Node.js fallback)
             const workflowResult = await AIWorkflowService.runTryOnWorkflow({
                 personImage,
                 garmentImage: targetGarmentUrl,
@@ -474,6 +503,17 @@ export class AIController {
      * Lấy danh sách các Workflows may đo chuyên biệt trong hệ thống
      */
     static async getWorkflows(req, res) {
+        try {
+            const pyRes = await fetch('http://127.0.0.1:8001/api/products/workflows');
+            if (pyRes.ok) {
+                const pyData = await pyRes.json();
+                if (pyData && pyData.success && Array.isArray(pyData.data)) {
+                    sendSuccess(res, pyData.data, 'Lấy danh sách AI Workflows thành công (Python AI)');
+                    return;
+                }
+            }
+        }
+        catch { }
         const workflows = [
             {
                 id: 'tailored_suit_workflow',
