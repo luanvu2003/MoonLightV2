@@ -683,33 +683,86 @@
         </div>
     </main>
 
-    <!-- Modal Xem Mã Chuyển Khoản Ngân Hàng (TPBank VietQR) -->
-    <div id="profileQrModal" class="cart-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
-        <div style="background:#ffffff; border-radius:14px; max-width:400px; width:90%; padding:24px; text-align:center; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
-            <button onclick="document.getElementById('profileQrModal').style.display='none'" style="position:absolute; top:14px; right:14px; border:none; background:none; font-size:18px; cursor:pointer; color:#64748b;">
+    <!-- Modal Xem Mã Chuyển Khoản Ngân Hàng (TPBank VietQR) Chuẩn Đồng Bộ Như Giỏ Hàng / Checkout -->
+    <div id="profileQrModal" class="cart-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.68); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:16px;">
+        <div style="background:#ffffff; border-radius:16px; max-width:440px; width:100%; padding:22px; text-align:center; position:relative; box-shadow:0 16px 40px rgba(0,0,0,0.28); max-height:92vh; overflow-y:auto; border:1px solid #e2e8f0;">
+            <button type="button" onclick="closeProfileQrModal()" style="position:absolute; top:14px; right:14px; border:none; background:#f1f5f9; width:32px; height:32px; border-radius:50%; font-size:14px; cursor:pointer; color:#64748b; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Đóng">
                 <i class="fas fa-times"></i>
             </button>
-            <h4 style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:6px;">QUÉT MÃ VIETQR THANH TOÁN</h4>
-            <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">Chuyển khoản tự động qua ngân hàng TPBank</p>
-            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:14px;">
-                <img id="profileQrImg" src="" alt="VietQR TPBank" style="max-width:240px; width:100%; border-radius:6px;">
-            </div>
-            <div style="font-size:13px; color:#334155; line-height:1.7; text-align:left; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px;">
-                <div>Ngân hàng: <strong>TPBank (Tiên Phong)</strong></div>
-                <div>Chủ tài khoản: <strong>VU PHAM LUAN</strong></div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin:2px 0;">
-                    <span>Số tài khoản: <strong style="color:var(--gold,#b48518); font-family:monospace; font-size:14px;">0393203037</strong></span>
-                    <button type="button" onclick="navigator.clipboard.writeText('0393203037'); if(typeof showToast==='function') showToast({title:'Đã chép', message:'Đã sao chép STK TPBank!', type:'success'});" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:2px 8px; color:#0f172a; cursor:pointer; font-size:11.5px; font-weight:600;"><i class="far fa-copy"></i> Chép STK</button>
+
+            <!-- KHỐI THANH TOÁN CHUYỂN KHOẢN (ĐỒNG BỘ CHECKOUT) -->
+            <div class="modal-banking-section" style="margin:6px 0 0 0; padding:16px 14px; background:#fdfbf7; border:1.5px solid rgba(223,186,115,0.55); border-radius:14px;">
+                <div class="modal-banking-header">
+                    <div class="mbh-badge"><i class="fas fa-qrcode"></i> QUÉT MÃ VIETQR THANH TOÁN</div>
+                    <p class="mbh-sub">Mở ứng dụng ngân hàng quét mã bên dưới để thanh toán nhanh chóng</p>
                 </div>
-                <div>Số tiền: <strong id="profileQrAmountText" style="color:#0f172a;">--</strong></div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-                    <span>Nội dung CK: <strong id="profileQrMemoText" style="color:var(--gold,#b48518); font-family:monospace;">--</strong></span>
-                    <button type="button" onclick="const memo = document.getElementById('profileQrMemoText').textContent; navigator.clipboard.writeText(memo); if(typeof showToast==='function') showToast({title:'Đã chép', message:'Đã sao chép mã đơn!', type:'success'});" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:2px 8px; color:#0f172a; cursor:pointer; font-size:11.5px; font-weight:600;"><i class="far fa-copy"></i> Chép mã</button>
+
+                <div class="modal-banking-qr-wrapper" id="profileQrWrapper">
+                    <div class="modal-vietqr-box">
+                        <img id="profileQrImg" src="" alt="VietQR TPBank" class="modal-vietqr-img">
+                        <div class="modal-vietqr-pulse"><span class="pulse-dot"></span> Sẵn sàng nhận chuyển khoản 24/7</div>
+                    </div>
+                </div>
+
+                <div class="modal-banking-summary">
+                    <div class="mbs-row">
+                        <span class="mbs-label">Ngân hàng:</span>
+                        <strong class="mbs-val">TPBank (Tiên Phong)</strong>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Số tài khoản:</span>
+                        <div class="mbs-val-copy">
+                            <strong class="mbs-val gold-text">0393203037</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyText('0393203037', 'Đã chép số tài khoản TPBank!')" title="Sao chép STK"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Chủ tài khoản:</span>
+                        <strong class="mbs-val">VU PHAM LUAN</strong>
+                    </div>
+                    <div class="mbs-row">
+                        <span class="mbs-label">Số tiền:</span>
+                        <div class="mbs-val-copy">
+                            <strong class="mbs-val gold-text" id="profileQrAmountText">0₫</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyProfileQrAmount()" title="Sao chép số tiền"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="mbs-row highlight-memo-row">
+                        <span class="mbs-label">Nội dung CK:</span>
+                        <div class="mbs-val-copy">
+                            <strong id="profileQrMemoText" class="memo-code">--</strong>
+                            <button type="button" class="btn-copy-mini" onclick="copyProfileQrMemo()" title="Sao chép nội dung"><i class="far fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Box Chờ Nhận Diện Tiền Vào (Auto Waiting Box) -->
+                <div id="profileWaitingNotice" class="modal-waiting-transfer-box">
+                    <div class="waiting-spin-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                    <div class="waiting-text-group">
+                        <strong>ĐANG CHỜ NHẬN DIỆN TIỀN VÀO TỰ ĐỘNG...</strong>
+                        <p>Vui lòng chuyển đúng số tiền & nội dung. Khi tiền vào TPBank, hệ thống sẽ tự động xác nhận đơn ngay!</p>
+                    </div>
+                </div>
+
+                <!-- Box Đã Nhận Tiền Thành Công (Paid Success Banner) -->
+                <div id="profilePaidSuccessBox" class="modal-paid-success-banner" style="display: none;">
+                    <i class="fas fa-circle-check"></i>
+                    <div class="paid-text-group">
+                        <strong>ĐÃ NHẬN TIỀN CHUYỂN KHOẢN THÀNH CÔNG!</strong>
+                        <p>Hệ thống TPBank đã khớp lệnh thanh toán. Đơn hàng đang được chuẩn bị đóng gói giao ngay!</p>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:16px;">
+                    <button type="button" onclick="handleCustomerConfirmedTransfer()" id="btnProfileCustConfirmTransfer" class="btn-confirm-transfer" style="flex:1;">
+                        <i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN
+                    </button>
+                    <button type="button" onclick="closeProfileQrModal()" class="btn-order-action" style="padding:12px 20px; border-radius:50px;">
+                        Đóng
+                    </button>
                 </div>
             </div>
-            <button onclick="document.getElementById('profileQrModal').style.display='none'" class="btn-primary" style="width:100%; margin-top:16px; padding:11px; border-radius:6px; font-weight:700;">
-                ĐÃ HOÀN TẤT CHUYỂN KHOẢN
-            </button>
         </div>
     </div>
 

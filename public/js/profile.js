@@ -831,10 +831,16 @@ function renderCustomerOrders(filterStatus = 'all') {
             </div>
             <div>
               <div>Phương thức: <strong>${isBanking ? 'Chuyển khoản TPBank (VietQR)' : 'Thanh toán khi nhận hàng (COD)'}</strong></div>
-              <div>Trạng thái TT: <strong style="color:${isPaid ? '#059669' : '#d97706'};">${isPaid ? '<i class="fas fa-check-circle"></i> Đã thanh toán' : '<i class="fas fa-hourglass-half"></i> Chưa thanh toán'}</strong></div>
+              <div style="margin-top:4px;">Trạng thái TT: ${isPaid ?
+                `<span style="display:inline-flex; align-items:center; gap:5px; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700;"><i class="fas fa-circle-check"></i> Đã thanh toán</span>` :
+                (order.customerTransferConfirmed ?
+                  `<span style="display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700;"><i class="fas fa-spinner fa-spin"></i> Chờ duyệt tiền vào</span>` :
+                  `<span style="display:inline-flex; align-items:center; gap:5px; background:#fffbeb; color:#d97706; border:1px solid #fde68a; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700;"><i class="fas fa-hourglass-half"></i> Chưa thanh toán</span>`
+                )
+              }</div>
               ${isBanking && !isPaid ? `
-                <button onclick="showOrderVietQrModal('${order.orderCode}', ${order.total || 0})" style="margin-top:6px; background:transparent; border:1px solid var(--gold,#d4af37); color:#b48518; padding:3px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:700;">
-                  <i class="fas fa-qrcode"></i> Xem mã QR thanh toán
+                <button onclick="showOrderVietQrModal('${order.orderCode}', ${order.total || 0})" style="margin-top:7px; background:linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%); border:1.5px solid var(--gold,#d4af37); color:#92400e; padding:5px 12px; border-radius:6px; font-size:11.5px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(212,175,55,0.12); transition:all 0.2s;">
+                  <i class="fas fa-qrcode" style="color:var(--gold,#b48518); font-size:13px;"></i> Quét mã VietQR thanh toán
                 </button>
               ` : ''}
             </div>
@@ -1148,24 +1154,255 @@ function handleRepurchaseOrder(orderId) {
   }, 800);
 }
 
-// Hiển thị mã QR Chuyển khoản TPBank
+// ==========================================
+// HỆ THỐNG THANH TOÁN VIETQR TPBANK (PROFILE)
+// ==========================================
+let currentProfileQrOrderCode = '';
+let currentProfileQrAmount = 0;
+let _profilePaymentTimer = null;
+
+function copyText(text, successMsg) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast({
+        title: 'Đã sao chép! 📋',
+        message: successMsg || 'Đã sao chép nội dung vào bộ nhớ tạm.',
+        type: 'success'
+      });
+    }).catch(() => {
+      fallbackCopyText(text, successMsg);
+    });
+  } else {
+    fallbackCopyText(text, successMsg);
+  }
+}
+
+function fallbackCopyText(text, successMsg) {
+  const tempInput = document.createElement('textarea');
+  tempInput.value = text;
+  tempInput.style.position = 'fixed';
+  tempInput.style.opacity = '0';
+  document.body.appendChild(tempInput);
+  tempInput.focus();
+  tempInput.select();
+  try {
+    document.execCommand('copy');
+    showToast({
+      title: 'Đã sao chép! 📋',
+      message: successMsg || 'Đã sao chép nội dung vào bộ nhớ tạm.',
+      type: 'success'
+    });
+  } catch (err) {
+    showToast({
+      title: 'Lỗi sao chép',
+      message: 'Không thể sao chép tự động, vui lòng chọn và copy thủ công.',
+      type: 'error'
+    });
+  }
+  document.body.removeChild(tempInput);
+}
+
+function copyProfileQrAmount() {
+  if (currentProfileQrAmount > 0) {
+    copyText(String(currentProfileQrAmount), `Đã sao chép số tiền: ${currentProfileQrAmount.toLocaleString('vi-VN')}₫`);
+  }
+}
+
+function copyProfileQrMemo() {
+  if (currentProfileQrOrderCode) {
+    copyText(currentProfileQrOrderCode, `Đã sao chép nội dung chuyển khoản: ${currentProfileQrOrderCode}`);
+  }
+}
+
+function closeProfileQrModal() {
+  const modal = document.getElementById('profileQrModal');
+  if (modal) modal.style.display = 'none';
+  if (_profilePaymentTimer) {
+    clearInterval(_profilePaymentTimer);
+    _profilePaymentTimer = null;
+  }
+}
+
+// Lắng nghe tự động tín hiệu tiền về từ Webhook SePay / TPBank
+function startProfilePaymentCheck(orderCode) {
+  if (_profilePaymentTimer) {
+    clearInterval(_profilePaymentTimer);
+    _profilePaymentTimer = null;
+  }
+  if (!orderCode) return;
+
+  _profilePaymentTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/v1/orders/${encodeURIComponent(orderCode)}/status`);
+      const json = await res.json();
+      if (json && json.success && json.data && json.data.isPaid) {
+        clearInterval(_profilePaymentTimer);
+        _profilePaymentTimer = null;
+
+        const qrWrapper = document.getElementById('profileQrWrapper');
+        const waitingNotice = document.getElementById('profileWaitingNotice');
+        const paidSuccessBox = document.getElementById('profilePaidSuccessBox');
+        const btnConfirm = document.getElementById('btnProfileCustConfirmTransfer');
+
+        if (qrWrapper) qrWrapper.style.display = 'none';
+        if (waitingNotice) waitingNotice.style.display = 'none';
+        if (paidSuccessBox) paidSuccessBox.style.display = 'flex';
+        if (btnConfirm) {
+          btnConfirm.disabled = true;
+          btnConfirm.innerHTML = '<i class="fas fa-check-double"></i> ĐÃ THANH TOÁN THÀNH CÔNG';
+          btnConfirm.style.background = '#059669';
+          btnConfirm.style.cursor = 'default';
+        }
+
+        // Cập nhật trạng thái đơn trong danh sách cục bộ
+        const targetOrder = currentOrdersList.find(o => (o.orderCode === orderCode || o.id === orderCode || o._id === orderCode));
+        if (targetOrder) {
+          targetOrder.isPaid = true;
+          targetOrder.customerTransferConfirmed = true;
+        }
+
+        // Re-render danh sách đơn hàng để cập nhật badge thời gian thực
+        if (typeof renderCustomerOrders === 'function') {
+          renderCustomerOrders(typeof currentFilterStatus !== 'undefined' ? currentFilterStatus : 'all');
+        }
+
+        showToast({
+          title: 'Thanh toán thành công! 🎉',
+          message: `Đơn hàng ${orderCode} đã khớp lệnh thanh toán TPBank. Cảm ơn bạn!`,
+          type: 'success',
+          duration: 9000
+        });
+      }
+    } catch (err) {
+      // Bỏ qua lỗi polling mạng nhẹ
+    }
+  }, 2500);
+}
+
+// Hiển thị mã QR Chuyển khoản TPBank với giao diện đồng bộ Checkout
 function showOrderVietQrModal(orderCode, amount) {
   const modal = document.getElementById('profileQrModal');
   const qrImg = document.getElementById('profileQrImg');
   const amountText = document.getElementById('profileQrAmountText');
   const memoText = document.getElementById('profileQrMemoText');
+  const qrWrapper = document.getElementById('profileQrWrapper');
+  const waitingNotice = document.getElementById('profileWaitingNotice');
+  const paidSuccessBox = document.getElementById('profilePaidSuccessBox');
+  const btnConfirm = document.getElementById('btnProfileCustConfirmTransfer');
 
   if (!modal || !qrImg) return;
 
+  currentProfileQrOrderCode = String(orderCode || '').trim();
   const total = Number(amount) || 0;
-  const qrUrl = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(orderCode)}&accountName=VU%20PHAM%20LUAN`;
+  currentProfileQrAmount = total;
+
+  const qrUrl = `https://img.vietqr.io/image/TPB-0393203037-compact2.png?amount=${total}&addInfo=${encodeURIComponent(currentProfileQrOrderCode)}&accountName=VU%20PHAM%20LUAN`;
 
   qrImg.src = qrUrl;
   if (amountText) amountText.textContent = `${total.toLocaleString('vi-VN')}₫`;
-  if (memoText) memoText.textContent = orderCode;
+  if (memoText) memoText.textContent = currentProfileQrOrderCode;
+
+  // Kiểm tra đơn hàng xem đã thanh toán hay chưa
+  const existingOrder = currentOrdersList.find(o => (o.orderCode === currentProfileQrOrderCode || o.id === currentProfileQrOrderCode || o._id === currentProfileQrOrderCode));
+  const isAlreadyPaid = existingOrder && Boolean(existingOrder.isPaid);
+
+  if (isAlreadyPaid) {
+    if (qrWrapper) qrWrapper.style.display = 'none';
+    if (waitingNotice) waitingNotice.style.display = 'none';
+    if (paidSuccessBox) paidSuccessBox.style.display = 'flex';
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<i class="fas fa-check-double"></i> ĐÃ THANH TOÁN THÀNH CÔNG';
+      btnConfirm.style.background = '#059669';
+      btnConfirm.style.cursor = 'default';
+    }
+  } else {
+    if (qrWrapper) qrWrapper.style.display = 'flex';
+    if (waitingNotice) waitingNotice.style.display = 'flex';
+    if (paidSuccessBox) paidSuccessBox.style.display = 'none';
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.innerHTML = '<i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN';
+      btnConfirm.style.background = '';
+      btnConfirm.style.cursor = 'pointer';
+    }
+    // Kích hoạt auto polling kiểm tra SePay / TPBank Webhook
+    startProfilePaymentCheck(currentProfileQrOrderCode);
+  }
 
   modal.style.display = 'flex';
 }
+
+// Xử lý khi khách bấm nút "TÔI ĐÃ CHUYỂN KHOẢN"
+async function handleCustomerConfirmedTransfer() {
+  if (!currentProfileQrOrderCode) return;
+  const btnConfirm = document.getElementById('btnProfileCustConfirmTransfer');
+
+  try {
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG GỬI XÁC NHẬN...';
+    }
+
+    const res = await MoonlightAPI.confirmBankTransfer(currentProfileQrOrderCode);
+    if (res && res.success) {
+      const qrWrapper = document.getElementById('profileQrWrapper');
+      const waitingNotice = document.getElementById('profileWaitingNotice');
+      const paidSuccessBox = document.getElementById('profilePaidSuccessBox');
+
+      if (qrWrapper) qrWrapper.style.display = 'none';
+      if (waitingNotice) waitingNotice.style.display = 'none';
+      if (paidSuccessBox) paidSuccessBox.style.display = 'flex';
+
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = '<i class="fas fa-check-double"></i> ĐÃ GHI NHẬN CHUYỂN KHOẢN';
+        btnConfirm.style.background = '#059669';
+        btnConfirm.style.cursor = 'default';
+      }
+
+      // Cập nhật đơn hàng trong currentOrdersList
+      const order = currentOrdersList.find(o => (o.orderCode === currentProfileQrOrderCode || o.id === currentProfileQrOrderCode || o._id === currentProfileQrOrderCode));
+      if (order) {
+        order.isPaid = true;
+        order.customerTransferConfirmed = true;
+      }
+
+      if (typeof renderCustomerOrders === 'function') {
+        renderCustomerOrders(typeof currentFilterStatus !== 'undefined' ? currentFilterStatus : 'all');
+      }
+
+      showToast({
+        title: 'Xác nhận thành công! 🎉',
+        message: `Hệ thống đã ghi nhận bạn đã chuyển khoản cho đơn hàng #${currentProfileQrOrderCode}. Chúng tôi sẽ xử lý ngay!`,
+        type: 'success',
+        duration: 7000
+      });
+    } else {
+      throw new Error(res?.message || 'Không thể xác nhận chuyển khoản lúc này');
+    }
+  } catch (err) {
+    console.error('Lỗi xác nhận chuyển khoản:', err);
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.innerHTML = '<i class="fas fa-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN';
+    }
+    showToast({
+      title: 'Chưa thể xác nhận',
+      message: err.message || 'Có lỗi xảy ra, vui lòng thử lại hoặc liên hệ hỗ trợ.',
+      type: 'error'
+    });
+  }
+}
+
+// Đóng modal chuyển khoản khi click ngoài backdrop
+window.addEventListener('click', (e) => {
+  const modal = document.getElementById('profileQrModal');
+  if (e.target === modal) {
+    closeProfileQrModal();
+  }
+});
 
 // ==========================================
 // HỆ THỐNG YÊU CẦU HỖ TRỢ / TICKET KHÁCH HÀNG
@@ -2648,5 +2885,9 @@ window.goToOrderPage = goToOrderPage;
 window.filterCustomerOrders = filterCustomerOrders;
 window.goToTicketPage = goToTicketPage;
 window.filterCustomerTickets = filterCustomerTickets;
-
-
+window.showOrderVietQrModal = showOrderVietQrModal;
+window.closeProfileQrModal = closeProfileQrModal;
+window.copyText = copyText;
+window.copyProfileQrAmount = copyProfileQrAmount;
+window.copyProfileQrMemo = copyProfileQrMemo;
+window.handleCustomerConfirmedTransfer = handleCustomerConfirmedTransfer;
