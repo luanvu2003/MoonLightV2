@@ -5087,42 +5087,43 @@ function renderAdminChatThreadOnly(ticket) {
     const countEl = document.getElementById('admModalMsgCount');
     if (countEl) countEl.innerText = `${msgList.length} tin nhắn`;
 
-// Tự động nhận diện URL và chuyển đổi xuống dòng cho chat Admin
+// Tự động nhận diện URL cho chat Admin
 function formatAdminChatContent(rawText) {
     if (!rawText) return '';
-    const escaped = escapeAdminHtml(rawText);
+    let cleaned = String(rawText).trim();
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    const escaped = escapeAdminHtml(cleaned);
     const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-    const withLinks = escaped.replace(urlRegex, (url) => {
+    return escaped.replace(urlRegex, (url) => {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link" style="color:#38bdf8; text-decoration:underline;"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
     });
-    return withLinks.replace(/\r?\n/g, '<br>');
 }
 
 // Render ảnh hoặc video đính kèm cho chat Admin
 function renderAdminMessageAttachments(attachments) {
     if (!Array.isArray(attachments) || attachments.length === 0) return '';
 
-    return `<div class="chat-media-attachment-wrap" style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">` + attachments.map(att => {
+    return `<div class="chat-media-attachment-wrap" style="display:flex; flex-direction:column; gap:6px; width:fit-content; max-width:100%;">` + attachments.map(att => {
         if (att.type === 'video' || (att.url && att.url.match(/\.(mp4|webm|mov|mkv)$/i))) {
             return `
-                <div style="max-width:100%; margin-top:4px;">
-                    <video controls preload="metadata" style="max-width:100%; width:300px; max-height:220px; border-radius:8px; background:#000;">
+                <div style="max-width:100%;">
+                    <video controls preload="metadata" style="max-width:100%; width:320px; max-height:240px; border-radius:14px; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.25); display:block;">
                         <source src="${escapeAdminHtml(att.url)}" type="video/mp4">
                         Trình duyệt không hỗ trợ xem video.
                     </video>
-                    ${att.name ? `<div style="font-size:11px; color:#94a3b8; margin-top:2px;"><i class="fas fa-file-video"></i> ${escapeAdminHtml(att.name)}</div>` : ''}
+                    ${att.name ? `<div style="font-size:11px; color:#94a3b8; margin-top:3px;"><i class="fas fa-file-video"></i> ${escapeAdminHtml(att.name)}</div>` : ''}
                 </div>
             `;
         } else if (att.type === 'image' || (att.url && att.url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i))) {
             return `
-                <div style="margin-top:4px;">
-                    <img src="${escapeAdminHtml(att.url)}" alt="${escapeAdminHtml(att.name || 'Ảnh')}" style="max-width:240px; max-height:200px; border-radius:8px; object-fit:cover; cursor:pointer; border:1px solid rgba(255,255,255,0.2);" onclick="window.open('${escapeAdminHtml(att.url)}', '_blank')">
+                <div>
+                    <img src="${escapeAdminHtml(att.url)}" alt="${escapeAdminHtml(att.name || 'Ảnh')}" style="max-width:280px; max-height:280px; border-radius:14px; object-fit:cover; cursor:pointer; border:1px solid rgba(255,255,255,0.2); box-shadow:0 4px 14px rgba(0,0,0,0.25); display:block;" onclick="window.open('${escapeAdminHtml(att.url)}', '_blank')">
                 </div>
             `;
         } else {
             return `
-                <div style="margin-top:4px;">
-                    <a href="${escapeAdminHtml(att.url)}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#38bdf8; text-decoration:none; background:rgba(255,255,255,0.08); padding:5px 10px; border-radius:6px;">
+                <div>
+                    <a href="${escapeAdminHtml(att.url)}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#38bdf8; text-decoration:none; background:rgba(255,255,255,0.08); padding:6px 12px; border-radius:8px;">
                         <i class="fas fa-paperclip"></i> <span>${escapeAdminHtml(att.name || 'Tệp đính kèm')}</span>
                     </a>
                 </div>
@@ -5295,8 +5296,20 @@ function renderAdminChatThreadOnly(ticket) {
             adminRadius = '18px 4px 18px 18px';
         }
 
+        const hasText = Boolean(m.message && m.message.trim());
+        const hasMedia = Array.isArray(m.attachments) && m.attachments.length > 0;
+
         if (isCust) {
-            // Khách hàng (bên trái trong Admin): Chỉ hiện tên khách ở tin đầu tiên trong cụm
+            // Khách hàng (bên trái trong Admin)
+            let custBubbleHtml = '';
+            if (!hasText && hasMedia) {
+                custBubbleHtml = `<div class="chat-msg-bubble chat-bubble-media-only" title="${mTime}" style="background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; width:fit-content; max-width:78%;">${renderAdminMessageAttachments(m.attachments)}</div>`;
+            } else if (hasText && hasMedia) {
+                custBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#f1f5f9; padding:6px; border-radius:${custRadius}; width:fit-content; max-width:78%;">${renderAdminMessageAttachments(m.attachments)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div></div>`;
+            } else {
+                custBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#f1f5f9; padding:8px 14px; border-radius:${custRadius}; width:fit-content; max-width:78%; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere;"><div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div></div>`;
+            }
+
             html += `
                 <div class="adm-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-start; margin-right:4px; margin-top:${itemMarginTop};">
                     ${isFirstInGroup ? `
@@ -5304,20 +5317,23 @@ function renderAdminChatThreadOnly(ticket) {
                             <strong style="color:#38bdf8;"><i class="fas fa-user-circle"></i> ${escapeAdminHtml(m.senderName || ticket.customerName || 'Khách hàng')}</strong>
                         </div>
                     ` : ''}
-                    <div class="chat-msg-bubble" title="${mTime}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#f1f5f9; padding:10px 15px; border-radius:${custRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;">
-                        ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
-                        ${renderAdminMessageAttachments(m.attachments)}
-                    </div>
+                    ${custBubbleHtml}
                 </div>
             `;
         } else {
-            // CSKH / Admin (bên phải): Messenger style - không lặp lại tên nhân viên
+            // CSKH / Admin (bên phải): Messenger style
+            let admBubbleHtml = '';
+            if (!hasText && hasMedia) {
+                admBubbleHtml = `<div class="chat-msg-bubble chat-bubble-media-only" title="${mTime}" style="background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; width:fit-content; max-width:78%;">${renderAdminMessageAttachments(m.attachments)}</div>`;
+            } else if (hasText && hasMedia) {
+                admBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:6px; border-radius:${adminRadius}; width:fit-content; max-width:78%; box-shadow:0 2px 8px rgba(0,0,0,0.25);">${renderAdminMessageAttachments(m.attachments)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div></div>`;
+            } else {
+                admBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:8px 14px; border-radius:${adminRadius}; width:fit-content; max-width:78%; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 8px rgba(0,0,0,0.25);"><div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div></div>`;
+            }
+
             html += `
                 <div class="adm-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-end; margin-right:4px; margin-top:${itemMarginTop};">
-                    <div class="chat-msg-bubble" title="${mTime}" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:10px 15px; border-radius:${adminRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-                        ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(m.message)}</div>` : ''}
-                        ${renderAdminMessageAttachments(m.attachments)}
-                    </div>
+                    ${admBubbleHtml}
                     ${isLastInGroup ? renderAdminMessageStatus(m.status) : ''}
                 </div>
             `;
@@ -5517,16 +5533,25 @@ async function handleAdminSubmitReply(event) {
             if (oldStatus) oldStatus.remove();
         }
 
-        const tempEl = document.createElement('div');
-        tempEl.id = tempMsgId;
-        tempEl.className = 'adm-msg-item';
-        tempEl.setAttribute('data-msg-role', 'admin');
-        tempEl.style.cssText = `display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px; margin-top: ${wasSameSender ? '2px' : '10px'};`;
+        const hasText = Boolean(replyMessage && replyMessage.trim());
+        const hasMedia = Array.isArray(attachments) && attachments.length > 0;
+
+        let bubbleStyle = `width:fit-content; max-width:78%;`;
+        let bubbleContent = '';
+
+        if (!hasText && hasMedia) {
+            bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
+            bubbleContent = renderAdminMessageAttachments(attachments);
+        } else if (hasText && hasMedia) {
+            bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
+            bubbleContent = `${renderAdminMessageAttachments(attachments)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
+        } else {
+            bubbleStyle += `background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.4); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 8px rgba(0,0,0,0.25);`;
+            bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>`;
+        }
+
         tempEl.innerHTML = `
-            <div class="chat-msg-bubble" title="${nowStr}" style="background: rgba(212, 175, 55, 0.18); border: 1px solid rgba(212, 175, 55, 0.4); color: #ffffff; padding: 10px 15px; border-radius: ${wasSameSender ? '18px 4px 18px 18px' : '18px'}; max-width: 78%; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-                ${replyMessage ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatAdminChatContent(replyMessage)}</div>` : ''}
-                ${renderAdminMessageAttachments(attachments)}
-            </div>
+            <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
             ${renderAdminMessageStatus('sending')}
         `;
         const typingInd = document.getElementById('admTypingIndicator');

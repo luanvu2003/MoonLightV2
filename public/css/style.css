@@ -3254,8 +3254,20 @@ input.input-locked {
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
     word-wrap: break-word !important;
-    white-space: pre-wrap !important;
-    max-width: 80% !important;
+    white-space: normal !important;
+    width: fit-content !important;
+    max-width: 78% !important;
+}
+
+.chat-bubble-media-only {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.chat-bubble-media-only .chat-media-attachment-wrap {
+    margin-top: 0 !important;
 }
 
 .chat-msg-text {
@@ -3263,41 +3275,44 @@ input.input-locked {
     overflow-wrap: anywhere !important;
     word-wrap: break-word !important;
     white-space: pre-wrap !important;
-    line-height: 1.55;
+    line-height: 1.45;
 }
 
 /* Chat media styling (Images, Videos, Links) */
 .chat-media-attachment-wrap {
-    margin-top: 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
 }
 
 .chat-media-image {
-    max-width: 260px;
-    max-height: 220px;
-    border-radius: 10px;
+    max-width: 280px;
+    max-height: 280px;
+    border-radius: 14px;
     object-fit: cover;
     cursor: pointer;
     border: 1px solid rgba(0, 0, 0, 0.08);
     display: block;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 
 .chat-media-image:hover {
     transform: scale(1.02);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .chat-media-video {
     max-width: 100%;
     width: 320px;
     max-height: 260px;
-    border-radius: 10px;
+    border-radius: 14px;
     background: #0f172a;
     display: block;
     outline: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .chat-link {

@@ -1222,16 +1222,18 @@ async function handleCloseCustomerTicket(ticketId) {
   }
 }
 
-// Tự động nhận diện và biến đổi URL thành clickable links kèm chuyển đổi xuống dòng
+// Tự động nhận diện và biến đổi URL thành clickable links
 function formatChatContent(rawText) {
   if (!rawText) return '';
-  const escaped = escapeHtml(rawText);
-  // Regex tìm URL http:// hoặc https://
+  // Xóa khoảng trắng và dòng trống dư thừa ở đầu và cuối
+  let cleaned = String(rawText).trim();
+  // Giới hạn tối đa 2 lần xuống dòng liên tiếp (tránh người dùng spam Enter tạo khoảng trống lớn)
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  const escaped = escapeHtml(cleaned);
   const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-  const withLinks = escaped.replace(urlRegex, (url) => {
+  return escaped.replace(urlRegex, (url) => {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:3px;"></i>${url}</a>`;
   });
-  return withLinks.replace(/\r?\n/g, '<br>');
 }
 
 // Render ảnh hoặc video đính kèm trong tin nhắn
@@ -1241,7 +1243,7 @@ function renderMessageAttachments(attachments, isCust) {
   return `<div class="chat-media-attachment-wrap">` + attachments.map(att => {
     if (att.type === 'video' || (att.url && att.url.match(/\.(mp4|webm|mov|mkv)$/i))) {
       return `
-        <div style="max-width:100%; margin-top:4px;">
+        <div style="max-width:100%;">
           <video controls preload="metadata" class="chat-media-video">
             <source src="${escapeHtml(att.url)}" type="video/mp4">
             Trình duyệt không hỗ trợ phát video này.
@@ -1251,13 +1253,13 @@ function renderMessageAttachments(attachments, isCust) {
       `;
     } else if (att.type === 'image' || (att.url && att.url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i))) {
       return `
-        <div style="margin-top:4px;">
+        <div>
           <img src="${escapeHtml(att.url)}" alt="${escapeHtml(att.name || 'Ảnh đính kèm')}" class="chat-media-image" onclick="openChatImageLightbox('${escapeHtml(att.url)}')">
         </div>
       `;
     } else {
       return `
-        <div style="margin-top:4px;">
+        <div>
           <a href="${escapeHtml(att.url)}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#0284c7; text-decoration:none; background:#f1f5f9; padding:6px 12px; border-radius:8px;">
             <i class="fas fa-paperclip"></i> <span>${escapeHtml(att.name || 'Tệp đính kèm')}</span>
           </a>
@@ -1379,19 +1381,40 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
       adminRadius = '4px 18px 18px 18px';
     }
 
+    const hasText = Boolean(m.message && m.message.trim());
+    const hasMedia = Array.isArray(m.attachments) && m.attachments.length > 0;
+
     if (isCust) {
-      // Tin nhắn Khách hàng gửi (bên phải): Messenger style - không lặp lại "Bạn" hay header
+      // Tin nhắn Khách hàng gửi (bên phải): Messenger style
+      let bubbleHtml = '';
+      if (!hasText && hasMedia) {
+        // Chỉ gửi ảnh/video: Trong suốt, không bọc bóng xanh khổng lồ
+        bubbleHtml = `<div class="chat-msg-bubble chat-bubble-media-only" title="${mTime}" style="background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; width:fit-content; max-width:78%;">${renderMessageAttachments(m.attachments, true)}</div>`;
+      } else if (hasText && hasMedia) {
+        // Có cả ảnh/video và chú thích văn bản
+        bubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:6px; border-radius:${custRadius}; width:fit-content; max-width:78%; box-shadow:0 2px 8px rgba(2,132,199,0.18);">${renderMessageAttachments(m.attachments, true)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div></div>`;
+      } else {
+        // Chỉ gửi văn bản (gọn gàng, vừa khít nội dung, không bị kéo dài)
+        bubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:8px 14px; border-radius:${custRadius}; width:fit-content; max-width:78%; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);"><div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div></div>`;
+      }
+
       html += `
         <div class="cust-chat-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-end; margin-top:${itemMarginTop};">
-          <div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 15px; border-radius:${custRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15); transition:transform 0.1s ease;">
-            ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
-            ${renderMessageAttachments(m.attachments, true)}
-          </div>
+          ${bubbleHtml}
           ${isLastInGroup ? renderCustomerMessageStatus(m.status) : ''}
         </div>
       `;
     } else {
       // Tin nhắn CSKH gửi (bên trái): Chỉ hiện tên CSKH ở tin nhắn đầu tiên trong cụm
+      let adminBubbleHtml = '';
+      if (!hasText && hasMedia) {
+        adminBubbleHtml = `<div class="chat-msg-bubble chat-bubble-media-only" title="${mTime}" style="background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; width:fit-content; max-width:78%;">${renderMessageAttachments(m.attachments, false)}</div>`;
+      } else if (hasText && hasMedia) {
+        adminBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #e2e8f0; color:#0f172a; padding:6px; border-radius:${adminRadius}; width:fit-content; max-width:78%; box-shadow:0 2px 8px rgba(0,0,0,0.04);">${renderMessageAttachments(m.attachments, false)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div></div>`;
+      } else {
+        adminBubbleHtml = `<div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #e2e8f0; color:#0f172a; padding:8px 14px; border-radius:${adminRadius}; width:fit-content; max-width:78%; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03);"><div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div></div>`;
+      }
+
       html += `
         <div class="cust-chat-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-start; margin-top:${itemMarginTop};">
           ${isFirstInGroup ? `
@@ -1401,10 +1424,7 @@ function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
               </strong>
             </div>
           ` : ''}
-          <div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #e2e8f0; color:#0f172a; padding:10px 15px; border-radius:${adminRadius}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03); transition:transform 0.1s ease;">
-            ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
-            ${renderMessageAttachments(m.attachments, false)}
-          </div>
+          ${adminBubbleHtml}
         </div>
       `;
     }
@@ -1752,16 +1772,25 @@ async function handleSendCustomerMessage(event, ticketId) {
       if (oldStatus) oldStatus.remove();
     }
 
-    const tempEl = document.createElement('div');
-    tempEl.id = tempMsgId;
-    tempEl.className = 'cust-chat-msg-item';
-    tempEl.setAttribute('data-msg-role', 'customer');
-    tempEl.style.cssText = `display:flex; flex-direction:column; align-items:flex-end; margin-top:${wasSameSender ? '2px' : '10px'};`;
+    const hasText = Boolean(text && text.trim());
+    const hasMedia = Array.isArray(attachments) && attachments.length > 0;
+
+    let bubbleStyle = `width:fit-content; max-width:78%;`;
+    let bubbleContent = '';
+
+    if (!hasText && hasMedia) {
+      bubbleStyle += `background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;`;
+      bubbleContent = renderMessageAttachments(attachments, true);
+    } else if (hasText && hasMedia) {
+      bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:6px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; box-shadow:0 2px 8px rgba(2,132,199,0.18);`;
+      bubbleContent = `${renderMessageAttachments(attachments, true)}<div class="chat-msg-text" style="padding:6px 8px 3px 8px; font-size:13.5px; line-height:1.45; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
+    } else {
+      bubbleStyle += `background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:8px 14px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; font-size:13.5px; line-height:1.45; box-shadow:0 2px 6px rgba(2,132,199,0.15);`;
+      bubbleContent = `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>`;
+    }
+
     tempEl.innerHTML = `
-      <div class="chat-msg-bubble" title="${nowStr}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 15px; border-radius:${wasSameSender ? '18px 4px 18px 18px' : '18px'}; max-width:78%; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
-        ${text ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>` : ''}
-        ${renderMessageAttachments(attachments, true)}
-      </div>
+      <div class="chat-msg-bubble" title="${nowStr}" style="${bubbleStyle}">${bubbleContent}</div>
       ${renderCustomerMessageStatus('sending')}
     `;
     const typingInd = document.getElementById(`custTypingIndicator-${ticketId}`);
