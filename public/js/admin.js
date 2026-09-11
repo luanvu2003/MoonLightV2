@@ -20,27 +20,127 @@ let currentTab = 'dashboard';
 // Callback cho Modal xác nhận
 let pendingConfirmCallback = null;
 
-// Bộ lọc Đơn hàng
+// ==========================================================================
+// CẤU HÌNH PHÂN TRANG QUẢN LÝ ADMIN (20 MỤC / TRANG THEO YÊU CẦU)
+// ==========================================================================
+const ADMIN_PAGE_SIZE = 20;
+
+// Bộ lọc & Phân trang Đơn hàng
 let orderFilterStatus = 'all'; // all, pending, completed, cancelled
 let orderFilterChannel = 'all'; // all, online, pos
 let orderSortBy = 'newest'; // newest, oldest, highest_amount
 let orderSearchKeyword = '';
+let orderCurrentPage = 1;
+const ORDERS_PER_PAGE = ADMIN_PAGE_SIZE;
 
-// Bộ lọc Sản phẩm
+// Bộ lọc & Phân trang Sản phẩm
 let productSearchKeyword = '';
 let productCategoryFilter = 'all';
 let productStockFilter = 'all';
+let productCurrentPage = 1;
+const PRODUCTS_PER_PAGE = ADMIN_PAGE_SIZE;
 
-// Bộ lọc Khách hàng
+// Bộ lọc & Phân trang Khách hàng
 let customerSearchKeyword = '';
 let customerRankFilter = 'all';
+let customerCurrentPage = 1;
+const CUSTOMERS_PER_PAGE = ADMIN_PAGE_SIZE;
 
-// Bộ lọc Đánh giá
+// Bộ lọc & Phân trang Đánh giá
 let reviewRatingFilter = 'all';
 let reviewProductFilter = 'all'; // 'all' hoặc ID sản phẩm cụ thể
 let reviewSearchKeyword = '';
 let reviewReplyStatusFilter = 'all'; // 'all', 'replied', 'unreplied'
 let currentReplyingReviewId = null;
+let reviewCurrentPage = 1;
+const REVIEWS_PER_PAGE = ADMIN_PAGE_SIZE;
+
+// Bộ lọc & Phân trang Yêu cầu hỗ trợ (Tickets)
+let ticketCurrentPage = 1;
+const TICKETS_PER_PAGE = ADMIN_PAGE_SIZE;
+
+// Tạo danh sách số trang phân trang với hỗ trợ dấu '...'
+function getAdminPaginationPages(currentPage, totalPages) {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    if (currentPage <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+    } else {
+        pages.push(1);
+        pages.push('...');
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push('...');
+        pages.push(totalPages);
+    }
+    return pages;
+}
+
+// Tạo chuỗi HTML thanh phân trang Luxury cho các bảng Admin
+function buildAdminPaginationHtml({ currentPage, totalPages, totalItems, startIndex, endIndex, unit = 'mục', onPageChange }) {
+    if (totalItems === 0) return '';
+    if (totalPages <= 1) {
+        return `
+            <div class="admin-pagination-wrapper">
+                <div class="admin-pagination-info">
+                    Hiển thị toàn bộ <strong>${totalItems}</strong> ${unit} (20 ${unit}/trang)
+                </div>
+                <div class="admin-pagination-controls">
+                    <span style="font-size:12px; color:var(--text-muted); font-weight:600;">Trang 1 / 1</span>
+                </div>
+            </div>
+        `;
+    }
+
+    const pages = getAdminPaginationPages(currentPage, totalPages);
+    const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+    const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+
+    let buttonsHtml = `
+        <button type="button" class="admin-page-btn" ${prevDisabled} onclick="${onPageChange}(${currentPage - 1})" title="Trang trước">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    `;
+
+    pages.forEach(p => {
+        if (p === '...') {
+            buttonsHtml += `<span class="admin-page-dots">...</span>`;
+        } else {
+            const activeClass = p === currentPage ? 'active' : '';
+            buttonsHtml += `
+                <button type="button" class="admin-page-btn ${activeClass}" onclick="${onPageChange}(${p})">
+                    ${p}
+                </button>
+            `;
+        }
+    });
+
+    buttonsHtml += `
+        <button type="button" class="admin-page-btn" ${nextDisabled} onclick="${onPageChange}(${currentPage + 1})" title="Trang sau">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+
+    return `
+        <div class="admin-pagination-wrapper">
+            <div class="admin-pagination-info">
+                Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> trong tổng số <strong>${totalItems}</strong> ${unit} (20 ${unit}/trang)
+            </div>
+            <div class="admin-pagination-controls">
+                ${buttonsHtml}
+            </div>
+        </div>
+    `;
+}
 
 // Bộ lọc Hoạt động & Biểu đồ
 let currentActivityFilter = 'all';
@@ -1337,6 +1437,16 @@ async function renderAdminCustomers() {
         return (b.stats?.totalOrders || 0) - (a.stats?.totalOrders || 0);
     });
 
+    // Phân trang: 20 khách hàng / trang
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / CUSTOMERS_PER_PAGE) || 1;
+    if (customerCurrentPage > totalPages) customerCurrentPage = totalPages;
+    if (customerCurrentPage < 1) customerCurrentPage = 1;
+
+    const startIndex = (customerCurrentPage - 1) * CUSTOMERS_PER_PAGE;
+    const endIndex = Math.min(startIndex + CUSTOMERS_PER_PAGE, totalItems);
+    const pagedCustomers = list.slice(startIndex, endIndex);
+
     container.innerHTML = `
         <!-- KPI METRICS BAR -->
         <!-- KPI METRICS BAR -->
@@ -1429,14 +1539,14 @@ async function renderAdminCustomers() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${list.length === 0 ? `
+                    ${totalItems === 0 ? `
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 50px 20px; color: #777;">
                                 <i class="fas fa-user-slash" style="font-size: 32px; margin-bottom: 10px; display: block; opacity: 0.4;"></i>
                                 Không tìm thấy người dùng nào phù hợp với bộ lọc hiện tại.
                             </td>
                         </tr>
-                    ` : list.map(u => {
+                    ` : pagedCustomers.map(u => {
                         let displayName = u.name || u.username || 'Khách hàng';
                         if (/^[0-9+.\s-]{8,15}$/.test(displayName)) {
                             displayName = `Khách hàng (${displayName})`;
@@ -1518,29 +1628,50 @@ async function renderAdminCustomers() {
                     }).join('')}
                 </tbody>
             </table>
+            ${buildAdminPaginationHtml({
+                currentPage: customerCurrentPage,
+                totalPages,
+                totalItems,
+                startIndex,
+                endIndex,
+                unit: 'khách hàng',
+                onPageChange: 'goToCustomerPage'
+            })}
         </div>
     `;
+}
+
+// Chuyển trang khách hàng
+function goToCustomerPage(page) {
+    customerCurrentPage = page;
+    renderAdminCustomers();
+    const tableEl = document.querySelector('.data-table-container');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Chuyển tab bộ lọc người dùng
 function setCustomerUserTypeFilter(type) {
     customerUserTypeFilter = type;
+    customerCurrentPage = 1;
     renderAdminCustomers();
 }
 
 // Tìm kiếm người dùng theo tên, sđt, email, địa chỉ
 function searchCustomers(keyword) {
     customerSearchKeyword = keyword;
+    customerCurrentPage = 1;
     renderAdminCustomers();
 }
 
 function clearCustomerSearch() {
     customerSearchKeyword = '';
+    customerCurrentPage = 1;
     renderAdminCustomers();
 }
 
 function setCustomerRankFilter(rank) {
     customerRankFilter = rank;
+    customerCurrentPage = 1;
     renderAdminCustomers();
 }
 
@@ -2282,6 +2413,16 @@ function renderAdminProducts() {
         return matchesKeyword && matchesCategory && matchesStock;
     });
 
+    // Phân trang: 20 sản phẩm / trang
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / PRODUCTS_PER_PAGE) || 1;
+    if (productCurrentPage > totalPages) productCurrentPage = totalPages;
+    if (productCurrentPage < 1) productCurrentPage = 1;
+
+    const startIndex = (productCurrentPage - 1) * PRODUCTS_PER_PAGE;
+    const endIndex = Math.min(startIndex + PRODUCTS_PER_PAGE, totalItems);
+    const pagedList = list.slice(startIndex, endIndex);
+
     container.innerHTML = `
         <!-- THANH HÀNH ĐỘNG SẢN PHẨM (THOÁNG ĐÃNG, KHÔNG LẶP TIÊU ĐỀ) -->
         <div class="orders-action-bar">
@@ -2289,7 +2430,7 @@ function renderAdminProducts() {
                 <span class="live-dot-pulse"></span>
                 <span>Hệ thống kho & biến thể sản phẩm</span>
                 <span class="adm-badge store-tag" style="font-size:10px; padding:2px 7px; margin-left:4px;">Thời gian thực</span>
-                <span style="color:var(--text-muted); font-size:12px; margin-left:6px;">Tổng <b>${products.length}</b> sản phẩm (${list.length} đang hiển thị)</span>
+                <span style="color:var(--text-muted); font-size:12px; margin-left:6px;">Tổng <b>${products.length}</b> sản phẩm (${totalItems} kết quả lọc &bull; Trang ${productCurrentPage}/${totalPages})</span>
             </div>
             <div class="orders-action-buttons">
                 <button class="btn-outline" onclick="exportProductsCSV()" title="Xuất danh sách sản phẩm sang file CSV">
@@ -2344,9 +2485,9 @@ function renderAdminProducts() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${list.length === 0 ? `
+                    ${totalItems === 0 ? `
                         <tr><td colspan="6" style="text-align:center; padding:40px; color:#777;">Không tìm thấy sản phẩm nào phù hợp.</td></tr>
-                    ` : list.map(p => {
+                    ` : pagedList.map(p => {
                         const totalStock = p.variants.reduce((sum, v) => sum + (v.sizes ? v.sizes.reduce((s, sz) => s + (sz.stock || 0), 0) : 0), 0);
                         const firstImg = p.variants[0]?.img || 'https://via.placeholder.com/60';
                         const isLow = totalStock < 10;
@@ -2410,8 +2551,25 @@ function renderAdminProducts() {
                     }).join('')}
                 </tbody>
             </table>
+            ${buildAdminPaginationHtml({
+                currentPage: productCurrentPage,
+                totalPages,
+                totalItems,
+                startIndex,
+                endIndex,
+                unit: 'sản phẩm',
+                onPageChange: 'goToProductPage'
+            })}
         </div>
     `;
+}
+
+// Chuyển trang sản phẩm
+function goToProductPage(page) {
+    productCurrentPage = page;
+    renderAdminProducts();
+    const tableEl = document.querySelector('.data-table-container');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Chuyển đổi mã loại sản phẩm thành tên tiếng Việt cao cấp
@@ -2486,16 +2644,19 @@ function exportProductsCSV() {
 
 function searchProducts(keyword) {
     productSearchKeyword = keyword;
+    productCurrentPage = 1;
     renderAdminProducts();
 }
 
 function setProductCategory(cat) {
     productCategoryFilter = cat;
+    productCurrentPage = 1;
     renderAdminProducts();
 }
 
 function setProductStockFilter(st) {
     productStockFilter = productStockFilter === st ? 'all' : st;
+    productCurrentPage = 1;
     renderAdminProducts();
 }
 
@@ -3366,6 +3527,16 @@ function renderAdminOrders() {
         list.sort((a, b) => getOrderTime(b) - getOrderTime(a));
     }
 
+    // Phân trang: 20 đơn hàng / trang
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / ORDERS_PER_PAGE) || 1;
+    if (orderCurrentPage > totalPages) orderCurrentPage = totalPages;
+    if (orderCurrentPage < 1) orderCurrentPage = 1;
+
+    const startIndex = (orderCurrentPage - 1) * ORDERS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ORDERS_PER_PAGE, totalItems);
+    const pagedOrders = list.slice(startIndex, endIndex);
+
     container.innerHTML = `
         <!-- THANH HÀNH ĐỘNG ĐƠN HÀNG (THOÁNG ĐÃNG, KHÔNG LẶP TIÊU ĐỀ) -->
         <div class="orders-action-bar">
@@ -3373,6 +3544,7 @@ function renderAdminOrders() {
                 <span class="live-dot-pulse"></span>
                 <span>Hệ thống đồng bộ đơn hàng trực tuyến & POS showroom</span>
                 <span class="adm-badge store-tag" style="font-size:10px; padding:2px 7px; margin-left:4px;">Thời gian thực</span>
+                <span style="color:var(--text-muted); font-size:12px; margin-left:6px;">Tổng <b>${orders.length}</b> đơn hàng (${totalItems} kết quả lọc &bull; Trang ${orderCurrentPage}/${totalPages})</span>
             </div>
             <div class="orders-action-buttons">
                 <button class="btn-outline" onclick="exportOrdersList()" title="Xuất danh sách đơn hàng sang file CSV">
@@ -3501,7 +3673,7 @@ function renderAdminOrders() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${list.length === 0 ? `
+                    ${totalItems === 0 ? `
                         <tr>
                             <td colspan="7">
                                 <div class="orders-empty-state">
@@ -3514,7 +3686,7 @@ function renderAdminOrders() {
                                 </div>
                             </td>
                         </tr>
-                    ` : list.map(o => {
+                    ` : pagedOrders.map(o => {
                         const isStore = ((o.customer?.address || '').toLowerCase().includes('tại cửa hàng') || (o.customer?.address || '').toLowerCase().includes('showroom') || o.orderSource === 'pos');
                         const isBanking = (o.paymentMethod || '').toLowerCase().includes('bank') || (o.paymentMethod || '').toLowerCase().includes('chuyển');
                         const isPaid = o.isPaid;
@@ -3652,27 +3824,48 @@ function renderAdminOrders() {
                     }).join('')}
                 </tbody>
             </table>
+            ${buildAdminPaginationHtml({
+                currentPage: orderCurrentPage,
+                totalPages,
+                totalItems,
+                startIndex,
+                endIndex,
+                unit: 'đơn hàng',
+                onPageChange: 'goToAdminOrderPage'
+            })}
         </div>
     `;
 }
 
+// Chuyển trang đơn hàng
+function goToAdminOrderPage(page) {
+    orderCurrentPage = page;
+    renderAdminOrders();
+    const tableEl = document.querySelector('.orders-table-wrapper');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function searchOrders(kw) {
     orderSearchKeyword = kw;
+    orderCurrentPage = 1;
     renderAdminOrders();
 }
 
 function setOrderFilter(filter) {
     orderFilterStatus = filter;
+    orderCurrentPage = 1;
     renderAdminOrders();
 }
 
 function setOrderChannelFilter(channel) {
     orderFilterChannel = channel;
+    orderCurrentPage = 1;
     renderAdminOrders();
 }
 
 function setOrderSort(sort) {
     orderSortBy = sort;
+    orderCurrentPage = 1;
     renderAdminOrders();
 }
 
@@ -3681,6 +3874,7 @@ function resetAllOrderFilters() {
     orderFilterChannel = 'all';
     orderSortBy = 'newest';
     orderSearchKeyword = '';
+    orderCurrentPage = 1;
     renderAdminOrders();
 }
 
@@ -4085,6 +4279,16 @@ function renderAdminReviews() {
         };
     }
 
+    // Phân trang: 20 đánh giá / trang
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / REVIEWS_PER_PAGE) || 1;
+    if (reviewCurrentPage > totalPages) reviewCurrentPage = totalPages;
+    if (reviewCurrentPage < 1) reviewCurrentPage = 1;
+
+    const startIndex = (reviewCurrentPage - 1) * REVIEWS_PER_PAGE;
+    const endIndex = Math.min(startIndex + REVIEWS_PER_PAGE, totalItems);
+    const pagedReviews = list.slice(startIndex, endIndex);
+
     container.innerHTML = `
         <!-- THANH HÀNH ĐỘNG ĐÁNH GIÁ (THOÁNG ĐÃNG, KHÔNG LẶP TIÊU ĐỀ) -->
         <div class="orders-action-bar">
@@ -4095,7 +4299,7 @@ function renderAdminReviews() {
                     <i class="fas fa-shield-alt"></i> Minh Bạch 100% (Không Duyệt / Không Xóa)
                 </span>
                 <span style="color:var(--text-muted); font-size:12px; margin-left:6px;">
-                    Tổng <b>${allReviews.length}</b> nhận xét (${list.length} đang hiển thị${unrepliedCount > 0 ? ` &bull; <span style="color:#f59e0b;"><i class="fas fa-hourglass-half"></i> ${unrepliedCount} chưa phản hồi</span>` : ''})
+                    Tổng <b>${allReviews.length}</b> nhận xét (${totalItems} kết quả lọc &bull; Trang ${reviewCurrentPage}/${totalPages}${unrepliedCount > 0 ? ` &bull; <span style="color:#f59e0b;"><i class="fas fa-hourglass-half"></i> ${unrepliedCount} chưa phản hồi</span>` : ''})
                 </span>
             </div>
             <div class="orders-action-buttons">
@@ -4243,14 +4447,14 @@ function renderAdminReviews() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${list.length === 0 ? `
+                    ${totalItems === 0 ? `
                         <tr>
                             <td colspan="7" style="text-align:center; padding:50px 20px; color:#888;">
                                 <i class="fas fa-comment-slash" style="font-size:28px; margin-bottom:8px; display:block; opacity:0.4;"></i>
                                 Không tìm thấy đánh giá nào khớp với bộ lọc hiện tại.
                             </td>
                         </tr>
-                    ` : list.map(rev => {
+                    ` : pagedReviews.map(rev => {
                         const initials = (rev.name || 'K').split(' ').map(w => w[0]).filter(Boolean).slice(-2).join('').toUpperCase();
                         const pFound = products.find(p => String(p.id) === String(rev.productId));
                         const pImg = (pFound && pFound.img) || 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=200';
@@ -4330,37 +4534,59 @@ function renderAdminReviews() {
                     }).join('')}
                 </tbody>
             </table>
+            ${buildAdminPaginationHtml({
+                currentPage: reviewCurrentPage,
+                totalPages,
+                totalItems,
+                startIndex,
+                endIndex,
+                unit: 'đánh giá',
+                onPageChange: 'goToReviewPage'
+            })}
         </div>
     `;
+}
+
+// Chuyển trang đánh giá
+function goToReviewPage(page) {
+    reviewCurrentPage = page;
+    renderAdminReviews();
+    const tableEl = document.querySelector('.data-table-container');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Chuyển bộ lọc sản phẩm riêng biệt
 function setReviewProductFilter(productId) {
     reviewProductFilter = productId;
+    reviewCurrentPage = 1;
     renderAdminReviews();
 }
 
 // Chuyển bộ lọc trạng thái phản hồi (Đã phản hồi / Chưa phản hồi)
 function setReviewReplyStatusFilter(status) {
     reviewReplyStatusFilter = status;
+    reviewCurrentPage = 1;
     renderAdminReviews();
 }
 
 // Chuyển bộ lọc số sao
 function setReviewRatingFilter(rating) {
     reviewRatingFilter = rating;
+    reviewCurrentPage = 1;
     renderAdminReviews();
 }
 
 // Tìm kiếm đánh giá
 function searchReviews(keyword) {
     reviewSearchKeyword = keyword;
+    reviewCurrentPage = 1;
     renderAdminReviews();
 }
 
 // Xóa ô tìm kiếm đánh giá
 function clearReviewSearch() {
     reviewSearchKeyword = '';
+    reviewCurrentPage = 1;
     renderAdminReviews();
 }
 
@@ -4581,6 +4807,16 @@ async function renderAdminTickets() {
     // Sort: newest first
     list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
+    // Phân trang: 20 yêu cầu / trang
+    const totalItems = list.length;
+    const totalPages = Math.ceil(totalItems / TICKETS_PER_PAGE) || 1;
+    if (ticketCurrentPage > totalPages) ticketCurrentPage = totalPages;
+    if (ticketCurrentPage < 1) ticketCurrentPage = 1;
+
+    const startIndex = (ticketCurrentPage - 1) * TICKETS_PER_PAGE;
+    const endIndex = Math.min(startIndex + TICKETS_PER_PAGE, totalItems);
+    const pagedTickets = list.slice(startIndex, endIndex);
+
     const categoryNames = {
         order_issue: 'Sự cố đơn hàng',
         size_advice: 'Tư vấn may đo / Size',
@@ -4694,7 +4930,7 @@ async function renderAdminTickets() {
 
         <!-- BẢNG DANH SÁCH TICKETS -->
         <div style="background: var(--bg-surface, #151824); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-            ${list.length === 0 ? `
+            ${totalItems === 0 ? `
                 <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
                     <i class="fas fa-headset" style="font-size: 46px; color: #475569; margin-bottom: 12px; display: block;"></i>
                     <h4 style="color: #fff; font-size: 16px; margin: 0 0 6px 0;">Không tìm thấy yêu cầu hỗ trợ nào</h4>
@@ -4716,7 +4952,7 @@ async function renderAdminTickets() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${list.map(t => {
+                            ${pagedTickets.map(t => {
                                 const sm = statusBadgeMeta[t.status] || { label: t.status, bg: 'rgba(255,255,255,0.1)', color: '#fff', border: 'rgba(255,255,255,0.2)', icon: 'fa-info' };
                                 const pri = priorityBadges[t.priority] || { label: 'Bình thường', color: '#38bdf8' };
                                 const catLabel = categoryNames[t.category] || t.category;
@@ -4788,9 +5024,26 @@ async function renderAdminTickets() {
                         </tbody>
                     </table>
                 </div>
+                ${buildAdminPaginationHtml({
+                    currentPage: ticketCurrentPage,
+                    totalPages,
+                    totalItems,
+                    startIndex,
+                    endIndex,
+                    unit: 'yêu cầu',
+                    onPageChange: 'goToAdminTicketPage'
+                })}
             `}
         </div>
     `;
+}
+
+// Chuyển trang yêu cầu hỗ trợ (Tickets)
+function goToAdminTicketPage(page) {
+    ticketCurrentPage = page;
+    renderAdminTickets();
+    const tableEl = document.querySelector('.adm-tickets-list-card') || document.querySelector('.data-table-container');
+    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function escapeAdminHtml(text) {
@@ -4805,20 +5058,24 @@ function escapeAdminHtml(text) {
 
 function handleAdminTicketSearch(val) {
     ticketSearchKeyword = val;
+    ticketCurrentPage = 1;
     renderAdminTickets();
 }
 
 function setAdminTicketCategoryFilter(cat) {
     ticketCategoryFilter = cat;
+    ticketCurrentPage = 1;
     renderAdminTickets();
 }
 
 function filterAdminTickets(status) {
     ticketStatusFilter = status;
+    ticketCurrentPage = 1;
     renderAdminTickets();
 }
 
 async function refreshAdminTickets() {
+    ticketCurrentPage = 1;
     await fetchAdminTickets();
     renderAdminTickets();
     showToast("Thành công", "Đã cập nhật danh sách yêu cầu hỗ trợ mới nhất!", "success");
