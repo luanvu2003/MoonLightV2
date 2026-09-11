@@ -4609,7 +4609,7 @@ function initCustomerAuthUI() {
                 <div class="auth-input-wrapper">
                   <i class="fas fa-lock"></i>
                   <input type="password" id="custLoginPassword" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
-                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custLoginPassword', this)"><i class="far fa-eye"></i></button>
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custLoginPassword', this)" title="Hiện/Ẩn mật khẩu" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:none; border:none; cursor:pointer; color:#94a3b8; padding:0; z-index:3;"><i class="far fa-eye" style="position:static!important; left:auto!important; top:auto!important; transform:none!important; pointer-events:none;"></i></button>
                 </div>
               </div>
               <div id="customerLoginAlert" class="auth-alert error" style="display:none;"></div>
@@ -4646,7 +4646,7 @@ function initCustomerAuthUI() {
                 <div class="auth-input-wrapper">
                   <i class="fas fa-lock"></i>
                   <input type="password" id="custRegPassword" placeholder="Tối thiểu 3 ký tự..." required autocomplete="new-password" minlength="3">
-                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegPassword', this)"><i class="far fa-eye"></i></button>
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegPassword', this)" title="Hiện/Ẩn mật khẩu" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:none; border:none; cursor:pointer; color:#94a3b8; padding:0; z-index:3;"><i class="far fa-eye" style="position:static!important; left:auto!important; top:auto!important; transform:none!important; pointer-events:none;"></i></button>
                 </div>
               </div>
               <div class="auth-form-group">
@@ -4654,7 +4654,7 @@ function initCustomerAuthUI() {
                 <div class="auth-input-wrapper">
                   <i class="fas fa-shield-alt"></i>
                   <input type="password" id="custRegConfirmPassword" placeholder="Nhập lại mật khẩu vừa đặt..." required autocomplete="new-password" minlength="3">
-                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegConfirmPassword', this)"><i class="far fa-eye"></i></button>
+                  <button type="button" class="auth-pwd-toggle" onclick="toggleAuthPasswordVisibility('custRegConfirmPassword', this)" title="Hiện/Ẩn mật khẩu" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; background:none; border:none; cursor:pointer; color:#94a3b8; padding:0; z-index:3;"><i class="far fa-eye" style="position:static!important; left:auto!important; top:auto!important; transform:none!important; pointer-events:none;"></i></button>
                 </div>
               </div>
               <div id="customerRegAlert" class="auth-alert error" style="display:none;"></div>
@@ -5519,6 +5519,7 @@ function highlightActiveNavMenu() {
 window.selectCheckoutSavedAddress = selectCheckoutSavedAddress;
 window.renderCheckoutAddressPicker = renderCheckoutAddressPicker;
 window.highlightActiveNavMenu = highlightActiveNavMenu;
+window.toggleAuthPasswordVisibility = toggleAuthPasswordVisibility;
 
 // Khởi chạy ngay lập tức nếu DOM đã sẵn sàng
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
