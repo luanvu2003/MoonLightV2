@@ -723,14 +723,23 @@ function renderCustomerOrders(filterStatus = 'all') {
     const isBanking = order.paymentMethod === 'banking';
     const isPaid = Boolean(order.isPaid);
 
-    // Tính toán stepper (Tiến trình 4 bước)
+    // Tính toán stepper (Tiến trình 4 bước hoặc Thông báo đơn đã hủy)
     let stepperHtml = '';
     if (isCancelled) {
+      const cancelReasonText = escapeHtml(order.cancelReason || 'Theo yêu cầu của quý khách');
       stepperHtml = `
-        <div class="order-cancelled-notice">
-          <i class="fas fa-exclamation-circle" style="font-size:18px;"></i>
-          <div>
-            <strong>Đơn hàng đã bị hủy.</strong> Lý do: ${order.cancelReason || 'Theo yêu cầu của khách hàng'}.
+        <div class="order-cancelled-card">
+          <div class="cancelled-card-icon">
+            <i class="fas fa-ban"></i>
+          </div>
+          <div class="cancelled-card-body">
+            <div class="cancelled-card-header">
+              <span class="cancelled-card-title"><i class="fas fa-times-circle" style="margin-right:4px;"></i> Đơn hàng đã bị hủy</span>
+              <span class="cancelled-card-badge">Đã kết thúc</span>
+            </div>
+            <div class="cancelled-card-detail">
+              Lý do hủy: <strong>${cancelReasonText}</strong>
+            </div>
           </div>
         </div>
       `;
