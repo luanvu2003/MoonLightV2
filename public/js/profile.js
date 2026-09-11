@@ -1289,33 +1289,68 @@ function openChatImageLightbox(imgUrl) {
 }
 
 function renderCustomerChatMessagesHtml(ticketId, msgList, showPendingNotice) {
-  return msgList.map(m => {
+  return msgList.map((m, idx) => {
     const isCust = m.senderRole === 'customer';
     const mTime = m.createdAt ? new Date(m.createdAt).toLocaleString('vi-VN') : '';
+
+    const prev = idx > 0 ? msgList[idx - 1] : null;
+    const next = idx < msgList.length - 1 ? msgList[idx + 1] : null;
+
+    // Kiểm tra tin nhắn trước đó có cùng người gửi không (trong vòng 10 phút)
+    const sameSenderAsPrev = prev && prev.senderRole === m.senderRole;
+    const prevTimeDiff = prev && prev.createdAt && m.createdAt ? (new Date(m.createdAt) - new Date(prev.createdAt)) : 0;
+    const isFirstInGroup = !sameSenderAsPrev || prevTimeDiff > 10 * 60 * 1000;
+
+    // Kiểm tra tin nhắn tiếp theo có cùng người gửi không (trong vòng 10 phút)
+    const sameSenderAsNext = next && next.senderRole === m.senderRole;
+    const nextTimeDiff = next && next.createdAt && m.createdAt ? (new Date(next.createdAt) - new Date(m.createdAt)) : 0;
+    const isLastInGroup = !sameSenderAsNext || nextTimeDiff > 10 * 60 * 1000;
+
+    const itemMarginTop = isFirstInGroup ? (idx === 0 ? '0px' : '10px') : '2px';
+
+    // Bo góc kiểu Facebook Messenger
+    let custRadius = '16px 16px 4px 16px';
+    if (!isFirstInGroup && !isLastInGroup) {
+      custRadius = '16px 4px 4px 16px';
+    } else if (!isFirstInGroup && isLastInGroup) {
+      custRadius = '16px 4px 16px 16px';
+    }
+
+    let adminRadius = '16px 16px 16px 4px';
+    if (!isFirstInGroup && !isLastInGroup) {
+      adminRadius = '4px 16px 16px 4px';
+    } else if (!isFirstInGroup && isLastInGroup) {
+      adminRadius = '4px 16px 16px 16px';
+    }
+
     if (isCust) {
       return `
-        <div class="cust-chat-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-end;">
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-            <span>${mTime}</span>
-            <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
-          </div>
-          <div class="chat-msg-bubble" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+        <div class="cust-chat-msg-item" data-msg-role="customer" style="display:flex; flex-direction:column; align-items:flex-end; margin-top:${itemMarginTop};">
+          ${isFirstInGroup ? `
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+              <span>${mTime}</span>
+              <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
+            </div>
+          ` : ''}
+          <div class="chat-msg-bubble" title="${mTime}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:9px 14px; border-radius:${custRadius}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
             ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, true)}
           </div>
-          ${renderCustomerMessageStatus(m.status)}
+          ${isLastInGroup ? renderCustomerMessageStatus(m.status) : ''}
         </div>
       `;
     } else {
       return `
-        <div class="cust-chat-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-            <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
-              <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
-            </strong>
-            <span>${mTime}</span>
-          </div>
-          <div class="chat-msg-bubble" style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:14px 14px 14px 2px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+        <div class="cust-chat-msg-item" data-msg-role="admin" style="display:flex; flex-direction:column; align-items:flex-start; margin-top:${itemMarginTop};">
+          ${isFirstInGroup ? `
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+              <strong style="color:var(--gold,#b48518); display:flex; align-items:center; gap:4px;">
+                <i class="fas fa-headset"></i> ${escapeHtml(m.senderName || 'CSKH MoonLight')}
+              </strong>
+              <span>${mTime}</span>
+            </div>
+          ` : ''}
+          <div class="chat-msg-bubble" title="${mTime}" style="background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; padding:9px 14px; border-radius:${adminRadius}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
             ${m.message ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(m.message)}</div>` : ''}
             ${renderMessageAttachments(m.attachments, false)}
           </div>
@@ -1650,17 +1685,29 @@ async function handleSendCustomerMessage(event, ticketId) {
   const nowStr = new Date().toLocaleString('vi-VN');
 
   if (scrollContainer) {
+    const allItems = scrollContainer.querySelectorAll('.cust-chat-msg-item');
+    const lastMsg = allItems.length > 0 ? allItems[allItems.length - 1] : null;
+    const wasSameSender = lastMsg && lastMsg.getAttribute('data-msg-role') === 'customer';
+
+    // Ẩn trạng thái cũ của tin nhắn trước nếu cùng người gửi
+    if (wasSameSender) {
+      const oldStatus = lastMsg.querySelector('.msg-status-tag');
+      if (oldStatus) oldStatus.style.display = 'none';
+    }
+
     const tempEl = document.createElement('div');
     tempEl.id = tempMsgId;
     tempEl.className = 'cust-chat-msg-item';
     tempEl.setAttribute('data-msg-role', 'customer');
-    tempEl.style.cssText = "display:flex; flex-direction:column; align-items:flex-end;";
+    tempEl.style.cssText = `display:flex; flex-direction:column; align-items:flex-end; margin-top:${wasSameSender ? '2px' : '10px'};`;
     tempEl.innerHTML = `
-      <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
-        <span>${nowStr}</span>
-        <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
-      </div>
-      <div class="chat-msg-bubble" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:10px 14px; border-radius:14px 14px 2px 14px; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
+      ${!wasSameSender ? `
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:#64748b;">
+          <span>${nowStr}</span>
+          <strong style="color:#0284c7;"><i class="fas fa-user-circle"></i> Bạn</strong>
+        </div>
+      ` : ''}
+      <div class="chat-msg-bubble" title="${nowStr}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; padding:9px 14px; border-radius:${wasSameSender ? '16px 4px 16px 16px' : '16px 16px 4px 16px'}; max-width:80%; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; box-shadow:0 2px 6px rgba(2,132,199,0.15);">
         ${text ? `<div class="chat-msg-text" style="word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${formatChatContent(text)}</div>` : ''}
         ${renderMessageAttachments(attachments, true)}
       </div>
@@ -1672,7 +1719,7 @@ async function handleSendCustomerMessage(event, ticketId) {
     } else {
       scrollContainer.appendChild(tempEl);
     }
-    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    scrollCustomerChatToBottom(ticketId, true);
   }
 
   try {
