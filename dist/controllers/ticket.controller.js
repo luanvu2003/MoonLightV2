@@ -135,8 +135,9 @@ export const getTicketById = async (req, res) => {
             sendError(res, 'Không tìm thấy yêu cầu hỗ trợ này', 404, 'NOT_FOUND');
             return;
         }
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(userRole);
-        if (ticket.userId.toString() !== userId && !isAdminOrStaff) {
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(userRole).toLowerCase());
+        const isOwner = ticket.userId && String(ticket.userId) === String(userId);
+        if (!isOwner && !isAdminOrStaff) {
             sendError(res, 'Bạn không có quyền xem ticket này', 403, 'FORBIDDEN');
             return;
         }
@@ -155,7 +156,7 @@ export const setTypingStatus = async (req, res) => {
         const ticketId = req.params.id;
         const userRole = req.user?.role || 'Customer';
         const isTyping = Boolean(req.body.isTyping);
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(userRole);
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(userRole).toLowerCase());
         if (!typingState[ticketId]) {
             typingState[ticketId] = {};
         }
@@ -195,8 +196,8 @@ export const markTicketSeen = async (req, res) => {
             sendError(res, 'Không tìm thấy ticket', 404, 'NOT_FOUND');
             return;
         }
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(userRole);
-        const isOwner = ticket.userId.toString() === userId;
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(userRole).toLowerCase());
+        const isOwner = ticket.userId && String(ticket.userId) === String(userId);
         if (!isOwner && !isAdminOrStaff) {
             sendError(res, 'Bạn không có quyền', 403, 'FORBIDDEN');
             return;
@@ -231,8 +232,8 @@ export const getTicketLive = async (req, res) => {
             sendError(res, 'Không tìm thấy ticket', 404, 'NOT_FOUND');
             return;
         }
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(userRole);
-        const isOwner = ticket.userId.toString() === userId;
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(userRole).toLowerCase());
+        const isOwner = ticket.userId && String(ticket.userId) === String(userId);
         if (!isOwner && !isAdminOrStaff) {
             sendError(res, 'Bạn không có quyền', 403, 'FORBIDDEN');
             return;
@@ -440,8 +441,9 @@ export const closeCustomerTicket = async (req, res) => {
             return;
         }
         // Kiểm tra quyền: Chủ sở hữu ticket hoặc Admin/Staff
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(req.user?.role);
-        if (ticket.userId.toString() !== userId && !isAdminOrStaff) {
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(req.user?.role || '').toLowerCase());
+        const isOwner = ticket.userId && String(ticket.userId) === String(userId);
+        if (!isOwner && !isAdminOrStaff) {
             sendError(res, 'Bạn không có quyền thao tác trên ticket này', 403, 'FORBIDDEN');
             return;
         }
@@ -462,7 +464,7 @@ export const reopenCustomerTicket = async (req, res) => {
             sendError(res, 'Không tìm thấy yêu cầu hỗ trợ này', 404, 'NOT_FOUND');
             return;
         }
-        const isAdminOrStaff = ['Admin', 'Staff', 'Owner'].includes(req.user?.role);
+        const isAdminOrStaff = ['admin', 'staff', 'owner'].includes(String(req.user?.role || '').toLowerCase());
         if (!isAdminOrStaff) {
             sendError(res, 'Phiếu hỗ trợ đã đóng không thể mở lại. Nếu cần trợ giúp thêm, quý khách vui lòng tạo phiếu hỗ trợ mới.', 400, 'CANNOT_REOPEN_CLOSED_TICKET');
             return;
@@ -490,7 +492,8 @@ export const rateCustomerTicket = async (req, res) => {
             sendError(res, 'Không tìm thấy yêu cầu hỗ trợ này', 404, 'NOT_FOUND');
             return;
         }
-        if (ticket.userId.toString() !== userId) {
+        const isOwner = ticket.userId && String(ticket.userId) === String(userId);
+        if (!isOwner) {
             sendError(res, 'Bạn không có quyền đánh giá yêu cầu này', 403, 'FORBIDDEN');
             return;
         }

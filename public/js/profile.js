@@ -158,6 +158,7 @@ function switchProfileTab(tabName, updateUrl = true) {
   if (paneTickets) paneTickets.style.display = 'none';
 
   if (tabName === 'orders') {
+    if (typeof stopCustomerTicketLiveSync === 'function') stopCustomerTicketLiveSync();
     if (btnOrders) btnOrders.classList.add('active');
     if (paneOrders) paneOrders.style.display = 'block';
   } else if (tabName === 'tickets') {
@@ -166,12 +167,16 @@ function switchProfileTab(tabName, updateUrl = true) {
     if (typeof loadCustomerTickets === 'function') {
       loadCustomerTickets();
     }
+    if (typeof startCustomerTicketLiveSync === 'function') {
+      startCustomerTicketLiveSync();
+    }
     setTimeout(() => {
       document.querySelectorAll('.ticket-messages-scroll').forEach(el => {
         el.scrollTop = el.scrollHeight;
       });
     }, 120);
   } else {
+    if (typeof stopCustomerTicketLiveSync === 'function') stopCustomerTicketLiveSync();
     if (btnProfile) btnProfile.classList.add('active');
     if (paneProfile) paneProfile.style.display = 'block';
   }
@@ -1144,13 +1149,14 @@ function renderCustomerTickets(filterStatus = 'all') {
     return;
   }
 
-  const statusMeta = {
-    pending: { label: 'Chờ tiếp nhận', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: 'fa-clock' },
-    processing: { label: 'Đang xử lý', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', icon: 'fa-spinner fa-spin' },
-    replied: { label: 'Đã phản hồi', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-comment-dots' },
-    resolved: { label: 'Đã giải quyết', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'fa-check-circle' },
-    closed: { label: 'Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: 'fa-lock' }
-  };
+const custTicketStatusMeta = {
+  pending: { label: 'Chờ tiếp nhận', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: 'fa-clock' },
+  processing: { label: 'Đang xử lý', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd', icon: 'fa-spinner fa-spin' },
+  replied: { label: 'Đã phản hồi', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-comment-dots' },
+  resolved: { label: 'Đã giải quyết', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'fa-check-circle' },
+  closed: { label: 'Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: 'fa-lock' }
+};
+  const statusMeta = custTicketStatusMeta;
 
   const categoryNames = {
     order_issue: 'Sự cố đơn hàng',
@@ -2207,10 +2213,136 @@ async function handleSubmitTicketRating(ticketId) {
   }
 }
 
+// ==========================================
+// ĐỒNG BỘ TIN NHẮN TRỰC TIẾP PHÍA KHÁCH HÀNG (LIVE SYNC & POLLING)
+// ==========================================
+let custLivePollTimer = null;
+
+function startCustomerTicketLiveSync() {
+  stopCustomerTicketLiveSync();
+
+  custLivePollTimer = setInterval(async () => {
+    // Chỉ đồng bộ khi tab Yêu cầu hỗ trợ đang mở
+    const paneTickets = document.getElementById('paneTickets');
+    if (!paneTickets || paneTickets.style.display === 'none') {
+      return;
+    }
+
+    if (!Array.isArray(currentTicketsList) || currentTicketsList.length === 0) {
+      return;
+    }
+
+    // Lọc các ticket đang mở (chưa đóng) để đồng bộ tin nhắn từ Admin
+    const openTickets = currentTicketsList.filter(t => t.status !== 'closed' && t.status !== 'resolved');
+    if (openTickets.length === 0) {
+      return;
+    }
+
+    for (const t of openTickets) {
+      const ticketId = String(t._id || t.id);
+      const scrollEl = document.getElementById(`custMsgScroll-${ticketId}`);
+      if (!scrollEl) continue;
+
+      try {
+        const res = await MoonlightAPI.getTicketLive(ticketId);
+        if (res && res.success && res.data) {
+          const liveData = res.data;
+          const liveTicket = liveData.ticket || liveData;
+          const adminTyping = liveData.typing?.admin;
+
+          // 1. Cập nhật trạng thái Admin / CSKH đang soạn tin nhắn
+          const typingEl = document.getElementById(`custTypingIndicator-${ticketId}`);
+          const typingText = document.getElementById(`custTypingText-${ticketId}`);
+          if (typingEl && typingText) {
+            if (adminTyping && adminTyping.isTyping) {
+              typingText.innerText = `${adminTyping.name || 'CSKH MoonLight'} đang soạn tin nhắn...`;
+              typingEl.style.display = 'inline-flex';
+            } else {
+              typingEl.style.display = 'none';
+            }
+          }
+
+          // 2. Kiểm tra nếu có tin nhắn mới từ Admin
+          const currentCount = scrollEl.querySelectorAll('.cust-chat-msg-item').length;
+          const serverMsgs = liveTicket.messages || [];
+
+          if (serverMsgs.length > currentCount) {
+            const isNearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 75;
+
+            // Cập nhật ticket trong currentTicketsList
+            const idx = currentTicketsList.findIndex(item => String(item._id || item.id) === ticketId);
+            if (idx !== -1) {
+              currentTicketsList[idx] = liveTicket;
+            }
+
+            // Đồng bộ trạng thái badge nếu status thay đổi (vd: từ 'pending' sang 'replied')
+            if (liveTicket.status && liveTicket.status !== t.status) {
+              t.status = liveTicket.status;
+              const cardEl = document.getElementById(`ticketCard-${ticketId}`);
+              const badgeEl = cardEl ? cardEl.querySelector('.ticket-header-row span[style*="border-radius:20px"]') : null;
+              if (badgeEl && custTicketStatusMeta[liveTicket.status]) {
+                const sm = custTicketStatusMeta[liveTicket.status];
+                badgeEl.style.background = sm.bg;
+                badgeEl.style.color = sm.color;
+                badgeEl.style.border = `1px solid ${sm.border}`;
+                badgeEl.innerHTML = `<i class="fas ${sm.icon}"></i> ${sm.label}`;
+              }
+            }
+
+            // Render lại khung tin nhắn
+            renderCustomerChatThreadOnly(liveTicket);
+
+            if (isNearBottom) {
+              setTimeout(() => {
+                scrollCustomerChatToBottom(ticketId, true);
+              }, 50);
+            } else {
+              const diff = serverMsgs.length - currentCount;
+              custNewMsgCount[ticketId] = (custNewMsgCount[ticketId] || 0) + diff;
+              const jumpBtn = document.getElementById(`custJumpBtn-${ticketId}`);
+              const pill = document.getElementById(`custNewMsgPill-${ticketId}`);
+              if (jumpBtn) {
+                jumpBtn.style.display = 'inline-flex';
+                jumpBtn.classList.add('has-new-messages');
+              }
+              if (pill) {
+                pill.innerHTML = `<i class="fas fa-bell fa-shake"></i> ${custNewMsgCount[ticketId]} tin mới`;
+                pill.style.display = 'inline-flex';
+              }
+            }
+          } else {
+            // Cập nhật trạng thái 'Đã xem' nếu Admin đã xem tin nhắn của khách
+            const adminSeenTime = liveTicket.adminLastSeenAt ? new Date(liveTicket.adminLastSeenAt).getTime() : 0;
+            if (adminSeenTime > 0) {
+              const statusTags = scrollEl.querySelectorAll('.msg-status-tag');
+              statusTags.forEach(tag => {
+                if (!tag.innerHTML.includes('Đã xem') && !tag.innerHTML.includes('Lỗi')) {
+                  tag.outerHTML = renderCustomerMessageStatus('seen');
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {
+        // Tránh gián đoạn giao diện khi mạng chập chờn
+      }
+    }
+  }, 2500);
+}
+
+function stopCustomerTicketLiveSync() {
+  if (custLivePollTimer) {
+    clearInterval(custLivePollTimer);
+    custLivePollTimer = null;
+  }
+}
+
 // Bắt đầu live polling khi tải xong
 startCustomerTicketLiveSync();
 
 // Gán hàm vào window để gọi được từ inline onclick
+window.startCustomerTicketLiveSync = startCustomerTicketLiveSync;
+window.stopCustomerTicketLiveSync = stopCustomerTicketLiveSync;
 window.handleSendCustomerMessage = handleSendCustomerMessage;
 window.handleCloseCustomerTicket = handleCloseCustomerTicket;
 window.handleCustTicketTyping = handleCustTicketTyping;
