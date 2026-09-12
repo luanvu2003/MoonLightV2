@@ -496,9 +496,34 @@ export class AIController {
                     const saveDir = path.join(process.cwd(), 'public', 'uploads', 'tryon');
                     await fs.promises.mkdir(saveDir, { recursive: true });
                     const fileName = `tryon_${Date.now()}.png`;
-                    await fs.promises.writeFile(path.join(saveDir, fileName), Buffer.from(buf));
+                    const outPath = path.join(saveDir, fileName);
+
+                    // Khôi phục tỉ lệ chuẩn và kích thước pixel gốc của ảnh người dùng
+                    try {
+                      const sharpMod = (await import('sharp')).default;
+                      let origW: number | undefined;
+                      let origH: number | undefined;
+                      if (pImg.startsWith('/')) {
+                        const localPerson = path.join(process.cwd(), 'public', pImg);
+                        if (fs.existsSync(localPerson)) {
+                          const m = await sharpMod(localPerson).metadata();
+                          origW = m.width;
+                          origH = m.height;
+                        }
+                      }
+                      if (origW && origH && (origW !== 768 || origH !== 1024)) {
+                        await sharpMod(Buffer.from(buf))
+                          .resize(origW, origH, { fit: 'fill' })
+                          .toFile(outPath);
+                      } else {
+                        await fs.promises.writeFile(outPath, Buffer.from(buf));
+                      }
+                    } catch {
+                      await fs.promises.writeFile(outPath, Buffer.from(buf));
+                    }
+
                     resultImageUrl = `/uploads/tryon/${fileName}`;
-                    console.log('   💾 Đã lưu ảnh kết quả cục bộ:', resultImageUrl);
+                    console.log('   💾 Đã lưu ảnh kết quả cục bộ (giữ trọn tỷ lệ gốc):', resultImageUrl);
                   } else {
                     resultImageUrl = hfResult;
                   }

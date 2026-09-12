@@ -108,6 +108,86 @@ class VTONEngine:
 
         return cls._normalize_garment_alpha_and_defringe(bgr, alpha)
 
+    @staticmethod
+    def _prepare_person_for_idm(person_image_path: str) -> Tuple[str, dict]:
+        """
+        Chuẩn bị ảnh người cho IDM-VTON (chuẩn 768x1024) bảo toàn 100% tỷ lệ gốc:
+        - Giữ nguyên 100% tỉ lệ vóc dáng của người (không bị kéo giãn hay phì ngang)
+        - Đệm biên đối xứng (Letterbox with Border Replicate) để đạt 768x1024
+        - Trả về: (đường_dẫn_ảnh_đệm, metadata_để_khôi_phục)
+        """
+        orig_img = cv2.imread(person_image_path)
+        if orig_img is None:
+            return person_image_path, {}
+
+        orig_h, orig_w = orig_img.shape[:2]
+        target_w, target_h = 768, 1024
+
+        scale = min(target_w / float(orig_w), target_h / float(orig_h))
+        scaled_w = int(round(orig_w * scale))
+        scaled_h = int(round(orig_h * scale))
+
+        pad_x = (target_w - scaled_w) // 2
+        pad_y = (target_h - scaled_h) // 2
+        pad_right = target_w - scaled_w - pad_x
+        pad_bottom = target_h - scaled_h - pad_y
+
+        resized = cv2.resize(orig_img, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA)
+        # Đệm biên bằng phản xạ điểm ảnh tự nhiên (BORDER_REPLICATE)
+        padded = cv2.copyMakeBorder(resized, pad_y, pad_bottom, pad_x, pad_right, cv2.BORDER_REPLICATE)
+
+        temp_padded_path = str(settings.STORAGE_UPLOADS_DIR / f"padded_for_idm_{int(time.time() * 1000)}.jpg")
+        cv2.imwrite(temp_padded_path, padded, [cv2.IMWRITE_JPEG_QUALITY, 98])
+
+        meta = {
+            "orig_w": orig_w,
+            "orig_h": orig_h,
+            "scaled_w": scaled_w,
+            "scaled_h": scaled_h,
+            "pad_x": pad_x,
+            "pad_y": pad_y,
+            "temp_file": temp_padded_path
+        }
+        return temp_padded_path, meta
+
+    @staticmethod
+    def _restore_idm_result(result_path: str, meta: dict, dest_path: str):
+        """
+        Khôi phục ảnh kết quả về ĐÚNG 100% kích thước pixel và tỷ lệ khung hình gốc:
+        - Cắt bỏ phần viền đệm (unpad)
+        - Resize về đúng (orig_w, orig_h) bằng Lanczos4
+        """
+        if not meta or "scaled_w" not in meta:
+            shutil.copyfile(result_path, dest_path)
+            return
+
+        res_bgr = cv2.imread(result_path)
+        if res_bgr is None:
+            shutil.copyfile(result_path, dest_path)
+            return
+
+        pad_x = meta["pad_x"]
+        pad_y = meta["pad_y"]
+        scaled_w = meta["scaled_w"]
+        scaled_h = meta["scaled_h"]
+        orig_w = meta["orig_w"]
+        orig_h = meta["orig_h"]
+
+        # Cắt bỏ phần đệm biên
+        cropped = res_bgr[pad_y : pad_y + scaled_h, pad_x : pad_x + scaled_w]
+
+        # Khôi phục về kích thước pixel gốc của người dùng
+        restored = cv2.resize(cropped, (orig_w, orig_h), interpolation=cv2.INTER_LANCZOS4)
+        cv2.imwrite(dest_path, restored, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+
+        # Dọn dẹp file đệm tạm thời
+        temp_file = meta.get("temp_file")
+        if temp_file and os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except Exception:
+                pass
+
     @classmethod
     def run_vton(
         cls,
@@ -124,6 +204,7 @@ class VTONEngine:
         - Giữ độ sắc nét tuyệt đối của thớ vải và đường may
         - Xóa sạch 100% nền áo, không còn viền trắng, viền xám hay bóng sàn studio
         - Che phủ tự nhiên và hoàn chỉnh trang phục cũ bên dưới
+        - Bảo toàn 100% tỷ lệ khung hình gốc (không bị phì/méo ngang)
         """
         timestamp = int(time.time() * 1000)
         output_filename = f"tryon_py_{timestamp}_{attempt}.png"
@@ -135,7 +216,10 @@ class VTONEngine:
             from gradio_client import Client, handle_file
             logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
             client = Client(settings.HF_SPACE_ID, hf_token=settings.HF_TOKEN if settings.HF_TOKEN else None)
-            
+
+            # Chuẩn bị ảnh người giữ nguyên 100% tỉ lệ gốc (aspect ratio letterbox)
+            idm_person_path, letterbox_meta = cls._prepare_person_for_idm(person_image_path)
+
             # Ưu tiên truyền ảnh catalog gốc (JPG) cho IDM-VTON vì mạng neural IDM-VTON nhận diện thớ vải tốt nhất từ ảnh gốc
             garm_ai_path = garment_image_path
             p_garm = Path(garment_image_path)
@@ -145,7 +229,7 @@ class VTONEngine:
                     garm_ai_path = str(orig_jpg)
 
             result = client.predict(
-                dict={"background": handle_file(person_image_path), "layers": [], "composite": None},
+                dict={"background": handle_file(idm_person_path), "layers": [], "composite": None},
                 garm_img=handle_file(garm_ai_path),
                 garment_des=garment_desc or "high quality designer garment",
                 is_checked=True,
@@ -155,9 +239,10 @@ class VTONEngine:
                 api_name="/tryon"
             )
             if result and len(result) > 0 and os.path.exists(result[0]):
-                shutil.copyfile(result[0], public_dest_path)
-                shutil.copyfile(result[0], storage_dest_path)
-                logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công: {public_dest_path}")
+                # Khôi phục ảnh về chính xác 100% kích thước pixel và tỷ lệ gốc của người dùng
+                cls._restore_idm_result(result[0], letterbox_meta, public_dest_path)
+                shutil.copyfile(public_dest_path, storage_dest_path)
+                logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công (bảo tồn 100% tỷ lệ gốc): {public_dest_path}")
                 return public_dest_path, "hf-idm-vton-py"
         except Exception as e:
             cls.last_error = str(e)
@@ -196,19 +281,19 @@ class VTONEngine:
 
             if torso_box is not None:
                 mx, my, mw, mh = torso_box
-                # Chiều rộng áo ôm vừa vặn vai và thân người
-                target_w = int(mw * 1.08 * workflow.warp_strength)
+                # Chiều rộng áo ôm vừa vặn vai, chuẩn may đo slim-fit không phì rộng
+                target_w = int(mw * 0.98)
                 scale_factor = target_w / float(garm_bgr.shape[1])
                 target_h = int(garm_bgr.shape[0] * scale_factor)
                 # Căn giữa theo trục ngực người và đặt ngay khớp cổ
                 pos_x = mx + int((mw - target_w) * 0.5)
                 pos_y = my
             else:
-                target_w = int(w_p * (0.52 * workflow.warp_strength))
+                target_w = int(w_p * 0.38)
                 scale_factor = target_w / float(garm_bgr.shape[1])
                 target_h = int(garm_bgr.shape[0] * scale_factor)
                 pos_x = int((w_p - target_w) * 0.5)
-                pos_y = int(h_p * 0.30)
+                pos_y = int(h_p * 0.35)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)

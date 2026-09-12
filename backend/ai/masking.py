@@ -50,21 +50,20 @@ class ClothMaskGenerator:
             max_y = int(h * 0.90)  # Kéo dài váy xuống dưới
 
         # Thêm padding tinh chỉnh theo lần thử retry
-        padding = (attempt - 1) * 8
+        padding = (attempt - 1) * 6
         min_x = max(0, min_x - padding)
         max_x = min(w, max_x + padding)
         min_y = max(0, min_y - padding)
         max_y = min(h, max_y + padding)
 
-        # Vẽ hình oval / polygon mô phỏng thân trên trang phục
+        # Vẽ hình polygon thân trên chuẩn dáng vóc, không phì ngang
+        mid_x = int((min_x + max_x) * 0.5)
         points = [
-            (int((min_x + max_x) / 2), min_y),
-            (max_x, int(min_y + (max_y - min_y) * 0.2)),
-            (int(max_x + (w * 0.05)), int(min_y + (max_y - min_y) * 0.6)),
+            (mid_x, min_y),
+            (max_x, int(min_y + (max_y - min_y) * 0.15)),
             (max_x, max_y),
             (min_x, max_y),
-            (int(min_x - (w * 0.05)), int(min_y + (max_y - min_y) * 0.6)),
-            (min_x, int(min_y + (max_y - min_y) * 0.2)),
+            (min_x, int(min_y + (max_y - min_y) * 0.15)),
         ]
         draw.polygon(points, fill=255)
 
