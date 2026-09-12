@@ -503,9 +503,11 @@
     const cat = (p.category || '').toLowerCase();
     const name = (p.name || '').toLowerCase();
 
-    // Loại bỏ hoàn toàn phụ kiện (giày dép, ví da, thắt lưng...)
-    if (cat === 'phukien' || cat === 'accessory' || cat === 'accessories') return false;
-    if (name.includes('giày') || name.includes('loafer') || name.includes('sneaker') || name.includes('dép') || name.includes('boots')) return false;
+    // Cho phép giày dép thử đồ, chỉ loại bỏ phụ kiện không thử được (ví da, thắt lưng, kính...)
+    if (cat === 'phukien' || cat === 'accessory' || cat === 'accessories') {
+      const isFootwear = name.includes('giày') || name.includes('loafer') || name.includes('sneaker') || name.includes('oxford') || name.includes('boot');
+      if (!isFootwear) return false;
+    }
     if (name.includes('ví da') || name.includes('ví cầm tay') || name.includes('bóp') || name.includes('wallet')) return false;
     if (name.includes('thắt lưng') || name.includes('dây nịt') || name.includes('belt')) return false;
     if (name.includes('kính') || name.includes('đồng hồ') || name.includes('cà vạt') || name.includes('khuyên') || name.includes('vòng')) return false;
@@ -533,7 +535,9 @@
         } else if (activeCategory === 'dam-vay') {
           matchCat = catLower.includes('đầm') || catLower.includes('dam') || catLower.includes('váy') || catLower.includes('vay') || catLower.includes('dress') || nameLower.includes('đầm') || nameLower.includes('váy');
         } else if (activeCategory === 'quan-au') {
-          matchCat = catLower.includes('quần') || catLower.includes('quan') || catLower.includes('trouser') || catLower.includes('pant') || catLower.includes('jean') || nameLower.includes('quần');
+          matchCat = catLower.includes('quần') || catLower.includes('quan') || catLower.includes('trouser') || catLower.includes('pant') || catLower.includes('jean') || nameLower.includes('quần') || nameLower.includes('jean') || nameLower.includes('chino');
+        } else if (activeCategory === 'giay') {
+          matchCat = catLower.includes('giày') || catLower.includes('giay') || catLower.includes('shoe') || catLower.includes('loafer') || nameLower.includes('giày') || nameLower.includes('loafer') || nameLower.includes('sneaker') || nameLower.includes('oxford') || nameLower.includes('boot');
         }
       }
       return matchQuery && matchCat;
@@ -811,12 +815,15 @@
     const name = ((product && product.name) || '').toLowerCase();
     const cat = ((product && product.category) || '').toLowerCase();
 
-    const isLower = cat.includes('quan') || cat.includes('pant') || cat.includes('jean') || 
+    const isShoes = cat.includes('giay') || cat.includes('shoe') || cat.includes('loafer') ||
+                    name.includes('giày') || name.includes('loafer') || name.includes('sneaker') ||
+                    name.includes('oxford') || name.includes('boot');
+    const isLower = !isShoes && (cat.includes('quan') || cat.includes('pant') || cat.includes('jean') || 
                     cat.includes('chino') || cat.includes('vay') || cat.includes('skirt') ||
                     name.includes('quần') || name.includes('jean') || name.includes('chino') || 
-                    name.includes('pants') || name.includes('chân váy') || name.includes('xếp ly');
-    const isDress = cat.includes('dam') || cat.includes('dress') || 
-                    name.includes('đầm') || name.includes('dress');
+                    name.includes('pants') || name.includes('chân váy') || name.includes('xếp ly'));
+    const isDress = !isShoes && !isLower && (cat.includes('dam') || cat.includes('dress') || 
+                    name.includes('đầm') || name.includes('dress'));
     const isShortSleeve = name.includes('polo') || name.includes('thun') || 
                           name.includes('pima') || name.includes('cộc') || 
                           name.includes('ngắn tay') || name.includes('tee') || name.includes('t-shirt');
@@ -825,10 +832,10 @@
                         name.includes('blazer') || name.includes('vest') || 
                         name.includes('suit') || name.includes('măng tô') || name.includes('tweed');
 
-    return { isLower, isDress, isUpper: !isLower && !isDress, isShortSleeve, isOuterwear };
+    return { isShoes, isLower, isDress, isUpper: !isShoes && !isLower && !isDress, isShortSleeve, isOuterwear };
   }
 
-  // Tách nền ảnh trang phục
+  // Tách nền ảnh trang phục và tự động crop viền thừa (Zero-Fringe tight bounding box)
   function createGarmentTransparentCanvas(img) {
     const w = img.naturalWidth || img.width;
     const h = img.naturalHeight || img.height;
@@ -858,6 +865,30 @@
           else if (dist < 46) { d[i+3] = Math.round(((dist-32)/14)*255); }
         }
         ctx.putImageData(imgData, 0, 0);
+      }
+
+      // Tự động cắt bỏ viền trong suốt thừa (Tight Bounding Box Crop)
+      const croppedData = ctx.getImageData(0, 0, w, h).data;
+      let minX = w, minY = h, maxX = 0, maxY = 0;
+      let hasAlpha = false;
+      for (let y = 0; y < h; y += 2) {
+        for (let x = 0; x < w; x += 2) {
+          if (croppedData[(y * w + x) * 4 + 3] > 40) {
+            hasAlpha = true;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (hasAlpha && maxX > minX && maxY > minY) {
+        const cropW = maxX - minX + 1;
+        const cropH = maxY - minY + 1;
+        const outCvs = document.createElement('canvas');
+        outCvs.width = cropW; outCvs.height = cropH;
+        outCvs.getContext('2d').drawImage(cvs, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+        return outCvs;
       }
     } catch(e) { console.warn('Auto alpha cutout warning:', e); }
     return cvs;
@@ -926,7 +957,12 @@
     const mask = new Float32Array(pW * pH);
     let topY, bottomY, leftX, rightX;
 
-    if (garmentType.isUpper) {
+    if (garmentType.isShoes) {
+      topY = Math.max(0, Math.round(pH * 0.85));
+      bottomY = Math.min(pH, Math.round(pH * 0.99));
+      leftX = Math.max(0, bodyInfo.neckX - Math.round(bodyInfo.shoulderSpan * 0.40));
+      rightX = Math.min(pW, bodyInfo.neckX + Math.round(bodyInfo.shoulderSpan * 0.40));
+    } else if (garmentType.isUpper) {
       topY = Math.max(0, Math.round(bodyInfo.neckY - bodyInfo.shoulderSpan * 0.08));
       bottomY = Math.min(pH, Math.round(bodyInfo.hipY + bodyInfo.shoulderSpan * 0.1));
       leftX = Math.max(0, bodyInfo.leftShoulderX - Math.round(bodyInfo.shoulderSpan * 0.15));
@@ -1042,7 +1078,12 @@
 
         // ── BƯỚC 4: Tính toán vị trí may đo ──
         let destW, destH, left, top;
-        if (garmentType.isUpper) {
+        if (garmentType.isShoes) {
+          destW = Math.round(Math.min(pW * 0.48, Math.max(bodyInfo.shoulderSpan * 0.85, pW * 0.28)));
+          destH = Math.round(destW * (gH / gW));
+          left = Math.round(bodyInfo.neckX - destW / 2);
+          top = Math.round(pH * 0.90 - destH * 0.40);
+        } else if (garmentType.isUpper) {
           const ws = garmentType.isOuterwear ? 1.85 : 1.70;
           destW = Math.round(Math.min(pW * 0.95, Math.max(bodyInfo.shoulderSpan * ws, pW * 0.38)));
           destH = Math.round(destW * (gH / gW));
@@ -1384,10 +1425,15 @@
         const fittedImage = await synthesizeTryOn(selectedPersonImage, selectedGarmentImage, selectedProduct);
         
         const cat = (selectedProduct?.category || '').toLowerCase();
+        const pName = (selectedProduct?.name || '').toLowerCase();
         let wfId = 'tailored-suit';
         let wfName = 'Quy trình May đo Vest Hoàng Gia';
         let wfDesc = 'Tối ưu phom dáng ve áo chữ V, dựng vai đệm đứng dáng';
-        if (cat.includes('lụa') || cat.includes('sơ mi') || cat.includes('shirt')) {
+        if (cat.includes('giay') || cat.includes('loafer') || cat.includes('shoe') || pName.includes('giày') || pName.includes('loafer')) {
+          wfId = 'royal-footwear';
+          wfName = 'Quy trình May đo Giày & Loafer Hoàng Gia';
+          wfDesc = 'Cân chỉnh tỷ lệ cổ chân, bề mặt da và khớp phối trang phục';
+        } else if (cat.includes('lụa') || cat.includes('sơ mi') || cat.includes('shirt')) {
           wfId = 'silk-shirt';
           wfName = 'Quy trình Lụa Tơ Tằm Thượng Hạng';
           wfDesc = 'Bảo toàn độ rũ mềm mại và đường may cổ áo thanh mảnh';
@@ -1395,7 +1441,7 @@
           wfId = 'evening-dress';
           wfName = 'Quy trình Đầm Dạ Hội & Váy Thiết Kế';
           wfDesc = 'Căn chỉnh độ xòe thân váy và ôm khít đường cong eo';
-        } else if (cat.includes('quần') || cat.includes('pant')) {
+        } else if (cat.includes('quần') || cat.includes('pant') || cat.includes('jean') || cat.includes('chino')) {
           wfId = 'tailored-pants';
           wfName = 'Quy trình May đo Quần Âu & Dáng Suông';
           wfDesc = 'Cân chỉnh độ dài ly quần và độ ôm hông tự nhiên';

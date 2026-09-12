@@ -52,6 +52,8 @@ class Analyzer:
         # ── Tự động nhận diện giải phẫu cơ thể người thực tế từ ảnh ──
         neck_x, neck_y = 0.50, 0.22
         chest_y, hip_y = 0.36, 0.58
+        knee_y, ankle_y, feet_y = 0.76, 0.90, 0.94
+        body_bottom_y = 0.96
         shoulder_ratio = default_shoulder_ratio
         torso_height_ratio = 0.52
 
@@ -72,6 +74,10 @@ class Analyzer:
                         torso_height_ratio = round(min(0.70, (bh * 0.40) / float(height)), 3)
                         chest_y = round((by + bh * 0.32) / float(height), 3)
                         hip_y = round((by + bh * 0.56) / float(height), 3)
+                        knee_y = round((by + bh * 0.78) / float(height), 3)
+                        ankle_y = round((by + bh * 0.93) / float(height), 3)
+                        feet_y = round((by + bh * 0.96) / float(height), 3)
+                        body_bottom_y = round(min(1.0, (by + bh) / float(height)), 3)
             except Exception:
                 pass
 
@@ -90,7 +96,11 @@ class Analyzer:
                 "left_shoulder": {"x": round(max(0.02, neck_x - shoulder_ratio * 0.5), 3), "y": round(neck_y + 0.04, 3)},
                 "right_shoulder": {"x": round(min(0.98, neck_x + shoulder_ratio * 0.5), 3), "y": round(neck_y + 0.04, 3)},
                 "chest_center": {"x": neck_x, "y": chest_y},
-                "hip_center": {"x": neck_x, "y": hip_y}
+                "hip_center": {"x": neck_x, "y": hip_y},
+                "knee_center": {"x": neck_x, "y": knee_y},
+                "ankle_center": {"x": neck_x, "y": ankle_y},
+                "feet_center": {"x": neck_x, "y": feet_y},
+                "body_bottom": {"x": neck_x, "y": body_bottom_y}
             }
         )
 
@@ -121,10 +131,17 @@ class Analyzer:
             fabric = "royal_velvet" if "nhung" in name else "mulberry_silk"
             collar = "v_neck"
             silhouette = "flowing_gown"
-        elif any(k in name or k in cat for k in ["quần", "pants", "trousers"]):
-            category = "trousers"
-            fabric = "italian_wool"
+        elif any(k in name or k in cat for k in ["giày", "loafer", "shoes", "oxford", "sneaker", "boot", "dép"]):
+            category = "shoes"
+            fabric = "genuine_leather"
             collar = "none"
+            sleeve = "none"
+            silhouette = "classic_loafer"
+        elif any(k in name or k in cat for k in ["quần", "pants", "trousers", "jean", "jeans", "chino"]):
+            category = "trousers"
+            fabric = "denim" if ("jean" in name or "denim" in name) else "italian_wool"
+            collar = "none"
+            sleeve = "none"
             silhouette = "straight_cut"
         else:
             category = "haute_couture"

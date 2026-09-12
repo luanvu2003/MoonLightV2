@@ -24,17 +24,17 @@ export interface PersonAnalysisResult {
 }
 
 export interface GarmentAnalysisResult {
-  category: 'vest_suit' | 'silk_shirt' | 'evening_dress' | 'trousers' | 'outerwear_coat';
-  fabricType: 'italian_wool' | 'mulberry_silk' | 'royal_velvet' | 'cashmere' | 'cotton_linen';
-  sleeveLength: 'long_sleeve' | 'short_sleeve' | 'sleeveless';
-  collarStyle: 'notch_lapel' | 'peak_lapel' | 'spread_collar' | 'band_collar' | 'v_neck';
-  silhouette: 'slim_fit' | 'tailored_fit' | 'flowing_gown' | 'structured';
+  category: 'vest_suit' | 'silk_shirt' | 'evening_dress' | 'trousers' | 'shoes' | 'outerwear_coat';
+  fabricType: 'italian_wool' | 'mulberry_silk' | 'royal_velvet' | 'cashmere' | 'cotton_linen' | 'genuine_leather';
+  sleeveLength: 'long_sleeve' | 'short_sleeve' | 'sleeveless' | 'none';
+  collarStyle: 'notch_lapel' | 'peak_lapel' | 'spread_collar' | 'band_collar' | 'v_neck' | 'none';
+  silhouette: 'slim_fit' | 'tailored_fit' | 'flowing_gown' | 'structured' | 'classic_loafer';
   dominantColors: string[];
   requiresFullBodyMask: boolean;
 }
 
 export interface WorkflowDecision {
-  workflowId: 'tailored_suit_workflow' | 'silk_shirt_workflow' | 'evening_dress_workflow' | 'tailored_pants_workflow' | 'haute_couture_general_workflow';
+  workflowId: 'tailored_suit_workflow' | 'silk_shirt_workflow' | 'evening_dress_workflow' | 'tailored_pants_workflow' | 'royal_footwear_workflow' | 'haute_couture_general_workflow';
   workflowName: string;
   description: string;
   targetResolution: string;
@@ -102,10 +102,18 @@ export class AIAnalyzerService {
       collarStyle = 'v_neck';
       silhouette = 'flowing_gown';
       requiresFullBodyMask = true;
-    } else if (cat.includes('quan') || name.includes('quần') || name.includes('pants')) {
+    } else if (cat.includes('giay') || name.includes('giày') || name.includes('loafer') || name.includes('shoe')) {
+      category = 'shoes';
+      fabricType = 'genuine_leather';
+      sleeveLength = 'none';
+      collarStyle = 'none';
+      silhouette = 'classic_loafer';
+      requiresFullBodyMask = false;
+    } else if (cat.includes('quan') || name.includes('quần') || name.includes('pants') || name.includes('jean') || name.includes('chino')) {
       category = 'trousers';
       fabricType = 'italian_wool';
-      sleeveLength = 'long_sleeve';
+      sleeveLength = 'none';
+      collarStyle = 'none';
       silhouette = 'slim_fit';
       requiresFullBodyMask = true;
     }
@@ -170,6 +178,18 @@ export class AIAnalyzerService {
         recommendedMaskFeathering: 5,
         warpStrength: 0.80,
         lightingBalanceFactor: 1.0
+      };
+    }
+
+    if (garment.category === 'shoes') {
+      return {
+        workflowId: 'royal_footwear_workflow',
+        workflowName: 'Quy trình May đo Giày & Loafer Hoàng Gia (Royal Footwear Pipeline)',
+        description: 'Tối ưu tỷ lệ cổ chân, form dáng mũi giày, chất liệu da bóng bẩy và định vị bàn chân hoàn hảo.',
+        targetResolution: '1024x1024_HD',
+        recommendedMaskFeathering: 4,
+        warpStrength: 0.75,
+        lightingBalanceFactor: 1.10
       };
     }
 

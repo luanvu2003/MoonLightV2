@@ -1416,7 +1416,8 @@ export const LUXURY_PRODUCTS = [
         "images": [
             "/images/garments/loafer.jpg",
             "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80"
+            "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80",
+            "/images/garments/loafer_cutout.png"
         ],
         "rating": 5,
         "sold": 45,
@@ -1431,7 +1432,8 @@ export const LUXURY_PRODUCTS = [
                 "images": [
                     "/images/garments/loafer.jpg",
                     "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=900&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80"
+                    "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=900&auto=format&fit=crop&q=80",
+                    "/images/garments/loafer_cutout.png"
                 ],
                 "price": 2850000,
                 "sizes": [

@@ -37,16 +37,16 @@ export interface PersonAnalysisResult {
     };
 }
 export interface GarmentAnalysisResult {
-    category: 'vest_suit' | 'silk_shirt' | 'evening_dress' | 'trousers' | 'outerwear_coat';
-    fabricType: 'italian_wool' | 'mulberry_silk' | 'royal_velvet' | 'cashmere' | 'cotton_linen';
-    sleeveLength: 'long_sleeve' | 'short_sleeve' | 'sleeveless';
-    collarStyle: 'notch_lapel' | 'peak_lapel' | 'spread_collar' | 'band_collar' | 'v_neck';
-    silhouette: 'slim_fit' | 'tailored_fit' | 'flowing_gown' | 'structured';
+    category: 'vest_suit' | 'silk_shirt' | 'evening_dress' | 'trousers' | 'shoes' | 'outerwear_coat';
+    fabricType: 'italian_wool' | 'mulberry_silk' | 'royal_velvet' | 'cashmere' | 'cotton_linen' | 'genuine_leather';
+    sleeveLength: 'long_sleeve' | 'short_sleeve' | 'sleeveless' | 'none';
+    collarStyle: 'notch_lapel' | 'peak_lapel' | 'spread_collar' | 'band_collar' | 'v_neck' | 'none';
+    silhouette: 'slim_fit' | 'tailored_fit' | 'flowing_gown' | 'structured' | 'classic_loafer';
     dominantColors: string[];
     requiresFullBodyMask: boolean;
 }
 export interface WorkflowDecision {
-    workflowId: 'tailored_suit_workflow' | 'silk_shirt_workflow' | 'evening_dress_workflow' | 'tailored_pants_workflow' | 'haute_couture_general_workflow';
+    workflowId: 'tailored_suit_workflow' | 'silk_shirt_workflow' | 'evening_dress_workflow' | 'tailored_pants_workflow' | 'royal_footwear_workflow' | 'haute_couture_general_workflow';
     workflowName: string;
     description: string;
     targetResolution: string;

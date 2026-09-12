@@ -62,10 +62,19 @@ export class AIAnalyzerService {
             silhouette = 'flowing_gown';
             requiresFullBodyMask = true;
         }
-        else if (cat.includes('quan') || name.includes('quần') || name.includes('pants')) {
+        else if (cat.includes('giay') || name.includes('giày') || name.includes('loafer') || name.includes('shoe')) {
+            category = 'shoes';
+            fabricType = 'genuine_leather';
+            sleeveLength = 'none';
+            collarStyle = 'none';
+            silhouette = 'classic_loafer';
+            requiresFullBodyMask = false;
+        }
+        else if (cat.includes('quan') || name.includes('quần') || name.includes('pants') || name.includes('jean') || name.includes('chino')) {
             category = 'trousers';
             fabricType = 'italian_wool';
-            sleeveLength = 'long_sleeve';
+            sleeveLength = 'none';
+            collarStyle = 'none';
             silhouette = 'slim_fit';
             requiresFullBodyMask = true;
         }
@@ -125,6 +134,17 @@ export class AIAnalyzerService {
                 recommendedMaskFeathering: 5,
                 warpStrength: 0.80,
                 lightingBalanceFactor: 1.0
+            };
+        }
+        if (garment.category === 'shoes') {
+            return {
+                workflowId: 'royal_footwear_workflow',
+                workflowName: 'Quy trình May đo Giày & Loafer Hoàng Gia (Royal Footwear Pipeline)',
+                description: 'Tối ưu tỷ lệ cổ chân, form dáng mũi giày, chất liệu da bóng bẩy và định vị bàn chân hoàn hảo.',
+                targetResolution: '1024x1024_HD',
+                recommendedMaskFeathering: 4,
+                warpStrength: 0.75,
+                lightingBalanceFactor: 1.10
             };
         }
         return {

@@ -211,50 +211,56 @@ class VTONEngine:
         public_dest_path = str(settings.PUBLIC_UPLOADS_DIR / output_filename)
         storage_dest_path = str(settings.STORAGE_RESULTS_DIR / output_filename)
 
-        # ── 1. Thử gọi ZeroGPU IDM-VTON qua Gradio Client (Ưu tiên hàng đầu AI Neural Try-On) ──
-        try:
-            from gradio_client import Client, handle_file
-            logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
-            hf_token = settings.HF_TOKEN.strip() if settings.HF_TOKEN else None
+        # ── 1. Thử gọi ZeroGPU IDM-VTON qua Gradio Client (Chỉ dành cho Áo, Vest & Đầm) ──
+        # IDM-VTON ZeroGPU được huấn luyện chuyên biệt trên phần thân trên (tops/dresses).
+        # Đối với Quần (trousers) và Giày (shoes), chuyển thẳng qua High-Precision Crisp Fitting Engine để định vị chính xác giải phẫu học
+        can_use_idm = workflow.workflow_id not in ["tailored_pants_workflow", "royal_footwear_workflow"]
+        if can_use_idm:
             try:
-                client = Client(settings.HF_SPACE_ID, hf_token=hf_token)
-            except TypeError:
+                from gradio_client import Client, handle_file
+                logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
+                hf_token = settings.HF_TOKEN.strip() if settings.HF_TOKEN else None
                 try:
-                    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else None
-                    client = Client(settings.HF_SPACE_ID, headers=headers)
-                except Exception:
-                    client = Client(settings.HF_SPACE_ID)
+                    client = Client(settings.HF_SPACE_ID, hf_token=hf_token)
+                except TypeError:
+                    try:
+                        headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else None
+                        client = Client(settings.HF_SPACE_ID, headers=headers)
+                    except Exception:
+                        client = Client(settings.HF_SPACE_ID)
 
-            # Chuẩn bị ảnh người giữ nguyên 100% tỉ lệ gốc (aspect ratio letterbox)
-            idm_person_path, letterbox_meta = cls._prepare_person_for_idm(person_image_path)
+                # Chuẩn bị ảnh người giữ nguyên 100% tỉ lệ gốc (aspect ratio letterbox)
+                idm_person_path, letterbox_meta = cls._prepare_person_for_idm(person_image_path)
 
-            # Ưu tiên truyền ảnh catalog gốc (JPG) cho IDM-VTON vì mạng neural IDM-VTON nhận diện thớ vải tốt nhất từ ảnh gốc
-            garm_ai_path = garment_image_path
-            p_garm = Path(garment_image_path)
-            if "_cutout" in p_garm.name:
-                orig_jpg = p_garm.parent / f"{p_garm.stem.replace('_cutout', '')}.jpg"
-                if orig_jpg.exists():
-                    garm_ai_path = str(orig_jpg)
+                # Ưu tiên truyền ảnh catalog gốc (JPG) cho IDM-VTON vì mạng neural IDM-VTON nhận diện thớ vải tốt nhất từ ảnh gốc
+                garm_ai_path = garment_image_path
+                p_garm = Path(garment_image_path)
+                if "_cutout" in p_garm.name:
+                    orig_jpg = p_garm.parent / f"{p_garm.stem.replace('_cutout', '')}.jpg"
+                    if orig_jpg.exists():
+                        garm_ai_path = str(orig_jpg)
 
-            result = client.predict(
-                dict={"background": handle_file(idm_person_path), "layers": [], "composite": None},
-                garm_img=handle_file(garm_ai_path),
-                garment_des=garment_desc or "high quality designer garment",
-                is_checked=True,
-                is_checked_crop=False,
-                denoise_steps=30,
-                seed=42,
-                api_name="/tryon"
-            )
-            if result and len(result) > 0 and os.path.exists(result[0]):
-                # Khôi phục ảnh về chính xác 100% kích thước pixel và tỷ lệ gốc của người dùng
-                cls._restore_idm_result(result[0], letterbox_meta, public_dest_path)
-                shutil.copyfile(public_dest_path, storage_dest_path)
-                logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công (bảo tồn 100% tỷ lệ gốc): {public_dest_path}")
-                return public_dest_path, "hf-idm-vton-py"
-        except Exception as e:
-            cls.last_error = str(e)
-            logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
+                result = client.predict(
+                    dict={"background": handle_file(idm_person_path), "layers": [], "composite": None},
+                    garm_img=handle_file(garm_ai_path),
+                    garment_des=garment_desc or "high quality designer garment",
+                    is_checked=True,
+                    is_checked_crop=False,
+                    denoise_steps=30,
+                    seed=42,
+                    api_name="/tryon"
+                )
+                if result and len(result) > 0 and os.path.exists(result[0]):
+                    # Khôi phục ảnh về chính xác 100% kích thước pixel và tỷ lệ gốc của người dùng
+                    cls._restore_idm_result(result[0], letterbox_meta, public_dest_path)
+                    shutil.copyfile(public_dest_path, storage_dest_path)
+                    logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công (bảo tồn 100% tỷ lệ gốc): {public_dest_path}")
+                    return public_dest_path, "hf-idm-vton-py"
+            except Exception as e:
+                cls.last_error = str(e)
+                logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
+        else:
+            logger.info(f"ℹ️ [VTON] Định tuyến {workflow.name}: Sử dụng MoonLight Crisp Engine giải phẫu học...")
 
         # ── 2. MoonLight High-Precision Crisp Fitting Engine (Zero-Blur & Zero-Fringe) ──
         logger.info(f"ℹ️ [VTON] Sử dụng MoonLight High-Precision Crisp Fitting Engine (Zero-Fringe)...")
@@ -279,7 +285,7 @@ class VTONEngine:
                 garm_bgr = garm_bgr[by:by+bh, bx:bx+bw]
                 garm_alpha = garm_alpha[by:by+bh, bx:bx+bw]
 
-            # Lấy vị trí và kích thước thực tế của vùng thân người từ cloth_mask
+            # Lấy vị trí và kích thước thực tế của vùng trang phục từ cloth_mask
             mask_img = cv2.imread(cloth_mask.mask_path, cv2.IMREAD_GRAYSCALE)
             torso_box = None
             if mask_img is not None and np.any(mask_img > 80):
@@ -289,19 +295,45 @@ class VTONEngine:
 
             if torso_box is not None:
                 mx, my, mw, mh = torso_box
-                # Chiều rộng áo ôm vừa vặn vai, chuẩn may đo slim-fit không phì rộng
-                target_w = int(mw * 0.98)
-                scale_factor = target_w / float(garm_bgr.shape[1])
-                target_h = int(garm_bgr.shape[0] * scale_factor)
-                # Căn giữa theo trục ngực người và đặt ngay khớp cổ
-                pos_x = mx + int((mw - target_w) * 0.5)
-                pos_y = my
+                if workflow.workflow_id == "royal_footwear_workflow":
+                    target_w = int(mw * 0.92)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    pos_x = mx + int((mw - target_w) * 0.5)
+                    pos_y = my + max(0, int(mh - target_h * 0.95))
+                elif workflow.workflow_id == "tailored_pants_workflow":
+                    target_w = int(mw * 0.96)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    pos_x = mx + int((mw - target_w) * 0.5)
+                    pos_y = my
+                else:
+                    # Chiều rộng áo ôm vừa vặn vai, chuẩn may đo slim-fit không phì rộng
+                    target_w = int(mw * 0.98)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    # Căn giữa theo trục ngực người và đặt ngay khớp cổ
+                    pos_x = mx + int((mw - target_w) * 0.5)
+                    pos_y = my
             else:
-                target_w = int(w_p * 0.38)
-                scale_factor = target_w / float(garm_bgr.shape[1])
-                target_h = int(garm_bgr.shape[0] * scale_factor)
-                pos_x = int((w_p - target_w) * 0.5)
-                pos_y = int(h_p * 0.35)
+                if workflow.workflow_id == "royal_footwear_workflow":
+                    target_w = int(w_p * 0.30)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    pos_x = int((w_p - target_w) * 0.5)
+                    pos_y = int(h_p * 0.88 - target_h * 0.20)
+                elif workflow.workflow_id == "tailored_pants_workflow":
+                    target_w = int(w_p * 0.35)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    pos_x = int((w_p - target_w) * 0.5)
+                    pos_y = int(h_p * 0.55)
+                else:
+                    target_w = int(w_p * 0.38)
+                    scale_factor = target_w / float(garm_bgr.shape[1])
+                    target_h = int(garm_bgr.shape[0] * scale_factor)
+                    pos_x = int((w_p - target_w) * 0.5)
+                    pos_y = int(h_p * 0.35)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)

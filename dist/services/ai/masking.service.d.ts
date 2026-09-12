@@ -8,7 +8,7 @@
 import { HumanParsingResult } from './parsing.service.js';
 import { GarmentAnalysisResult, WorkflowDecision } from './analyzer.service.js';
 export interface ClothMaskResult {
-    maskType: 'upper_body_mask' | 'full_body_mask' | 'lower_body_mask';
+    maskType: 'upper_body_mask' | 'full_body_mask' | 'lower_body_mask' | 'footwear_mask';
     featherRadiusPx: number;
     antiBleedErosionPx: number;
     collarContourPreserved: boolean;

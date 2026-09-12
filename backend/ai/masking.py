@@ -39,40 +39,63 @@ class ClothMaskGenerator:
         mask = Image.new("L", (w, h), 0)
         draw = ImageDraw.Draw(mask)
 
-        # Lấy vùng torso_garment từ parsing
-        tb = parsing_result.torso_garment.bounds
-        min_x = int(tb["min_x"] * w)
-        max_x = int(tb["max_x"] * w)
-        min_y = int(tb["min_y"] * h)
-        max_y = int(tb["max_y"] * h)
+        category = garment_analysis.category
 
-        if garment_analysis.category == "evening_dress":
-            max_y = int(h * 0.90)  # Kéo dài váy xuống dưới
+        if category == "shoes":
+            # Mặt nạ giày & loafer: vùng bàn chân và cổ chân
+            lb = parsing_result.legs_and_feet.bounds
+            min_x = int(lb["min_x"] * w)
+            max_x = int(lb["max_x"] * w)
+            min_y = int(h * 0.88)
+            max_y = int(h * 0.99)
+            draw.rounded_rectangle([min_x, min_y, max_x, max_y], radius=15, fill=255)
+        elif category == "trousers":
+            # Mặt nạ quần: từ eo/hông xuống mắt cá chân
+            lb = parsing_result.legs_and_feet.bounds
+            min_x = int(lb["min_x"] * w)
+            max_x = int(lb["max_x"] * w)
+            min_y = int(lb["min_y"] * h)
+            max_y = int(h * 0.93)
+            # Thêm padding tinh chỉnh theo lần thử retry
+            padding = (attempt - 1) * 4
+            min_x = max(0, min_x - padding)
+            max_x = min(w, max_x + padding)
+            draw.rounded_rectangle([min_x, min_y, max_x, max_y], radius=10, fill=255)
+        else:
+            # Lấy vùng torso_garment từ parsing cho áo, vest & đầm
+            tb = parsing_result.torso_garment.bounds
+            min_x = int(tb["min_x"] * w)
+            max_x = int(tb["max_x"] * w)
+            min_y = int(tb["min_y"] * h)
+            max_y = int(tb["max_y"] * h)
 
-        # Thêm padding tinh chỉnh theo lần thử retry
-        padding = (attempt - 1) * 6
-        min_x = max(0, min_x - padding)
-        max_x = min(w, max_x + padding)
-        min_y = max(0, min_y - padding)
-        max_y = min(h, max_y + padding)
+            if category == "evening_dress":
+                max_y = int(h * 0.90)  # Kéo dài váy xuống dưới
 
-        # Vẽ hình polygon thân trên chuẩn dáng vóc, không phì ngang
-        mid_x = int((min_x + max_x) * 0.5)
-        points = [
-            (mid_x, min_y),
-            (max_x, int(min_y + (max_y - min_y) * 0.15)),
-            (max_x, max_y),
-            (min_x, max_y),
-            (min_x, int(min_y + (max_y - min_y) * 0.15)),
-        ]
-        draw.polygon(points, fill=255)
+            # Thêm padding tinh chỉnh theo lần thử retry
+            padding = (attempt - 1) * 6
+            min_x = max(0, min_x - padding)
+            max_x = min(w, max_x + padding)
+            min_y = max(0, min_y - padding)
+            max_y = min(h, max_y + padding)
 
-        # Đục lỗ bảo vệ khớp cổ và cằm
-        nb = parsing_result.neck_skin.bounds
-        draw.ellipse([
-            int(nb["min_x"] * w), int(nb["min_y"] * h * 0.9),
-            int(nb["max_x"] * w), int(nb["max_y"] * h)
-        ], fill=0)
+            # Vẽ hình polygon thân trên chuẩn dáng vóc, không phì ngang
+            mid_x = int((min_x + max_x) * 0.5)
+            points = [
+                (mid_x, min_y),
+                (max_x, int(min_y + (max_y - min_y) * 0.15)),
+                (max_x, max_y),
+                (min_x, max_y),
+                (min_x, int(min_y + (max_y - min_y) * 0.15)),
+            ]
+            draw.polygon(points, fill=255)
+
+            # Đục lỗ bảo vệ khớp cổ và cằm
+            nb = parsing_result.neck_skin.bounds
+            draw.ellipse([
+                int(nb["min_x"] * w), int(nb["min_y"] * h * 0.9),
+                int(nb["max_x"] * w), int(nb["max_y"] * h)
+            ], fill=0)
 
         # Gaussian Blur làm mềm viền (feathering)
         feather = workflow.recommended_mask_feathering + (attempt - 1) * 2

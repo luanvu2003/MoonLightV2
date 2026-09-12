@@ -53,6 +53,16 @@ class WorkflowSelector:
             lighting_balance_factor=1.0,
             denoise_steps=28
         ),
+        "royal_footwear_workflow": WorkflowDecision(
+            workflow_id="royal_footwear_workflow",
+            name="Quy trình May đo Giày & Loafer Hoàng Gia (Royal Footwear Pipeline)",
+            description="Tối ưu tỷ lệ cổ chân, form dáng mũi giày, chất liệu da bóng bẩy và định vị bàn chân hoàn hảo.",
+            target_resolution="1024x1024_HD",
+            recommended_mask_feathering=4,
+            warp_strength=0.75,
+            lighting_balance_factor=1.10,
+            denoise_steps=25
+        ),
         "haute_couture_general_workflow": WorkflowDecision(
             workflow_id="haute_couture_general_workflow",
             name="Quy trình Thử Đồ Tiêu Chuẩn MoonLight Luxury",
@@ -76,6 +86,8 @@ class WorkflowSelector:
             return cls.WORKFLOWS["evening_dress_workflow"]
         elif cat == "trousers":
             return cls.WORKFLOWS["tailored_pants_workflow"]
+        elif cat == "shoes":
+            return cls.WORKFLOWS["royal_footwear_workflow"]
         return cls.WORKFLOWS["haute_couture_general_workflow"]
 
     @classmethod

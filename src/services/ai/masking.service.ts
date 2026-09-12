@@ -10,7 +10,7 @@ import { HumanParsingResult } from './parsing.service.js';
 import { GarmentAnalysisResult, WorkflowDecision } from './analyzer.service.js';
 
 export interface ClothMaskResult {
-  maskType: 'upper_body_mask' | 'full_body_mask' | 'lower_body_mask';
+  maskType: 'upper_body_mask' | 'full_body_mask' | 'lower_body_mask' | 'footwear_mask';
   featherRadiusPx: number;
   antiBleedErosionPx: number;
   collarContourPreserved: boolean;
@@ -30,10 +30,11 @@ export class AIMaskingService {
   ): Promise<ClothMaskResult> {
     const isFullBody = garment.requiresFullBodyMask || garment.category === 'evening_dress';
     const isLowerBody = garment.category === 'trousers';
+    const isFootwear = garment.category === 'shoes';
 
     const maskType = isFullBody
       ? 'full_body_mask'
-      : (isLowerBody ? 'lower_body_mask' : 'upper_body_mask');
+      : (isLowerBody ? 'lower_body_mask' : (isFootwear ? 'footwear_mask' : 'upper_body_mask'));
 
     // Tự động tinh chỉnh viền nếu chạy retry pass
     const extraFeather = refinementPass * 2;
@@ -43,8 +44,8 @@ export class AIMaskingService {
       maskType,
       featherRadiusPx: workflow.recommendedMaskFeathering + extraFeather,
       antiBleedErosionPx: 2 + extraErosion,
-      collarContourPreserved: true,
-      maskCoverageRatio: isFullBody ? 0.68 : (isLowerBody ? 0.38 : 0.44),
+      collarContourPreserved: !isLowerBody && !isFootwear,
+      maskCoverageRatio: isFullBody ? 0.68 : (isLowerBody ? 0.38 : (isFootwear ? 0.12 : 0.44)),
       maskConfidence: Math.min(0.999, 0.982 + refinementPass * 0.008)
     };
   }
