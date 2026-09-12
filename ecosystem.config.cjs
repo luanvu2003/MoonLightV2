@@ -23,6 +23,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         PYTHONUNBUFFERED: '1',
+        PYTHONPATH: '.',
         AI_PORT: 8001,
         AI_HOST: '0.0.0.0'
       }
