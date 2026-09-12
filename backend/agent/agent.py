@@ -36,7 +36,28 @@ class TryOnAgent:
             except Exception as e:
                 logger.error(f"Lỗi decode base64: {e}")
 
-        # 2. HTTP/HTTPS URL
+        # 2. Check if local path or URL points to a file on this server
+        from urllib.parse import urlparse
+        if img_src.startswith("http://") or img_src.startswith("https://"):
+            clean_path = urlparse(img_src).path.lstrip("/")
+        else:
+            clean_path = img_src.lstrip("/")
+
+        candidate_paths = [
+            settings.WORKSPACE_ROOT / clean_path,
+            settings.WORKSPACE_ROOT / "public" / clean_path,
+            Path(clean_path)
+        ]
+        for p in candidate_paths:
+            if p.exists():
+                if prefix == "garment":
+                    p_cutout = p.parent / f"{p.stem}_cutout.png"
+                    if p_cutout.exists():
+                        logger.info(f"✨ [Path Resolver] Sử dụng cutout chất lượng cao: {p_cutout}")
+                        return str(p_cutout)
+                return str(p)
+
+        # 3. Download external HTTP/HTTPS URL if not on local disk
         if img_src.startswith("http://") or img_src.startswith("https://"):
             try:
                 ext = "png" if ".png" in img_src.lower() else "jpg"
@@ -48,21 +69,6 @@ class TryOnAgent:
                     return file_path
             except Exception as e:
                 logger.error(f"Lỗi tải ảnh từ URL: {e}")
-
-        # 3. Local relative path (ví dụ: /uploads/..., /images/...)
-        clean_path = img_src.lstrip("/")
-        candidate_paths = [
-            settings.WORKSPACE_ROOT / clean_path,
-            settings.WORKSPACE_ROOT / "public" / clean_path,
-            Path(img_src)
-        ]
-        for p in candidate_paths:
-            if p.exists():
-                if prefix == "garment":
-                    p_cutout = p.parent / f"{p.stem}_cutout.png"
-                    if p_cutout.exists():
-                        return str(p_cutout)
-                return str(p)
 
         return img_src
 
