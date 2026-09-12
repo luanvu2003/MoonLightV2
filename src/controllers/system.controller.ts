@@ -182,15 +182,40 @@ export class SystemController {
         return;
       }
 
+      // Tự động nạp HF_TOKEN vào .env nếu được truyền lên qua body
+      const userHfToken = req.body?.hfToken || req.query?.hfToken;
+      if (userHfToken && typeof userHfToken === 'string' && userHfToken.trim().startsWith('hf_')) {
+        try {
+          const envPath = path.join(process.cwd(), '.env');
+          let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf-8') : '';
+          if (envContent.includes('HF_TOKEN=')) {
+            envContent = envContent.replace(/HF_TOKEN=.*/g, `HF_TOKEN=${userHfToken.trim()}`);
+            fs.writeFileSync(envPath, envContent, 'utf-8');
+          } else {
+            fs.appendFileSync(envPath, `\nHF_TOKEN=${userHfToken.trim()}\n`);
+          }
+          process.env.HF_TOKEN = userHfToken.trim();
+        } catch (err) {
+          console.warn('⚠️ Lỗi ghi .env:', err);
+        }
+      }
+
+      // Đảm bảo các thư viện Python AI được cài đặt
+      try {
+        await execAsync('pip3 install -r backend/requirements.txt || pip install -r backend/requirements.txt');
+      } catch (pipErr: any) {
+        console.warn('⚠️ Pip install check:', pipErr.message);
+      }
+
       const durationMs = Date.now() - startTime;
 
-      // 4. Lên lịch reload PM2 sau 2 giây để kịp flush toàn bộ response JSON về cho trình duyệt
+      // 4. Khởi động và reload toàn bộ ứng dụng Node & Python AI qua ecosystem.config.cjs
       setTimeout(() => {
-        exec('pm2 restart ecosystem.config.cjs || pm2 restart all', (err, stdout, stderr) => {
+        exec('pm2 startOrReload ecosystem.config.cjs || pm2 start ecosystem.config.cjs || pm2 restart all', (err, stdout, stderr) => {
           if (err) {
             console.error('Lỗi PM2 reload:', err);
           } else {
-            console.log('✅ Đã PM2 reload moonlight & moonlight-ai thành công!');
+            console.log('✅ Đã PM2 startOrReload ecosystem.config.cjs thành công!');
           }
         });
       }, 2000);
@@ -202,7 +227,7 @@ export class SystemController {
         gitOutput: gitOutput.trim(),
         buildOutput: buildOutput.trim(),
         reloaded: true
-      }, 'Cập nhật mã nguồn và yêu cầu khởi động lại ứng dụng thành công!');
+      }, 'Cập nhật mã nguồn và khởi động lại toàn bộ Node & Python AI thành công!');
     } catch (error) {
       next(error);
     }
@@ -213,7 +238,7 @@ export class SystemController {
    */
   static async getLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { stdout } = await execAsync('pm2 logs moonlight --lines 80 --nostream || pm2 logs --lines 80 --nostream');
+      const { stdout } = await execAsync('pm2 status && pm2 logs --lines 40 --nostream');
       sendSuccess(res, { logs: stdout }, 'Lấy logs thành công');
     } catch (err: any) {
       sendSuccess(res, { logs: err.message }, 'Lỗi lấy logs');
