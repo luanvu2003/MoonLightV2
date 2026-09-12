@@ -126,29 +126,37 @@ class VTONEngine:
         public_dest_path = str(settings.PUBLIC_UPLOADS_DIR / output_filename)
         storage_dest_path = str(settings.STORAGE_RESULTS_DIR / output_filename)
 
-        # ── 1. Thử gọi ZeroGPU IDM-VTON qua Gradio Client (nếu khả dụng) ──
-        if settings.HF_TOKEN:
-            try:
-                from gradio_client import Client, handle_file
-                logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
-                client = Client(settings.HF_SPACE_ID, hf_token=settings.HF_TOKEN)
-                result = client.predict(
-                    dict={"background": handle_file(person_image_path), "layers": [], "composite": None},
-                    garm_img=handle_file(garment_image_path),
-                    garment_des=garment_desc or "high quality designer garment",
-                    is_checked=True,
-                    is_checked_crop=False,
-                    denoise_steps=30,
-                    seed=42,
-                    api_name="/tryon"
-                )
-                if result and len(result) > 0 and os.path.exists(result[0]):
-                    shutil.copyfile(result[0], public_dest_path)
-                    shutil.copyfile(result[0], storage_dest_path)
-                    logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công: {public_dest_path}")
-                    return public_dest_path, "hf-idm-vton-py"
-            except Exception as e:
-                logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
+        # ── 1. Thử gọi ZeroGPU IDM-VTON qua Gradio Client (Ưu tiên hàng đầu AI Neural Try-On) ──
+        try:
+            from gradio_client import Client, handle_file
+            logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
+            client = Client(settings.HF_SPACE_ID, hf_token=settings.HF_TOKEN if settings.HF_TOKEN else None)
+            
+            # Ưu tiên truyền ảnh catalog gốc (JPG) cho IDM-VTON vì mạng neural IDM-VTON nhận diện thớ vải tốt nhất từ ảnh gốc
+            garm_ai_path = garment_image_path
+            p_garm = Path(garment_image_path)
+            if "_cutout" in p_garm.name:
+                orig_jpg = p_garm.parent / f"{p_garm.stem.replace('_cutout', '')}.jpg"
+                if orig_jpg.exists():
+                    garm_ai_path = str(orig_jpg)
+
+            result = client.predict(
+                dict={"background": handle_file(person_image_path), "layers": [], "composite": None},
+                garm_img=handle_file(garm_ai_path),
+                garment_des=garment_desc or "high quality designer garment",
+                is_checked=True,
+                is_checked_crop=False,
+                denoise_steps=30,
+                seed=42,
+                api_name="/tryon"
+            )
+            if result and len(result) > 0 and os.path.exists(result[0]):
+                shutil.copyfile(result[0], public_dest_path)
+                shutil.copyfile(result[0], storage_dest_path)
+                logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công: {public_dest_path}")
+                return public_dest_path, "hf-idm-vton-py"
+        except Exception as e:
+            logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
 
         # ── 2. MoonLight High-Precision Crisp Fitting Engine (Zero-Blur & Zero-Fringe) ──
         logger.info(f"ℹ️ [VTON] Sử dụng MoonLight High-Precision Crisp Fitting Engine (Zero-Fringe)...")
