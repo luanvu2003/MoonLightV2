@@ -1033,16 +1033,23 @@
         if (poseData && poseData.poseLandmarks && poseData.poseLandmarks.length >= 25) {
           const lm = poseData.poseLandmarks;
           const ls = lm[11], rs = lm[12], lh = lm[23], rh = lm[24];
+          const lk = lm[25], rk = lm[26], la = lm[27], ra = lm[28];
           const neckX = ((ls.x + rs.x) / 2) * pW;
           const neckY = ((ls.y + rs.y) / 2) * pH;
           const shoulderSpan = Math.hypot((ls.x - rs.x) * pW, (ls.y - rs.y) * pH);
+          const hipSpan = Math.hypot((lh.x - rh.x) * pW, (lh.y - rh.y) * pH);
           bodyInfo = {
             neckX: Math.round(neckX), neckY: Math.round(neckY),
             shoulderSpan: Math.round(shoulderSpan),
+            hipX: Math.round(((lh.x + rh.x) / 2) * pW),
             hipY: Math.round(((lh.y + rh.y) / 2) * pH),
+            hipSpan: Math.round(hipSpan > 10 ? hipSpan : shoulderSpan * 0.78),
             chinY: Math.round(neckY - shoulderSpan * 0.25),
             leftShoulderX: Math.round(ls.x * pW), rightShoulderX: Math.round(rs.x * pW),
-            leftHipX: Math.round(lh.x * pW), rightHipX: Math.round(rh.x * pW)
+            leftHipX: Math.round(lh.x * pW), rightHipX: Math.round(rh.x * pW),
+            kneeY: lk && rk ? Math.round(((lk.y + rk.y) / 2) * pH) : Math.round(pH * 0.80),
+            ankleY: la && ra ? Math.round(((la.y + ra.y) / 2) * pH) : Math.round(pH * 0.94),
+            hasLegs: Boolean((lk && lk.visibility > 0.35) || (la && la.visibility > 0.35))
           };
         } else {
           bodyInfo = detectPersonAnatomy(personImg);
@@ -1076,19 +1083,22 @@
         const gW = cleanGarmentCanvas.width, gH = cleanGarmentCanvas.height;
         const garmentPalette = extractGarmentPalette(cleanGarmentCanvas);
 
-        // ── BƯỚC 4: Tính toán vị trí may đo ──
+        // ── BƯỚC 4: Tính toán vị trí may đo chuẩn giải phẫu học ──
         let destW, destH, left, top;
         if (garmentType.isShoes) {
-          destW = Math.round(Math.min(pW * 0.48, Math.max(bodyInfo.shoulderSpan * 0.85, pW * 0.28)));
+          // Giày: rộng khoảng 70% vai (hoặc 92% hông), đặt ngay mắt cá chân / bàn chân
+          destW = Math.round(Math.min(pW * 0.32, Math.max(bodyInfo.shoulderSpan * 0.70, pW * 0.16)));
           destH = Math.round(destW * (gH / gW));
-          left = Math.round(bodyInfo.neckX - destW / 2);
-          top = Math.round(pH * 0.90 - destH * 0.40);
+          const shoeX = bodyInfo.hipX || bodyInfo.neckX;
+          left = Math.round(shoeX - destW / 2);
+          const footY = bodyInfo.ankleY ? bodyInfo.ankleY : Math.round(pH * 0.92);
+          top = Math.max(0, Math.min(pH - destH, Math.round(footY - destH * 0.80)));
         } else if (garmentType.isUpper) {
-          const ws = garmentType.isOuterwear ? 1.85 : 1.70;
-          destW = Math.round(Math.min(pW * 0.95, Math.max(bodyInfo.shoulderSpan * ws, pW * 0.38)));
+          const ws = garmentType.isOuterwear ? 1.45 : 1.35;
+          destW = Math.round(Math.min(pW * 0.65, Math.max(bodyInfo.shoulderSpan * ws, pW * 0.28)));
           destH = Math.round(destW * (gH / gW));
           if (prodName.includes('trench') || prodName.includes('dáng dài')) {
-            destW = Math.round(Math.min(pW * 0.95, Math.max(bodyInfo.shoulderSpan * 1.95, pW * 0.42)));
+            destW = Math.round(Math.min(pW * 0.68, Math.max(bodyInfo.shoulderSpan * 1.65, pW * 0.32)));
             destH = Math.round(destW * 1.45);
           }
           left = Math.round(bodyInfo.neckX - destW / 2);
@@ -1102,12 +1112,16 @@
             top = Math.round(bodyInfo.neckY - destH * 0.08);
           }
         } else if (garmentType.isLower) {
-          destW = Math.round(Math.min(pW * 0.85, Math.max(bodyInfo.shoulderSpan * 1.30, pW * 0.30)));
+          // Quần: độ rộng vừa khít hông (khoảng 82% độ rộng vai, tối đa 38% chiều rộng ảnh)
+          const baseW = bodyInfo.hipSpan ? bodyInfo.hipSpan * 1.12 : bodyInfo.shoulderSpan * 0.82;
+          destW = Math.round(Math.min(pW * 0.38, Math.max(baseW, pW * 0.18)));
           destH = Math.round(destW * (gH / gW));
-          left = Math.round(bodyInfo.neckX - destW / 2);
-          top = Math.round(bodyInfo.hipY - destH * 0.04);
+          const pantsCenterX = bodyInfo.hipX || bodyInfo.neckX;
+          left = Math.round(pantsCenterX - destW / 2);
+          // Cạp quần bắt đầu chuẩn xác từ đường eo/hông
+          top = Math.round(bodyInfo.hipY);
         } else {
-          destW = Math.round(Math.min(pW * 0.95, Math.max(bodyInfo.shoulderSpan * 1.80, pW * 0.38)));
+          destW = Math.round(Math.min(pW * 0.70, Math.max(bodyInfo.shoulderSpan * 1.40, pW * 0.32)));
           destH = Math.round(destW * (gH / gW));
           left = Math.round(bodyInfo.neckX - destW / 2);
           top = Math.round(bodyInfo.neckY - destH * 0.10);
@@ -1386,12 +1400,43 @@
     startScanningAnimation();
 
     try {
+      // 0. Quét trước tư thế người mẫu bằng MediaPipe Pose để có tọa độ giải phẫu học chính xác tuyệt đối
+      let poseHint = null;
+      try {
+        const pImg = new Image();
+        pImg.crossOrigin = 'anonymous';
+        await new Promise(r => { pImg.onload = r; pImg.onerror = r; pImg.src = selectedPersonImage; });
+        const pData = await detectPoseLandmarks(pImg);
+        if (pData && pData.poseLandmarks && pData.poseLandmarks.length >= 25) {
+          const lm = pData.poseLandmarks;
+          const ls = lm[11], rs = lm[12], lh = lm[23], rh = lm[24];
+          const lk = lm[25], rk = lm[26], la = lm[27], ra = lm[28];
+          const shoulderSpan = Math.hypot(rs.x - ls.x, rs.y - ls.y);
+          const hipSpan = Math.hypot(rh.x - lh.x, rh.y - lh.y);
+          const r3 = n => Math.round(n * 1000) / 1000;
+          poseHint = {
+            neck: { x: r3((ls.x + rs.x) / 2), y: r3((ls.y + rs.y) / 2) },
+            shoulder_span: r3(shoulderSpan),
+            hip: { x: r3((lh.x + rh.x) / 2), y: r3((lh.y + rh.y) / 2) },
+            hip_span: r3(hipSpan > 0.05 ? hipSpan : shoulderSpan * 0.78),
+            knee_y: r3(lk && rk ? (lk.y + rk.y) / 2 : ((lh.y + rh.y) / 2 + 0.22)),
+            ankle_y: r3(la && ra ? (la.y + ra.y) / 2 : ((lh.y + rh.y) / 2 + 0.40)),
+            feet_y: r3(lm[31] && lm[32] ? (lm[31].y + lm[32].y) / 2 : ((lh.y + rh.y) / 2 + 0.45)),
+            has_legs: Boolean((lk && lk.visibility > 0.35) || (la && la.visibility > 0.35))
+          };
+          console.log('📍 MediaPipe Pose Landmark scan hoàn tất:', poseHint);
+        }
+      } catch (poseErr) {
+        console.warn('MediaPipe pre-scan warning:', poseErr);
+      }
+
       const payload = {
         personImage: selectedPersonImage,
         productId: selectedProduct ? (selectedProduct._id || selectedProduct.id) : undefined,
         garmentImage: selectedGarmentImage,
         modelGender: selectedGender,
-        isCustomUpload: isCustomUpload
+        isCustomUpload: isCustomUpload,
+        pose: poseHint
       };
 
       let finalResult = null;

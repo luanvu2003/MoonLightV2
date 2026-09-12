@@ -27,7 +27,8 @@ class ClothMaskGenerator:
         parsing_result: HumanParsingResult,
         garment_analysis: GarmentAnalysis,
         workflow: WorkflowDecision,
-        attempt: int = 1
+        attempt: int = 1,
+        person_analysis: Optional[PersonAnalysis] = None
     ) -> ClothMaskResult:
         """
         Tạo mặt nạ Cloth Mask bóc tách trang phục cũ với viền khử lem màu
@@ -41,21 +42,37 @@ class ClothMaskGenerator:
 
         category = garment_analysis.category
 
+        # Trích xuất thông số giải phẫu học chính xác
+        kp = person_analysis.keypoints if person_analysis else {}
+        hip_pt = kp.get("hip_center", {"x": 0.50, "y": 0.58})
+        neck_pt = kp.get("neck", {"x": 0.50, "y": 0.24})
+        hip_x = float(hip_pt.get("x", 0.50))
+        hip_y = float(hip_pt.get("y", 0.58))
+        neck_x = float(neck_pt.get("x", 0.50))
+        neck_y = float(neck_pt.get("y", 0.24))
+        ankle_y = float(kp.get("ankle_center", {}).get("y", 0.92))
+        feet_y = float(kp.get("feet_center", {}).get("y", 0.96))
+        sw = person_analysis.shoulder_width_ratio if person_analysis else 0.38
+        hw = (person_analysis.hip_width_ratio if person_analysis and person_analysis.hip_width_ratio else sw * 0.78)
+
         if category == "shoes":
-            # Mặt nạ giày & loafer: vùng bàn chân và cổ chân
-            lb = parsing_result.legs_and_feet.bounds
-            min_x = int(lb["min_x"] * w)
-            max_x = int(lb["max_x"] * w)
-            min_y = int(h * 0.88)
-            max_y = int(h * 0.99)
+            # Mặt nạ giày & loafer: vùng bàn chân và cổ chân chuẩn xác
+            shoe_w = min(int(w * 0.30), int(sw * 0.70 * w))
+            shoe_center_x = int(hip_x * w)
+            min_x = max(0, shoe_center_x - shoe_w // 2)
+            max_x = min(w, shoe_center_x + shoe_w // 2)
+            min_y = int(min(h * 0.88, ankle_y * h - h * 0.03))
+            max_y = min(h, int(max(feet_y * h + h * 0.04, h * 0.98)))
             draw.rounded_rectangle([min_x, min_y, max_x, max_y], radius=15, fill=255)
         elif category == "trousers":
             # Mặt nạ quần: từ eo/hông xuống mắt cá chân
-            lb = parsing_result.legs_and_feet.bounds
-            min_x = int(lb["min_x"] * w)
-            max_x = int(lb["max_x"] * w)
-            min_y = int(lb["min_y"] * h)
-            max_y = int(h * 0.93)
+            # Độ rộng chuẩn may đo ôm hông (tối đa 38% chiều rộng ảnh)
+            pants_w = min(int(w * 0.38), max(int(hw * 1.15 * w), int(sw * 0.82 * w), int(w * 0.20)))
+            pants_center_x = int(hip_x * w)
+            min_x = max(0, pants_center_x - pants_w // 2)
+            max_x = min(w, pants_center_x + pants_w // 2)
+            min_y = int(hip_y * h)
+            max_y = min(h, int(max(ankle_y * h, h * 0.94)))
             # Thêm padding tinh chỉnh theo lần thử retry
             padding = (attempt - 1) * 4
             min_x = max(0, min_x - padding)

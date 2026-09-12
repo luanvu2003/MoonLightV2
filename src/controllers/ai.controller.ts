@@ -335,7 +335,8 @@ export class AIController {
    */
   static async tryOn(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { personImage, productId, garmentImage, category, modelGender } = req.body;
+      const { personImage, productId, garmentImage, category, modelGender, pose, poseHint } = req.body;
+      const detectedPose = pose || poseHint || null;
 
       if (!personImage) {
         sendError(res, 'Vui lòng cung cấp ảnh người dùng (personImage)', 400, 'MISSING_PERSON_IMAGE');
@@ -389,7 +390,9 @@ export class AIController {
             garmentImage: targetGarmentUrl,
             productId,
             modelGender,
-            product
+            product,
+            pose: detectedPose,
+            pose_hint: detectedPose
           }),
           signal: pyController.signal
         });

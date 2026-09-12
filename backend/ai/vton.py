@@ -12,6 +12,7 @@ import numpy as np
 from backend.config.settings import settings
 if TYPE_CHECKING:
     from backend.agent.workflow import WorkflowDecision
+    from backend.agent.analyzer import PersonAnalysis
 from backend.ai.masking import ClothMaskResult
 
 logger = logging.getLogger("MoonLightVTON")
@@ -196,7 +197,8 @@ class VTONEngine:
         cloth_mask: ClothMaskResult,
         workflow: WorkflowDecision,
         garment_desc: str = "",
-        attempt: int = 1
+        attempt: int = 1,
+        person_analysis: Optional[PersonAnalysis] = None
     ) -> Tuple[str, str]:
         """
         Thực thi mô hình Virtual Try-On Model:
@@ -285,6 +287,23 @@ class VTONEngine:
                 garm_bgr = garm_bgr[by:by+bh, bx:bx+bw]
                 garm_alpha = garm_alpha[by:by+bh, bx:bx+bw]
 
+            # Trích xuất tọa độ giải phẫu học cơ thể chính xác
+            kp = person_analysis.keypoints if person_analysis else {}
+            hip_pt = kp.get("hip_center", {"x": 0.50, "y": 0.58})
+            neck_pt = kp.get("neck", {"x": 0.50, "y": 0.24})
+            ankle_pt = kp.get("ankle_center", {"x": 0.50, "y": 0.92})
+            feet_pt = kp.get("feet_center", {"x": 0.50, "y": 0.96})
+            
+            neck_x = float(neck_pt.get("x", 0.50))
+            neck_y = float(neck_pt.get("y", 0.24))
+            hip_x = float(hip_pt.get("x", neck_x))
+            hip_y = float(hip_pt.get("y", 0.58))
+            ankle_y = float(ankle_pt.get("y", 0.92))
+            feet_y = float(feet_pt.get("y", 0.96))
+            
+            sw = person_analysis.shoulder_width_ratio if person_analysis else 0.38
+            hw = person_analysis.hip_width_ratio if (person_analysis and person_analysis.hip_width_ratio) else (sw * 0.78)
+
             # Lấy vị trí và kích thước thực tế của vùng trang phục từ cloth_mask
             mask_img = cv2.imread(cloth_mask.mask_path, cv2.IMREAD_GRAYSCALE)
             torso_box = None
@@ -293,47 +312,37 @@ class VTONEngine:
                 if mask_pts is not None:
                     torso_box = cv2.boundingRect(mask_pts)
 
-            if torso_box is not None:
-                mx, my, mw, mh = torso_box
-                if workflow.workflow_id == "royal_footwear_workflow":
-                    target_w = int(mw * 0.92)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    pos_x = mx + int((mw - target_w) * 0.5)
-                    pos_y = my + max(0, int(mh - target_h * 0.95))
-                elif workflow.workflow_id == "tailored_pants_workflow":
-                    target_w = int(mw * 0.96)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    pos_x = mx + int((mw - target_w) * 0.5)
-                    pos_y = my
-                else:
-                    # Chiều rộng áo ôm vừa vặn vai, chuẩn may đo slim-fit không phì rộng
-                    target_w = int(mw * 0.98)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    # Căn giữa theo trục ngực người và đặt ngay khớp cổ
-                    pos_x = mx + int((mw - target_w) * 0.5)
-                    pos_y = my
+            if workflow.workflow_id == "royal_footwear_workflow":
+                # Giày & loafer: rộng khoảng 70% vai, tối đa 30% chiều rộng ảnh
+                ideal_w = int(sw * 0.70 * w_p)
+                target_w = min(int(w_p * 0.30), max(ideal_w, int(w_p * 0.16)))
+                if torso_box is not None:
+                    target_w = min(target_w, int(torso_box[2] * 0.95))
+                scale_factor = target_w / float(garm_bgr.shape[1])
+                target_h = int(garm_bgr.shape[0] * scale_factor)
+                pos_x = int(hip_x * w_p - target_w * 0.5)
+                pos_y = min(h_p - target_h, max(0, int(ankle_y * h_p - target_h * 0.75)))
+            elif workflow.workflow_id == "tailored_pants_workflow":
+                # Quần: ôm hông chuẩn may đo, tuyệt đối không rộng quá 38% chiều rộng ảnh
+                # Cạp quần bắt đầu chuẩn xác từ đường eo/hông (hip_y)
+                ideal_w = int(max(hw * 1.12, sw * 0.82) * w_p)
+                target_w = min(int(w_p * 0.38), max(ideal_w, int(w_p * 0.20)))
+                if torso_box is not None:
+                    target_w = min(target_w, int(torso_box[2] * 0.98))
+                scale_factor = target_w / float(garm_bgr.shape[1])
+                target_h = int(garm_bgr.shape[0] * scale_factor)
+                pos_x = int(hip_x * w_p - target_w * 0.5)
+                pos_y = int(hip_y * h_p)
             else:
-                if workflow.workflow_id == "royal_footwear_workflow":
-                    target_w = int(w_p * 0.30)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    pos_x = int((w_p - target_w) * 0.5)
-                    pos_y = int(h_p * 0.88 - target_h * 0.20)
-                elif workflow.workflow_id == "tailored_pants_workflow":
-                    target_w = int(w_p * 0.35)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    pos_x = int((w_p - target_w) * 0.5)
-                    pos_y = int(h_p * 0.55)
-                else:
-                    target_w = int(w_p * 0.38)
-                    scale_factor = target_w / float(garm_bgr.shape[1])
-                    target_h = int(garm_bgr.shape[0] * scale_factor)
-                    pos_x = int((w_p - target_w) * 0.5)
-                    pos_y = int(h_p * 0.35)
+                # Áo, vest, sơ mi, đầm
+                ideal_w = int(sw * 1.35 * w_p)
+                target_w = min(int(w_p * 0.65), max(ideal_w, int(w_p * 0.28)))
+                if torso_box is not None:
+                    target_w = min(target_w, int(torso_box[2] * 0.98))
+                scale_factor = target_w / float(garm_bgr.shape[1])
+                target_h = int(garm_bgr.shape[0] * scale_factor)
+                pos_x = int(neck_x * w_p - target_w * 0.5)
+                pos_y = int(neck_y * h_p)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)

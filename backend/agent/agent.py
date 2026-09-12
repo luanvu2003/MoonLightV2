@@ -101,7 +101,8 @@ class TryOnAgent:
         person_image_src: str,
         garment_image_src: str,
         product_meta: Optional[Dict[str, Any]] = None,
-        model_gender: Optional[str] = None
+        model_gender: Optional[str] = None,
+        pose_hint: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Thực thi Master AI Virtual Try-On Pipeline theo sơ đồ 7 bước
@@ -122,7 +123,7 @@ class TryOnAgent:
 
         # ── BƯỚC 1: AI AGENT - PHÂN TÍCH ẢNH & ÁO ──
         t0 = time.time()
-        person_analysis = Analyzer.analyze_person(person_path, model_gender)
+        person_analysis = Analyzer.analyze_person(person_path, model_gender, pose_hint=pose_hint)
         garment_analysis = Analyzer.analyze_garment(garment_path, product_meta)
         pipeline_stages.append({
             "stageId": "analysis",
@@ -162,7 +163,7 @@ class TryOnAgent:
             # Cloth Mask
             t_mask = time.time()
             cloth_mask = ClothMaskGenerator.generate_mask(
-                person_path, parsing_result, garment_analysis, workflow, attempt
+                person_path, parsing_result, garment_analysis, workflow, attempt, person_analysis=person_analysis
             )
             pipeline_stages.append({
                 "stageId": "mask",
@@ -179,7 +180,8 @@ class TryOnAgent:
                 cloth_mask,
                 workflow,
                 garment_desc=garment_analysis.description,
-                attempt=attempt
+                attempt=attempt,
+                person_analysis=person_analysis
             )
             pipeline_stages.append({
                 "stageId": "vton",

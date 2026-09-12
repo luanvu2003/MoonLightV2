@@ -19,6 +19,8 @@ class TryOnRequest(BaseModel):
     isCustomUpload: Optional[bool] = False
     product: Optional[Dict[str, Any]] = None
     product_meta: Optional[Dict[str, Any]] = None
+    pose: Optional[Dict[str, Any]] = None
+    pose_hint: Optional[Dict[str, Any]] = None
 
 @router.post("")
 @router.post("/")
@@ -31,6 +33,7 @@ async def execute_tryon(payload: TryOnRequest):
         g_img = payload.garmentImage or payload.garment_image
         p_meta = payload.product or payload.product_meta
         gender = payload.modelGender or payload.model_gender
+        pose_hint = payload.pose or payload.pose_hint
 
         if not p_img or not g_img:
             raise HTTPException(status_code=400, detail="Thiếu ảnh người mẫu hoặc ảnh trang phục")
@@ -41,7 +44,8 @@ async def execute_tryon(payload: TryOnRequest):
             person_image_src=p_img,
             garment_image_src=g_img,
             product_meta=p_meta,
-            model_gender=gender
+            model_gender=gender,
+            pose_hint=pose_hint
         )
 
         return {
