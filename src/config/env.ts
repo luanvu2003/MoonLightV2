@@ -12,5 +12,6 @@ export const ENV = {
   EMAIL_PASS: process.env.EMAIL_PASS || 'gwupomwtazwjkfhr',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '360224518102-huhgvbiv7o8ls6mdm2nav9gu0cunqd6v.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || 'GOCSPX-0r2EexOPbp-D-bhjd2av8945qIT',
+  HF_TOKEN: process.env.HF_TOKEN || '',
   NODE_ENV: process.env.NODE_ENV || 'development'
 };

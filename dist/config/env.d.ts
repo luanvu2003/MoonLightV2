@@ -9,5 +9,6 @@ export declare const ENV: {
     EMAIL_PASS: string;
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
+    HF_TOKEN: string;
     NODE_ENV: string;
 };

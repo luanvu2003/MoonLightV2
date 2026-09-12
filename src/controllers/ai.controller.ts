@@ -67,8 +67,13 @@ const HF_VTON_SPACES = [
 async function uploadToHFSpace(spaceUrl: string, blob: Blob, filename: string, signal: AbortSignal): Promise<string | null> {
   const fd = new FormData();
   fd.append('files', blob, filename);
+  const headers: Record<string, string> = {};
+  if (ENV.HF_TOKEN) {
+    headers['Authorization'] = `Bearer ${ENV.HF_TOKEN}`;
+  }
   const upRes = await fetch(`${spaceUrl}/upload`, {
     method: 'POST',
+    headers,
     body: fd,
     signal
   });
@@ -203,9 +208,13 @@ async function callIdmVtonHF(personImage: string, garmentImage: string, garmentD
 
       try {
         console.log('   🚀 Gửi request tới IDM-VTON model...');
+        const inferHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (ENV.HF_TOKEN) {
+          inferHeaders['Authorization'] = `Bearer ${ENV.HF_TOKEN}`;
+        }
         const callRes = await fetch(`${spaceUrl}/call/tryon`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: inferHeaders,
           body: JSON.stringify({
             data: [
               {
@@ -250,7 +259,12 @@ async function callIdmVtonHF(personImage: string, garmentImage: string, garmentD
         console.log('   📡 Nhận event_id:', eventId, '- Đang chờ kết quả...');
 
         // 4. Nhận kết quả từ luồng SSE
+        const sseHeaders: Record<string, string> = {};
+        if (ENV.HF_TOKEN) {
+          sseHeaders['Authorization'] = `Bearer ${ENV.HF_TOKEN}`;
+        }
         const sseRes = await fetch(`${spaceUrl}/call/tryon/${eventId}`, {
+          headers: sseHeaders,
           signal: inferController.signal
         });
         const sseText = await sseRes.text();
