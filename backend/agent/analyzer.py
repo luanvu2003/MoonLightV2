@@ -118,14 +118,14 @@ class Analyzer:
                         body_bottom_y = round(min(1.0, (by + bh) / float(height)), 3)
                     elif is_outdoor_scene:
                         bg_complexity = "outdoor"
-                        neck_x, neck_y = 0.50, 0.28
-                        hip_x = 0.50
+                        neck_x, neck_y = 0.54, 0.46
+                        hip_x = 0.54
                         shoulder_ratio = 0.35
                         hip_ratio = 0.28
                         torso_height_ratio = 0.36
-                        chest_y, hip_y = 0.42, 0.58
-                        knee_y, ankle_y, feet_y = 0.78, 0.92, 0.96
-                        body_bottom_y = 0.98
+                        chest_y, hip_y = 0.52, 0.63
+                        knee_y, ankle_y, feet_y = 0.77, 0.89, 0.94
+                        body_bottom_y = 0.96
             except Exception:
                 pass
 
