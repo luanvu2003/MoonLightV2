@@ -2,11 +2,9 @@ import os
 import logging
 from pathlib import Path
 from typing import Tuple, Union, Optional
-import torch
 import numpy as np
 from PIL import Image
 import cv2
-from torchvision.transforms.functional import normalize
 
 logger = logging.getLogger("GarmentSegmenter")
 
@@ -19,6 +17,7 @@ def get_rmbg_model():
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
         try:
+            import torch
             from transformers import AutoModelForImageSegmentation
             logger.info("🧠 [Segmenter] Đang tải mô hình briaai/RMBG-1.4...")
             device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
@@ -60,6 +59,8 @@ class GarmentSegmenter:
         model_pack = get_rmbg_model()
         if model_pack is not None:
             try:
+                import torch
+                from torchvision.transforms.functional import normalize
                 model, device = model_pack
                 # Chuẩn hóa ảnh đầu vào 1024x1024
                 im_resized = pil_img.resize((1024, 1024), Image.BILINEAR)
