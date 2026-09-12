@@ -16,94 +16,93 @@ logger = logging.getLogger("MoonLightVTON")
 
 class VTONEngine:
     @staticmethod
-    def _clean_garment_mask_and_defringe(bgr: np.ndarray, alpha: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _normalize_garment_alpha_and_defringe(bgr: np.ndarray, alpha: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Khử sạch 100% nền trắng, viền xám, viền mờ và bóng sàn studio (Zero-Halo & Zero-Fringe)
-        Đồng thời mở rộng màu ruột áo (Defringe) để chống lem viền trắng khi nội suy.
+        Bảo toàn 100% đường nét, thớ vải và độ nét nguyên bản của trang phục:
+        - Giữ trọn từng chi tiết dệt len, gân cổ áo, bo tay và sợi vải (không bị răng cưa/mẻ viền)
+        - Defringe BGR: Tô màu thớ vải ruột áo vào vùng ngoài mask (alpha=0) để triệt tiêu hoàn toàn viền trắng khi nội suy
+        - Giữ nguyên anti-aliasing mềm mại tự nhiên
         """
-        h, w = alpha.shape
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        # Xác định màu ruột áo (median color của phần thân áo vững chắc)
+        solid_mask = alpha > 180
+        if not np.any(solid_mask):
+            solid_mask = alpha > 50
 
-        # 1. Đo màu sắc và độ sáng lõi thân áo (tránh ảnh hưởng bởi viền)
-        dist = cv2.distanceTransform((alpha > 128).astype(np.uint8), cv2.DIST_L2, 5)
-        core_mask = dist > 15
-        if not np.any(core_mask):
-            core_mask = alpha > 128
+        med_bgr = np.median(bgr[solid_mask], axis=0).astype(np.uint8) if np.any(solid_mask) else np.array([220, 220, 220], dtype=np.uint8)
 
-        core_gray = float(np.median(gray[core_mask])) if np.any(core_mask) else 128.0
-        med_bgr = np.median(bgr[core_mask], axis=0).astype(np.uint8) if np.any(core_mask) else np.array([25, 25, 25], dtype=np.uint8)
-
-        # 2. Phát hiện và loại bỏ triệt để bóng sàn studio & nền trắng
-        # Bóng sàn studio có độ bão hòa thấp (màu xám nhạt hsv[1] < 50) và sáng hơn hẳn thân áo
-        if core_gray < 165:
-            thresh_light = max(core_gray + 25, 70)
-            bad_bg = (alpha > 0) & (
-                ((gray > 205) & (hsv[:, :, 1] < 50)) |
-                ((np.arange(h)[:, None] > h * 0.55) & (gray > thresh_light) & (hsv[:, :, 1] < 45))
-            )
-        else:
-            # Trang phục màu sáng (trắng / kem): chỉ lọc nền sáng studio > 235
-            bad_bg = (alpha > 0) & (gray > 235) & (hsv[:, :, 1] < 30)
-
-        alpha_clean = alpha.copy()
-        alpha_clean[bad_bg] = 0
-
-        # 3. Lọc bỏ các mảng rác nhỏ, chỉ giữ lại các contour thân áo chính
-        contours, _ = cv2.findContours(alpha_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        mask_clean = np.zeros((h, w), np.uint8)
-        for c in contours:
-            if cv2.contourArea(c) > 2500:
-                cv2.drawContours(mask_clean, [c], -1, 255, -1)
-
-        # 4. Cạo viền (Erosion 2px) để loại bỏ hoàn toàn viền halo ngoài cùng
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        alpha_eroded = cv2.erode(mask_clean, kernel, iterations=2)
-
-        # 5. Defringe: Thay thế toàn bộ pixel ngoài viền bằng màu thân áo
-        # Ngăn chặn hiện tượng cv2.resize Lanczos lấy mẫu pixel trắng bên ngoài mask
+        # Defringe: Ép màu pixel bên ngoài alpha=0 thành màu ruột áo
+        # Để khi nội suy Lanczos/Bilinear không bao giờ lấy mẫu màu trắng nền
         bgr_clean = bgr.copy()
-        border_fringe = cv2.subtract(mask_clean, alpha_eroded)
-        bgr_clean[(border_fringe > 0) & (gray > core_gray + 10)] = med_bgr
-        bgr_clean[alpha_eroded == 0] = med_bgr
+        bgr_clean[alpha == 0] = med_bgr
 
-        # 6. Anti-Aliasing 1px làm mịn viền tự nhiên
-        alpha_final = cv2.GaussianBlur(alpha_eroded, (3, 3), 0)
-        return bgr_clean, alpha_final
+        # Nếu alpha là dạng binary cứng (chỉ có 0 và 255), làm mịn 1px viền ngoài để không bị răng cưa
+        unique_vals = np.unique(alpha)
+        if len(unique_vals) <= 3:
+            alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.5)
+        else:
+            # Alpha đã có anti-aliasing mượt mà sẵn -> bảo toàn 100%
+            alpha_smooth = alpha.copy()
+
+        return bgr_clean, alpha_smooth
 
     @classmethod
     def extract_garment_cutout(cls, garment_path: str) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Bóc tách nền áo chuẩn xác 100% không còn viền trắng, viền xám hay bóng sàn studio
+        Bóc tách và chuẩn hóa trang phục:
+        - Giữ nguyên 100% phom dáng, đường nét thớ vải và viền tự nhiên (không bị mẻ/răng cưa)
+        - Bảo toàn tuyệt đối chi tiết thớ len, dệt kim, gân vải của cả áo màu tối và áo trắng sáng
+        - Defringe RGB: Mở rộng màu ruột áo ra vùng trong suốt để triệt tiêu hoàn toàn viền trắng khi nội suy
         """
         p = Path(garment_path)
 
-        # 1. Kiểm tra xem có file _cutout.png tương ứng không
+        # 1. Nếu có file _cutout.png sẵn có
         cutout_candidate = p.parent / f"{p.stem}_cutout.png"
         if cutout_candidate.exists():
             cutout = cv2.imread(str(cutout_candidate), cv2.IMREAD_UNCHANGED)
             if cutout is not None and len(cutout.shape) == 3 and cutout.shape[2] == 4:
-                return cls._clean_garment_mask_and_defringe(cutout[:, :, :3], cutout[:, :, 3])
+                return cls._normalize_garment_alpha_and_defringe(cutout[:, :, :3], cutout[:, :, 3])
 
-        # 2. Kiểm tra ảnh hiện tại có alpha channel không
+        # 2. Nếu file đầu vào đã là PNG có alpha channel
         img = cv2.imread(garment_path, cv2.IMREAD_UNCHANGED)
         if img is None:
             raise ValueError(f"Không thể đọc file ảnh trang phục: {garment_path}")
 
         if len(img.shape) == 3 and img.shape[2] == 4:
-            return cls._clean_garment_mask_and_defringe(img[:, :, :3], img[:, :, 3])
+            return cls._normalize_garment_alpha_and_defringe(img[:, :, :3], img[:, :, 3])
 
-        # 3. Tách nền tự động bằng phân tích màu loại bỏ sạch nền trắng & bóng đổ studio dưới sàn
+        # 3. Với ảnh JPEG 3 kênh màu (chưa có alpha): Tách nền kết nối từ 4 góc ngoài biên
         bgr = img[:, :, :3] if len(img.shape) == 3 else cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         h, w = bgr.shape[:2]
 
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        # Kiểm tra màu nền ở 4 góc
+        corners = np.array([bgr[0, 0], bgr[0, w - 1], bgr[h - 1, 0], bgr[h - 1, w - 1]], dtype=np.float32)
+        bg_color = np.median(corners, axis=0)
 
-        is_white_bg = (gray > 205) & (hsv[:, :, 1] < 45)
-        initial_alpha = np.where(is_white_bg, 0, 255).astype(np.uint8)
+        # Khoảng cách màu tới màu nền ở các góc
+        color_diff = np.linalg.norm(bgr.astype(np.float32) - bg_color, axis=2)
 
-        return cls._clean_garment_mask_and_defringe(bgr, initial_alpha)
+        # Nền là các điểm ảnh tương đồng với góc và kết nối với đường biên ngoài
+        is_bg_candidate = (color_diff < 35).astype(np.uint8) * 255
+
+        # FloodFill từ 4 góc để chỉ xóa phần nền liên tục bên ngoài, KHÔNG bao giờ đục thủng áo trắng bên trong
+        bg_mask = np.zeros((h + 2, w + 2), np.uint8)
+        cv2.floodFill(is_bg_candidate, bg_mask, (0, 0), 128)
+        cv2.floodFill(is_bg_candidate, bg_mask, (w - 1, 0), 128)
+        cv2.floodFill(is_bg_candidate, bg_mask, (0, h - 1), 128)
+        cv2.floodFill(is_bg_candidate, bg_mask, (w - 1, h - 1), 128)
+
+        # Điểm ảnh có giá trị 128 chính là nền ngoài kết nối từ 4 góc
+        alpha = np.where(is_bg_candidate == 128, 0, 255).astype(np.uint8)
+
+        # Giữ lại contour lớn nhất (thân áo)
+        contours, _ = cv2.findContours(alpha, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        mask_filled = np.zeros((h, w), np.uint8)
+        if contours:
+            c = max(contours, key=cv2.contourArea)
+            cv2.drawContours(mask_filled, [c], -1, 255, -1)
+            alpha = mask_filled
+
+        return cls._normalize_garment_alpha_and_defringe(bgr, alpha)
 
     @classmethod
     def run_vton(
