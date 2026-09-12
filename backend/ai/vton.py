@@ -215,7 +215,15 @@ class VTONEngine:
         try:
             from gradio_client import Client, handle_file
             logger.info(f"🚀 [VTON] Kết nối tới ZeroGPU HuggingFace Space: {settings.HF_SPACE_ID}...")
-            client = Client(settings.HF_SPACE_ID, hf_token=settings.HF_TOKEN if settings.HF_TOKEN else None)
+            hf_token = settings.HF_TOKEN.strip() if settings.HF_TOKEN else None
+            try:
+                client = Client(settings.HF_SPACE_ID, hf_token=hf_token)
+            except TypeError:
+                try:
+                    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else None
+                    client = Client(settings.HF_SPACE_ID, headers=headers)
+                except Exception:
+                    client = Client(settings.HF_SPACE_ID)
 
             # Chuẩn bị ảnh người giữ nguyên 100% tỉ lệ gốc (aspect ratio letterbox)
             idm_person_path, letterbox_meta = cls._prepare_person_for_idm(person_image_path)

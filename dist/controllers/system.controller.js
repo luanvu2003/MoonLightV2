@@ -186,9 +186,9 @@ export class SystemController {
                     console.warn('⚠️ Lỗi ghi .env:', err);
                 }
             }
-            // Đảm bảo các thư viện Python AI được cài đặt
+            // Đảm bảo các thư viện Python AI được cài đặt và cập nhật phiên bản tương thích
             try {
-                await execAsync('pip3 install -r backend/requirements.txt || pip install -r backend/requirements.txt');
+                await execAsync('pip3 install -U "gradio_client>=1.3.0" || pip install -U "gradio_client>=1.3.0" || true');
             }
             catch (pipErr) {
                 console.warn('⚠️ Pip install check:', pipErr.message);
