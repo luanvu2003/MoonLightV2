@@ -58,6 +58,10 @@ class TryOnAgent:
         ]
         for p in candidate_paths:
             if p.exists():
+                if prefix == "garment":
+                    p_cutout = p.parent / f"{p.stem}_cutout.png"
+                    if p_cutout.exists():
+                        return str(p_cutout)
                 return str(p)
 
         return img_src
