@@ -118,7 +118,7 @@ class Analyzer:
                         body_bottom_y = round(min(1.0, (by + bh) / float(height)), 3)
                     elif is_outdoor_scene:
                         bg_complexity = "outdoor"
-                        neck_x, neck_y = 0.54, 0.46
+                        neck_x, neck_y = 0.54, 0.48
                         hip_x = 0.54
                         shoulder_ratio = 0.35
                         hip_ratio = 0.28

@@ -346,7 +346,7 @@ class VTONEngine:
                 target_w = int(target_h * aspect_ratio)
                 target_w = min(int(w_p * 0.65), max(int(sw * 1.35 * w_p), target_w))
                 pos_x = int(neck_x * w_p - target_w * 0.5)
-                pos_y = int(neck_y * h_p - target_h * 0.05)
+                pos_y = int(neck_y * h_p)
             else:
                 # Áo, vest, sơ mi, len, hoodie: kích thước trùm đủ vai và viền tay áo cũ
                 ideal_w = int(sw * 1.38 * w_p)
@@ -355,7 +355,7 @@ class VTONEngine:
                 target_h = int(garm_bgr.shape[0] * scale_factor)
                 pos_x = int(neck_x * w_p - target_w * 0.5)
                 # Cổ áo khớp chính xác quanh chân cổ (ngay dưới cằm)
-                pos_y = int(neck_y * h_p - target_h * 0.05)
+                pos_y = int(neck_y * h_p)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
