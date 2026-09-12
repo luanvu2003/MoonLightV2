@@ -349,8 +349,8 @@ class VTONEngine:
                 pos_y = int(neck_y * h_p)
             else:
                 # Áo, vest, sơ mi, len, hoodie: kích thước trùm đủ vai và viền tay áo cũ
-                ideal_w = int(sw * 1.38 * w_p)
-                target_w = min(int(w_p * 0.68), max(ideal_w, int(w_p * 0.30)))
+                ideal_w = int(sw * 1.55 * w_p)
+                target_w = min(int(w_p * 0.72), max(ideal_w, int(w_p * 0.42)))
                 scale_factor = target_w / float(garm_bgr.shape[1])
                 target_h = int(garm_bgr.shape[0] * scale_factor)
                 pos_x = int(neck_x * w_p - target_w * 0.5)
