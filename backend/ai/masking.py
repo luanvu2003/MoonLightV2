@@ -1,12 +1,15 @@
+from __future__ import annotations
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFilter
 import numpy as np
 import cv2
 
-from backend.agent.analyzer import PersonAnalysis, GarmentAnalysis
-from backend.agent.workflow import WorkflowDecision
+if TYPE_CHECKING:
+    from backend.agent.analyzer import PersonAnalysis, GarmentAnalysis
+    from backend.agent.workflow import WorkflowDecision
 from backend.ai.parsing import HumanParsingResult
 from backend.config.settings import settings
 

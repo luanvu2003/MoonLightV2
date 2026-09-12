@@ -35,36 +35,62 @@ class Analyzer:
             except Exception:
                 pass
 
-        gender = (gender_hint or "unisex").lower()
-        if "female" in image_path.lower() or gender == "female":
+        detected_gender = (gender_hint or "unisex").lower()
+        if "female" in image_path.lower() or detected_gender == "female":
             detected_gender = "female"
             body_type = "slim_standard"
-            shoulder_ratio = 0.38
-        elif "male" in image_path.lower() or gender == "male":
+            default_shoulder_ratio = 0.38
+        elif "male" in image_path.lower() or detected_gender == "male":
             detected_gender = "male"
             body_type = "broad_shoulders"
-            shoulder_ratio = 0.46
+            default_shoulder_ratio = 0.46
         else:
             detected_gender = "unisex"
             body_type = "standard"
-            shoulder_ratio = 0.42
+            default_shoulder_ratio = 0.42
+
+        # ── Tự động nhận diện giải phẫu cơ thể người thực tế từ ảnh ──
+        neck_x, neck_y = 0.50, 0.22
+        chest_y, hip_y = 0.36, 0.58
+        shoulder_ratio = default_shoulder_ratio
+        torso_height_ratio = 0.52
+
+        if os.path.exists(image_path):
+            try:
+                import cv2
+                import numpy as np
+                from backend.ai.segmenter import GarmentSegmenter
+                _, alpha = GarmentSegmenter.remove_background(image_path)
+                pts = cv2.findNonZero((alpha > 80).astype(np.uint8))
+                if pts is not None:
+                    bx, by, bw, bh = cv2.boundingRect(pts)
+                    # Xác thực kích thước người hợp lý (chiếm ít nhất 6% chiều rộng và 12% chiều cao)
+                    if bw >= int(width * 0.06) and bh >= int(height * 0.12):
+                        neck_x = round((bx + bw * 0.5) / float(width), 3)
+                        neck_y = round((by + bh * 0.17) / float(height), 3)
+                        shoulder_ratio = round(min(0.85, (bw * 0.95) / float(width)), 3)
+                        torso_height_ratio = round(min(0.70, (bh * 0.40) / float(height)), 3)
+                        chest_y = round((by + bh * 0.32) / float(height), 3)
+                        hip_y = round((by + bh * 0.56) / float(height), 3)
+            except Exception:
+                pass
 
         return PersonAnalysis(
             gender=detected_gender,
             body_type=body_type,
             pose_orientation="front_facing",
             shoulder_width_ratio=shoulder_ratio,
-            torso_height_ratio=0.52,
+            torso_height_ratio=torso_height_ratio,
             has_clear_face=True,
             background_complexity="studio",
             image_width=width,
             image_height=height,
             keypoints={
-                "neck": {"x": 0.50, "y": 0.22},
-                "left_shoulder": {"x": 0.35, "y": 0.26},
-                "right_shoulder": {"x": 0.65, "y": 0.26},
-                "chest_center": {"x": 0.50, "y": 0.36},
-                "hip_center": {"x": 0.50, "y": 0.58}
+                "neck": {"x": neck_x, "y": neck_y},
+                "left_shoulder": {"x": round(max(0.02, neck_x - shoulder_ratio * 0.5), 3), "y": round(neck_y + 0.04, 3)},
+                "right_shoulder": {"x": round(min(0.98, neck_x + shoulder_ratio * 0.5), 3), "y": round(neck_y + 0.04, 3)},
+                "chest_center": {"x": neck_x, "y": chest_y},
+                "hip_center": {"x": neck_x, "y": hip_y}
             }
         )
 

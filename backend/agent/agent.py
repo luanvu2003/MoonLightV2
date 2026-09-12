@@ -48,17 +48,19 @@ class TryOnAgent:
             settings.WORKSPACE_ROOT / "public" / clean_path,
             Path(clean_path)
         ]
+        resolved_path = ""
         for p in candidate_paths:
             if p.exists():
+                resolved_path = str(p)
                 if prefix == "garment":
                     p_cutout = p.parent / f"{p.stem}_cutout.png"
                     if p_cutout.exists():
                         logger.info(f"✨ [Path Resolver] Sử dụng cutout chất lượng cao: {p_cutout}")
                         return str(p_cutout)
-                return str(p)
+                break
 
         # 3. Download external HTTP/HTTPS URL if not on local disk
-        if img_src.startswith("http://") or img_src.startswith("https://"):
+        if not resolved_path and (img_src.startswith("http://") or img_src.startswith("https://")):
             try:
                 ext = "png" if ".png" in img_src.lower() else "jpg"
                 file_path = str(settings.STORAGE_UPLOADS_DIR / f"{prefix}_{timestamp}.{ext}")
@@ -66,11 +68,32 @@ class TryOnAgent:
                 if resp.status_code == 200:
                     with open(file_path, "wb") as fh:
                         fh.write(resp.content)
-                    return file_path
+                    resolved_path = file_path
             except Exception as e:
                 logger.error(f"Lỗi tải ảnh từ URL: {e}")
 
-        return img_src
+        final_path = resolved_path or img_src
+
+        # Tự động bóc tách nền chuẩn xác bằng GarmentSegmenter nếu là trang phục mới tải lên
+        if prefix == "garment" and os.path.exists(final_path):
+            p_file = Path(final_path)
+            if not p_file.name.endswith("_cutout.png"):
+                cutout_target = p_file.parent / f"{p_file.stem}_cutout.png"
+                if cutout_target.exists():
+                    return str(cutout_target)
+                try:
+                    import cv2
+                    import numpy as np
+                    from backend.ai.segmenter import GarmentSegmenter
+                    bgr, alpha = GarmentSegmenter.remove_background(final_path)
+                    res_rgba = np.dstack([bgr, alpha])
+                    cv2.imwrite(str(cutout_target), res_rgba, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+                    logger.info(f"✂️ [Segmenter] Đã tự động tạo cutout chất lượng cao: {cutout_target}")
+                    return str(cutout_target)
+                except Exception as e:
+                    logger.warning(f"⚠️ Không thể tự động tạo cutout cho {final_path}: {e}")
+
+        return final_path
 
     @classmethod
     def execute_workflow(

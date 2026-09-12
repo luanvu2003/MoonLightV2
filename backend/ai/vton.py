@@ -1,15 +1,17 @@
+from __future__ import annotations
 import os
 import shutil
 import time
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 from PIL import Image
 import cv2
 import numpy as np
 
 from backend.config.settings import settings
-from backend.agent.workflow import WorkflowDecision
+if TYPE_CHECKING:
+    from backend.agent.workflow import WorkflowDecision
 from backend.ai.masking import ClothMaskResult
 
 logger = logging.getLogger("MoonLightVTON")
@@ -22,28 +24,28 @@ class VTONEngine:
         """
         Bảo toàn 100% đường nét, thớ vải và độ nét nguyên bản của trang phục:
         - Giữ trọn từng chi tiết dệt len, gân cổ áo, bo tay và sợi vải (không bị răng cưa/mẻ viền)
-        - Defringe BGR: Tô màu thớ vải ruột áo vào vùng ngoài mask (alpha=0) để triệt tiêu hoàn toàn viền trắng khi nội suy
+        - Triệt tiêu 100% viền trắng/halo từ phông nền studio gốc
+        - Inpaint màu thớ vải ruột áo vào dải chuyển tiếp viền ngoài
         - Giữ nguyên anti-aliasing mềm mại tự nhiên
         """
-        # Xác định màu ruột áo (median color của phần thân áo vững chắc)
-        solid_mask = alpha > 180
-        if not np.any(solid_mask):
-            solid_mask = alpha > 50
+        # 1. Erode alpha nhẹ 1px để khử dải pixel giao thoa với phông studio trắng
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        alpha_clean = cv2.erode(alpha, kernel, iterations=1)
+        alpha_smooth = cv2.GaussianBlur(alpha_clean, (3, 3), 0.5)
 
-        med_bgr = np.median(bgr[solid_mask], axis=0).astype(np.uint8) if np.any(solid_mask) else np.array([220, 220, 220], dtype=np.uint8)
-
-        # Defringe: Ép màu pixel bên ngoài alpha=0 thành màu ruột áo
-        # Để khi nội suy Lanczos/Bilinear không bao giờ lấy mẫu màu trắng nền
-        bgr_clean = bgr.copy()
-        bgr_clean[alpha == 0] = med_bgr
-
-        # Nếu alpha là dạng binary cứng (chỉ có 0 và 255), làm mịn 1px viền ngoài để không bị răng cưa
-        unique_vals = np.unique(alpha)
-        if len(unique_vals) <= 3:
-            alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.5)
+        # 2. Inpaint BGR: Tô màu thớ vải bên trong ra dải biên để triệt tiêu hoàn toàn viền trắng
+        inpaint_mask = ((alpha > 0) & (alpha_smooth < 220)).astype(np.uint8)
+        if np.any(inpaint_mask):
+            bgr_clean = cv2.inpaint(bgr, inpaint_mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
         else:
-            # Alpha đã có anti-aliasing mượt mà sẵn -> bảo toàn 100%
-            alpha_smooth = alpha.copy()
+            bgr_clean = bgr.copy()
+
+        # 3. Ép màu vùng alpha=0 thành màu ruột áo
+        solid_mask = alpha_smooth > 180
+        if not np.any(solid_mask):
+            solid_mask = alpha_smooth > 50
+        med_bgr = np.median(bgr_clean[solid_mask], axis=0).astype(np.uint8) if np.any(solid_mask) else np.array([220, 220, 220], dtype=np.uint8)
+        bgr_clean[alpha_smooth == 0] = med_bgr
 
         return bgr_clean, alpha_smooth
 
@@ -184,17 +186,29 @@ class VTONEngine:
                 garm_bgr = garm_bgr[by:by+bh, bx:bx+bw]
                 garm_alpha = garm_alpha[by:by+bh, bx:bx+bw]
 
-            # Tính toán kích thước áo ôm trọn thân người & che kín áo cũ bên dưới
-            target_w = int(w_p * (0.68 * workflow.warp_strength))
-            scale_factor = target_w / float(garm_bgr.shape[1])
-            target_h = int(garm_bgr.shape[0] * scale_factor * 1.05)
+            # Lấy vị trí và kích thước thực tế của vùng thân người từ cloth_mask
+            mask_img = cv2.imread(cloth_mask.mask_path, cv2.IMREAD_GRAYSCALE)
+            torso_box = None
+            if mask_img is not None and np.any(mask_img > 80):
+                mask_pts = cv2.findNonZero((mask_img > 80).astype(np.uint8))
+                if mask_pts is not None:
+                    torso_box = cv2.boundingRect(mask_pts)
 
-            # Giới hạn chiều cao áo vừa vặn với chiều dài thân trên
-            max_allowed_h = int(h_p * 0.58)
-            if target_h > max_allowed_h:
-                target_h = max_allowed_h
-                scale_factor = target_h / float(garm_bgr.shape[0])
-                target_w = int(garm_bgr.shape[1] * scale_factor)
+            if torso_box is not None:
+                mx, my, mw, mh = torso_box
+                # Chiều rộng áo ôm vừa vặn vai và thân người
+                target_w = int(mw * 1.08 * workflow.warp_strength)
+                scale_factor = target_w / float(garm_bgr.shape[1])
+                target_h = int(garm_bgr.shape[0] * scale_factor)
+                # Căn giữa theo trục ngực người và đặt ngay khớp cổ
+                pos_x = mx + int((mw - target_w) * 0.5)
+                pos_y = my
+            else:
+                target_w = int(w_p * (0.52 * workflow.warp_strength))
+                scale_factor = target_w / float(garm_bgr.shape[1])
+                target_h = int(garm_bgr.shape[0] * scale_factor)
+                pos_x = int((w_p - target_w) * 0.5)
+                pos_y = int(h_p * 0.30)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
@@ -203,10 +217,6 @@ class VTONEngine:
             # Tăng cường nhẹ độ sắc nét thớ vải (Unsharp Masking)
             gaussian_3x3 = cv2.GaussianBlur(resized_garm, (0, 0), 2.0)
             sharpened_garm = cv2.addWeighted(resized_garm, 1.12, gaussian_3x3, -0.12, 0)
-
-            # Vị trí đặt áo (Căn giữa trục người, khớp ngực và vai, che kín cổ & gấu áo cũ bên dưới)
-            pos_x = int((w_p - target_w) * 0.5)
-            pos_y = int(h_p * 0.23)
 
             # Cắt ghép an toàn vào khung ảnh người
             x1, y1 = max(0, pos_x), max(0, pos_y)

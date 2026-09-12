@@ -1,8 +1,8 @@
-# backend/ai/__init__.py
 from .parsing import HumanParser, HumanParsingResult
 from .masking import ClothMaskGenerator, ClothMaskResult
 from .vton import VTONEngine
 from .quality import QualityEvaluator, QualityCheckResult
+from .segmenter import GarmentSegmenter
 
 __all__ = [
     "HumanParser",
@@ -11,5 +11,7 @@ __all__ = [
     "ClothMaskResult",
     "VTONEngine",
     "QualityEvaluator",
-    "QualityCheckResult"
+    "QualityCheckResult",
+    "GarmentSegmenter"
 ]
+

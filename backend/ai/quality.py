@@ -1,10 +1,12 @@
-from typing import Dict
+from __future__ import annotations
+from typing import Dict, TYPE_CHECKING
 from pydantic import BaseModel
 import random
 import os
 from PIL import Image
 
-from backend.agent.workflow import WorkflowDecision
+if TYPE_CHECKING:
+    from backend.agent.workflow import WorkflowDecision
 from backend.config.settings import settings
 
 class QualityMetrics(BaseModel):
