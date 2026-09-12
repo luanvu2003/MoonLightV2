@@ -8,3 +8,4 @@ public/uploads/tryon/
 __pycache__/
 *.pyc
 backend/storage/
+scratch/

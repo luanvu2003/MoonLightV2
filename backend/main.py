@@ -60,6 +60,28 @@ async def health_check():
         "quality_pass_threshold": settings.QUALITY_PASS_THRESHOLD
     }
 
+@app.get("/diagnostic")
+async def diagnostic():
+    info = {
+        "python_version": sys.version,
+        "gradio_client": None,
+        "hf_connection": None,
+        "hf_error": None
+    }
+    try:
+        import gradio_client
+        info["gradio_client"] = getattr(gradio_client, "__version__", "installed")
+        try:
+            from gradio_client import Client
+            c = Client(settings.HF_SPACE_ID)
+            info["hf_connection"] = "CONNECTED"
+        except Exception as e:
+            info["hf_connection"] = "FAILED"
+            info["hf_error"] = str(e)
+    except Exception as e:
+        info["gradio_client"] = f"NOT_INSTALLED: {e}"
+    return info
+
 if __name__ == "__main__":
     logger.info(f"🌙 Khởi động {settings.PROJECT_NAME} tại http://{settings.HOST}:{settings.PORT}")
     uvicorn.run("backend.main:app", host=settings.HOST, port=settings.PORT, reload=True)

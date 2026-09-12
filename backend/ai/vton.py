@@ -15,6 +15,8 @@ from backend.ai.masking import ClothMaskResult
 logger = logging.getLogger("MoonLightVTON")
 
 class VTONEngine:
+    last_error: str = ""
+
     @staticmethod
     def _normalize_garment_alpha_and_defringe(bgr: np.ndarray, alpha: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -156,6 +158,7 @@ class VTONEngine:
                 logger.info(f"✅ [VTON] IDM-VTON ZeroGPU thành công: {public_dest_path}")
                 return public_dest_path, "hf-idm-vton-py"
         except Exception as e:
+            cls.last_error = str(e)
             logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
 
         # ── 2. MoonLight High-Precision Crisp Fitting Engine (Zero-Blur & Zero-Fringe) ──

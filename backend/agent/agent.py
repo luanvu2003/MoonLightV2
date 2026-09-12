@@ -188,6 +188,7 @@ class TryOnAgent:
         return {
             "status": "completed",
             "provider": provider,
+            "lastEngineError": VTONEngine.last_error,
             "resultImage": public_url,
             "originalImage": person_image_src,
             "garmentImage": garment_image_src,
