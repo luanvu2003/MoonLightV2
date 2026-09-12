@@ -320,22 +320,26 @@ export class AIController {
      */
     static async tryOn(req, res, next) {
         try {
-            const { personImage, productId, garmentImage, category, modelGender, pose, poseHint } = req.body;
+            const { personImage, productId, garmentImage, category, modelGender, pose, poseHint, product: clientProduct } = req.body;
             const detectedPose = pose || poseHint || null;
             if (!personImage) {
                 sendError(res, 'Vui lòng cung cấp ảnh người dùng (personImage)', 400, 'MISSING_PERSON_IMAGE');
                 return;
             }
-            // Lấy thông tin sản phẩm từ database nếu có productId
-            let product = null;
+            // Lấy thông tin sản phẩm từ database hoặc client hoặc LUXURY_PRODUCTS
+            let product = clientProduct || null;
             let targetGarmentUrl = garmentImage || '';
             if (productId) {
                 try {
                     if (mongoose.Types.ObjectId.isValid(productId)) {
-                        product = await Product.findById(productId);
+                        const dbProd = await Product.findById(productId);
+                        if (dbProd)
+                            product = dbProd;
                     }
                     if (!product) {
-                        product = await Product.findOne({ id: Number(productId) || productId });
+                        const dbProd = await Product.findOne({ id: Number(productId) || productId });
+                        if (dbProd)
+                            product = dbProd;
                     }
                 }
                 catch (e) {
@@ -345,11 +349,42 @@ export class AIController {
                 if (!product) {
                     product = LUXURY_PRODUCTS.find((p) => String(p.id) === String(productId) ||
                         String(p._id) === String(productId) ||
+                        (targetGarmentUrl && (p.image === targetGarmentUrl || (p.images && p.images.includes(targetGarmentUrl)))) ||
                         (p.name && p.name.toLowerCase().includes(String(productId).toLowerCase())));
                 }
-                if (product && !targetGarmentUrl) {
-                    targetGarmentUrl = product.image || (product.variants && product.variants[0]?.img) || '';
+            }
+            if (!product && targetGarmentUrl) {
+                product = LUXURY_PRODUCTS.find((p) => p.image === targetGarmentUrl || (p.images && p.images.includes(targetGarmentUrl)));
+            }
+            // Nếu vẫn chưa có product metadata, tự động suy đoán từ URL ảnh trang phục
+            if (!product && targetGarmentUrl) {
+                const lowerUrl = targetGarmentUrl.toLowerCase();
+                let synCat = 'vest';
+                let synName = 'Trang Phục MoonLight Luxury';
+                if (lowerUrl.includes('chino') || lowerUrl.includes('jean') || lowerUrl.includes('pant')) {
+                    synCat = 'quan';
+                    synName = 'Quần May Đo MoonLight';
                 }
+                else if (lowerUrl.includes('loafer') || lowerUrl.includes('shoe') || lowerUrl.includes('giay')) {
+                    synCat = 'giay';
+                    synName = 'Giày Loafer Hoàng Gia';
+                }
+                else if (lowerUrl.includes('dam') || lowerUrl.includes('dress') || lowerUrl.includes('skirt')) {
+                    synCat = 'dam';
+                    synName = 'Đầm Thiết Kế MoonLight';
+                }
+                else if (lowerUrl.includes('shirt') || lowerUrl.includes('so mi') || lowerUrl.includes('blouse')) {
+                    synCat = 'ao';
+                    synName = 'Áo Sơ Mi Lụa MoonLight';
+                }
+                else if (lowerUrl.includes('cashmere') || lowerUrl.includes('sweater') || lowerUrl.includes('tee') || lowerUrl.includes('hoodie')) {
+                    synCat = 'ao';
+                    synName = 'Áo Len & Thun MoonLight';
+                }
+                product = { name: synName, category: synCat, image: targetGarmentUrl };
+            }
+            if (product && !targetGarmentUrl) {
+                targetGarmentUrl = product.image || (product.variants && product.variants[0]?.img) || '';
             }
             if (!targetGarmentUrl && !product) {
                 sendError(res, 'Vui lòng chọn sản phẩm thời trang hoặc cung cấp ảnh trang phục (garmentImage)', 400, 'MISSING_GARMENT');

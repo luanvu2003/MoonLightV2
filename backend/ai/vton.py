@@ -19,6 +19,7 @@ logger = logging.getLogger("MoonLightVTON")
 
 class VTONEngine:
     last_error: str = ""
+    _zero_gpu_disabled_until: float = 0.0
 
     @staticmethod
     def _normalize_garment_alpha_and_defringe(bgr: np.ndarray, alpha: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -216,7 +217,10 @@ class VTONEngine:
         # ── 1. Thử gọi ZeroGPU IDM-VTON qua Gradio Client (Chỉ dành cho Áo, Vest & Đầm) ──
         # IDM-VTON ZeroGPU được huấn luyện chuyên biệt trên phần thân trên (tops/dresses).
         # Đối với Quần (trousers) và Giày (shoes), chuyển thẳng qua High-Precision Crisp Fitting Engine để định vị chính xác giải phẫu học
-        can_use_idm = workflow.workflow_id not in ["tailored_pants_workflow", "royal_footwear_workflow"]
+        can_use_idm = (
+            workflow.workflow_id not in ["tailored_pants_workflow", "royal_footwear_workflow"]
+            and time.time() > cls._zero_gpu_disabled_until
+        )
         if can_use_idm:
             try:
                 from gradio_client import Client, handle_file
@@ -260,7 +264,12 @@ class VTONEngine:
                     return public_dest_path, "hf-idm-vton-py"
             except Exception as e:
                 cls.last_error = str(e)
-                logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
+                err_str = str(e).lower()
+                if "quota" in err_str or "exceeded your free zerogpu" in err_str:
+                    cls._zero_gpu_disabled_until = time.time() + 7200  # Chuyển qua Crisp Engine trong 2 tiếng
+                    logger.warning(f"⚠️ ZeroGPU hết quota hôm nay ({e}). Tạm ngưng gọi ZeroGPU trong 2h để tăng tốc độ phản hồi...")
+                else:
+                    logger.warning(f"⚠️ ZeroGPU không phản hồi hoặc bận ({e}). Chuyển tiếp sang Crisp Engine...")
         else:
             logger.info(f"ℹ️ [VTON] Định tuyến {workflow.name}: Sử dụng MoonLight Crisp Engine giải phẫu học...")
 
@@ -313,36 +322,40 @@ class VTONEngine:
                     torso_box = cv2.boundingRect(mask_pts)
 
             if workflow.workflow_id == "royal_footwear_workflow":
-                # Giày & loafer: rộng khoảng 70% vai, tối đa 30% chiều rộng ảnh
-                ideal_w = int(sw * 0.70 * w_p)
-                target_w = min(int(w_p * 0.30), max(ideal_w, int(w_p * 0.16)))
-                if torso_box is not None:
-                    target_w = min(target_w, int(torso_box[2] * 0.95))
-                scale_factor = target_w / float(garm_bgr.shape[1])
-                target_h = int(garm_bgr.shape[0] * scale_factor)
+                # Giày & loafer: rộng khoảng 70% vai, tối đa 28% chiều rộng ảnh, đặt chuẩn tại bàn chân
+                target_w = min(int(w_p * 0.28), max(int(sw * 0.70 * w_p), int(w_p * 0.16)))
+                aspect_ratio = float(garm_bgr.shape[0]) / float(garm_bgr.shape[1])
+                target_h = int(target_w * aspect_ratio)
                 pos_x = int(hip_x * w_p - target_w * 0.5)
-                pos_y = min(h_p - target_h, max(0, int(ankle_y * h_p - target_h * 0.75)))
+                pos_y = min(h_p - target_h, max(0, int(feet_y * h_p - target_h * 0.85)))
             elif workflow.workflow_id == "tailored_pants_workflow":
-                # Quần: ôm hông chuẩn may đo, tuyệt đối không rộng quá 38% chiều rộng ảnh
-                # Cạp quần bắt đầu chuẩn xác từ đường eo/hông (hip_y)
-                ideal_w = int(max(hw * 1.12, sw * 0.82) * w_p)
-                target_w = min(int(w_p * 0.38), max(ideal_w, int(w_p * 0.20)))
-                if torso_box is not None:
-                    target_w = min(target_w, int(torso_box[2] * 0.98))
-                scale_factor = target_w / float(garm_bgr.shape[1])
-                target_h = int(garm_bgr.shape[0] * scale_factor)
+                # Quần: ôm hông chuẩn may đo, cạp bắt đầu từ đường eo/hông (hip_y)
+                # và chiều dài ống quần vươn xuống chạm mắt cá/giày (ankle_y)
+                leg_length = max(int(h_p * 0.28), int((ankle_y - hip_y) * h_p))
+                target_h = int(leg_length * 1.05)
+                aspect_ratio = float(garm_bgr.shape[1]) / float(garm_bgr.shape[0])
+                target_w = int(target_h * aspect_ratio)
+                target_w = min(int(w_p * 0.38), max(int(w_p * 0.22), target_w))
                 pos_x = int(hip_x * w_p - target_w * 0.5)
                 pos_y = int(hip_y * h_p)
+            elif workflow.workflow_id == "evening_dress_workflow":
+                # Đầm & Váy: vươn từ vai xuống ngang gối / mắt cá chân
+                dress_length = max(int(h_p * 0.50), int((ankle_y - neck_y) * h_p))
+                target_h = int(dress_length * 0.95)
+                aspect_ratio = float(garm_bgr.shape[1]) / float(garm_bgr.shape[0])
+                target_w = int(target_h * aspect_ratio)
+                target_w = min(int(w_p * 0.65), max(int(sw * 1.35 * w_p), target_w))
+                pos_x = int(neck_x * w_p - target_w * 0.5)
+                pos_y = int(neck_y * h_p - target_h * 0.05)
             else:
-                # Áo, vest, sơ mi, đầm
-                ideal_w = int(sw * 1.35 * w_p)
-                target_w = min(int(w_p * 0.65), max(ideal_w, int(w_p * 0.28)))
-                if torso_box is not None:
-                    target_w = min(target_w, int(torso_box[2] * 0.98))
+                # Áo, vest, sơ mi, len, hoodie: kích thước trùm đủ vai và viền tay áo cũ
+                ideal_w = int(sw * 1.38 * w_p)
+                target_w = min(int(w_p * 0.68), max(ideal_w, int(w_p * 0.30)))
                 scale_factor = target_w / float(garm_bgr.shape[1])
                 target_h = int(garm_bgr.shape[0] * scale_factor)
                 pos_x = int(neck_x * w_p - target_w * 0.5)
-                pos_y = int(neck_y * h_p)
+                # Cổ áo khớp chính xác quanh chân cổ (ngay dưới cằm)
+                pos_y = int(neck_y * h_p - target_h * 0.05)
 
             # Resize bằng nội suy Lanczos4 để giữ độ sắc nét cao nhất của thớ vải
             resized_garm = cv2.resize(garm_bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)

@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from PIL import Image
 import os
+from pathlib import Path
 
 class PersonAnalysis(BaseModel):
     gender: str
@@ -157,6 +158,8 @@ class Analyzer:
         meta = product_meta or {}
         name = str(meta.get("name", "")).lower()
         cat = str(meta.get("category", "")).lower()
+        img_stem = Path(image_path).stem.lower().replace("_cutout", "") if image_path else ""
+        combined = f"{name} {cat} {img_stem}"
         
         category = "vest_suit"
         fabric = "italian_wool"
@@ -164,38 +167,60 @@ class Analyzer:
         sleeve = "long_sleeve"
         silhouette = "tailored_fit"
         
-        if any(k in name or k in cat for k in ["vest", "suit", "blazer"]):
-            category = "vest_suit"
-            fabric = "italian_wool"
-            collar = "peak_lapel" if "hoàng gia" in name else "notch_lapel"
-            silhouette = "structured"
-        elif any(k in name or k in cat for k in ["sơ mi", "so-mi", "shirt", "lụa", "silk"]):
-            category = "silk_shirt"
-            fabric = "mulberry_silk" if ("lụa" in name or "silk" in name) else "cotton_linen"
-            collar = "spread_collar"
-            silhouette = "slim_fit"
-        elif any(k in name or k in cat for k in ["đầm", "váy", "dress", "gown"]):
-            category = "evening_dress"
-            fabric = "royal_velvet" if "nhung" in name else "mulberry_silk"
-            collar = "v_neck"
-            silhouette = "flowing_gown"
-        elif any(k in name or k in cat for k in ["giày", "loafer", "shoes", "oxford", "sneaker", "boot", "dép"]):
+        # 1. Giày & Loafer (Footwear)
+        if any(k in combined for k in ["giay", "giày", "loafer", "shoe", "shoes", "boot", "sneaker", "oxford"]):
             category = "shoes"
             fabric = "genuine_leather"
             collar = "none"
             sleeve = "none"
             silhouette = "classic_loafer"
-        elif any(k in name or k in cat for k in ["quần", "pants", "trousers", "jean", "jeans", "chino"]):
+        # 2. Quần (Trousers / Pants / Jeans / Chino)
+        elif any(k in combined for k in ["quan", "quần", "pant", "pants", "trouser", "trousers", "jean", "jeans", "chino", "kaki", "khaki"]):
             category = "trousers"
-            fabric = "denim" if ("jean" in name or "denim" in name) else "italian_wool"
+            fabric = "denim" if ("jean" in combined or "denim" in combined) else "italian_wool"
             collar = "none"
             sleeve = "none"
             silhouette = "straight_cut"
+        # 3. Đầm & Váy (Dresses & Skirts)
+        elif any(k in combined for k in ["dam", "đầm", "dress", "gown", "vay", "váy", "skirt"]):
+            category = "evening_dress"
+            fabric = "royal_velvet" if "nhung" in combined else "mulberry_silk"
+            collar = "v_neck"
+            silhouette = "flowing_gown"
+        # 4. Vest, Blazer & Áo khoác (Suits & Outerwear)
+        elif any(k in combined for k in ["vest", "suit", "blazer", "tweed", "khoac", "khoác", "coat", "trench"]):
+            category = "vest_suit"
+            fabric = "italian_wool" if "wool" in combined or "tweed" in combined else "structured_cotton"
+            collar = "peak_lapel" if "hoàng gia" in combined else "notch_lapel"
+            silhouette = "structured"
+        # 5. Sơ mi & Áo lụa (Shirts & Blouses)
+        elif any(k in combined for k in ["so mi", "sơ mi", "shirt", "blouse", "lua", "lụa", "silk"]):
+            category = "silk_shirt"
+            fabric = "mulberry_silk" if ("lụa" in combined or "silk" in combined) else "cotton_linen"
+            collar = "spread_collar"
+            silhouette = "slim_fit"
+        # 6. Áo len, hoodie, thun, polo (Tops & Sweaters)
+        elif any(k in combined for k in ["sweater", "len", "hoodie", "tee", "thun", "polo", "pima"]):
+            category = "vest_suit"  # Định tuyến phom dáng thân trên
+            fabric = "cashmere" if "cashmere" in combined else "pima_cotton"
+            collar = "turtleneck" if "cổ lọ" in combined else "crew_neck"
+            silhouette = "comfort_fit"
         else:
-            category = "haute_couture"
-            fabric = "premium_blend"
-            collar = "designer"
-            silhouette = "bespoke"
+            # Fallback dựa trên tỷ lệ kích thước ảnh (nếu có file ảnh thực tế)
+            if image_path and os.path.exists(image_path):
+                try:
+                    import cv2
+                    g_img = cv2.imread(image_path)
+                    if g_img is not None:
+                        gh, gw = g_img.shape[:2]
+                        if gh / float(gw) >= 1.35:
+                            category = "trousers"
+                            fabric = "italian_wool"
+                        elif gw / float(gh) >= 1.25:
+                            category = "shoes"
+                            fabric = "genuine_leather"
+                except Exception:
+                    pass
 
         desc = meta.get("description") or f"MoonLight Luxury {category.replace('_', ' ').title()} - {fabric.replace('_', ' ')}"
 

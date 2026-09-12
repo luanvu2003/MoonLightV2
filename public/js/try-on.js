@@ -814,23 +814,23 @@
   function classifyGarment(product) {
     const name = ((product && product.name) || '').toLowerCase();
     const cat = ((product && product.category) || '').toLowerCase();
+    const imgUrl = (selectedGarmentImage || '').toLowerCase();
+    const combined = `${name} ${cat} ${imgUrl}`;
 
-    const isShoes = cat.includes('giay') || cat.includes('shoe') || cat.includes('loafer') ||
-                    name.includes('giày') || name.includes('loafer') || name.includes('sneaker') ||
-                    name.includes('oxford') || name.includes('boot');
-    const isLower = !isShoes && (cat.includes('quan') || cat.includes('pant') || cat.includes('jean') || 
-                    cat.includes('chino') || cat.includes('vay') || cat.includes('skirt') ||
-                    name.includes('quần') || name.includes('jean') || name.includes('chino') || 
-                    name.includes('pants') || name.includes('chân váy') || name.includes('xếp ly'));
-    const isDress = !isShoes && !isLower && (cat.includes('dam') || cat.includes('dress') || 
-                    name.includes('đầm') || name.includes('dress'));
-    const isShortSleeve = name.includes('polo') || name.includes('thun') || 
-                          name.includes('pima') || name.includes('cộc') || 
-                          name.includes('ngắn tay') || name.includes('tee') || name.includes('t-shirt');
-    const isOuterwear = name.includes('khoác') || name.includes('jacket') || 
-                        name.includes('trench') || name.includes('coat') || 
-                        name.includes('blazer') || name.includes('vest') || 
-                        name.includes('suit') || name.includes('măng tô') || name.includes('tweed');
+    const isShoes = combined.includes('giay') || combined.includes('shoe') || combined.includes('loafer') ||
+                    combined.includes('giày') || combined.includes('sneaker') || combined.includes('oxford') || combined.includes('boot');
+    const isLower = !isShoes && (combined.includes('quan') || combined.includes('pant') || combined.includes('jean') || 
+                    combined.includes('chino') || combined.includes('kaki') || combined.includes('khaki') ||
+                    combined.includes('vay') || combined.includes('skirt') || combined.includes('quần') || 
+                    combined.includes('chân váy') || combined.includes('xếp ly'));
+    const isDress = !isShoes && !isLower && (combined.includes('dam') || combined.includes('dress') || combined.includes('đầm'));
+    const isShortSleeve = combined.includes('polo') || combined.includes('thun') || 
+                          combined.includes('pima') || combined.includes('cộc') || 
+                          combined.includes('ngắn tay') || combined.includes('tee') || combined.includes('t-shirt');
+    const isOuterwear = combined.includes('khoác') || combined.includes('jacket') || 
+                        combined.includes('trench') || combined.includes('coat') || 
+                        combined.includes('blazer') || combined.includes('vest') || 
+                        combined.includes('suit') || combined.includes('măng tô') || combined.includes('tweed');
 
     return { isShoes, isLower, isDress, isUpper: !isShoes && !isLower && !isDress, isShortSleeve, isOuterwear };
   }
@@ -859,10 +859,36 @@
         const bgR = (c1[0]+c2[0]+c3[0]+c4[0])/4;
         const bgG = (c1[1]+c2[1]+c3[1]+c4[1])/4;
         const bgB = (c1[2]+c2[2]+c3[2]+c4[2])/4;
-        for (let i = 0; i < d.length; i += 4) {
-          const dist = Math.hypot(d[i]-bgR, d[i+1]-bgG, d[i+2]-bgB);
-          if (dist < 32) { d[i+3] = 0; }
-          else if (dist < 46) { d[i+3] = Math.round(((dist-32)/14)*255); }
+
+        // BFS Flood-fill từ 4 cạnh ngoài biên: CHỈ xóa nền liên tục ở ngoài, bảo toàn 100% áo trắng/kem bên trong
+        const visited = new Uint8Array(w * h);
+        const queue = [];
+        const pushPoint = (px, py) => {
+          const idx = py * w + px;
+          if (!visited[idx]) {
+            visited[idx] = 1;
+            queue.push(px, py);
+          }
+        };
+
+        for (let x = 0; x < w; x++) { pushPoint(x, 0); pushPoint(x, h - 1); }
+        for (let y = 0; y < h; y++) { pushPoint(0, y); pushPoint(w - 1, y); }
+
+        let head = 0;
+        const threshold = 34;
+        while (head < queue.length) {
+          const qx = queue[head++];
+          const qy = queue[head++];
+          const pIdx = (qy * w + qx) * 4;
+          const dist = Math.hypot(d[pIdx] - bgR, d[pIdx+1] - bgG, d[pIdx+2] - bgB);
+
+          if (dist < threshold) {
+            d[pIdx + 3] = 0;
+            if (qx > 0 && !visited[qy * w + qx - 1]) pushPoint(qx - 1, qy);
+            if (qx < w - 1 && !visited[qy * w + qx + 1]) pushPoint(qx + 1, qy);
+            if (qy > 0 && !visited[(qy - 1) * w + qx]) pushPoint(qx, qy - 1);
+            if (qy < h - 1 && !visited[(qy + 1) * w + qx]) pushPoint(qx, qy + 1);
+          }
         }
         ctx.putImageData(imgData, 0, 0);
       }
@@ -1433,6 +1459,7 @@
       const payload = {
         personImage: selectedPersonImage,
         productId: selectedProduct ? (selectedProduct._id || selectedProduct.id) : undefined,
+        product: selectedProduct || undefined,
         garmentImage: selectedGarmentImage,
         modelGender: selectedGender,
         isCustomUpload: isCustomUpload,
